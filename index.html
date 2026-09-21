@@ -16,7 +16,7 @@ h1,h2,h3{margin:0}.sub,.muted{color:var(--mut);font-size:12px}.pill{display:inli
 .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}.metricLabel{color:var(--mut);font-size:12px}.metricValue{font-size:28px;font-weight:900;margin-top:4px;letter-spacing:-.02em}.green{color:var(--green)}.red{color:var(--red)}.amber{color:var(--amber)}
 .grid2{display:grid;grid-template-columns:1.15fr .85fr;gap:16px}.rowbar{display:grid;grid-template-columns:44px 1fr 100px;gap:10px;align-items:center;margin:12px 0}.track{height:18px;background:#0d100e;border-radius:6px;overflow:hidden}.fill{height:100%;background:#145c3d}
 .symgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.sym{border:1px solid var(--line);border-radius:15px;padding:14px;background:#070a08}.sym b{font-size:18px}
-.calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:13px;overflow:hidden}.dow,.day{background:#080b09;padding:7px;min-height:82px}.dow{min-height:auto;text-align:center;color:var(--mut);font-size:11px;font-weight:800}.day.pos{background:#0a1d15}.day.neg{background:#211010}.dnum{font-size:11px;color:#aaa}.dpnl{font-weight:850;margin-top:12px}.dmeta{font-size:10px;color:var(--mut);margin-top:3px}.calhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.month{font-size:20px;font-weight:900}
+.calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:13px;overflow:hidden}.dow,.day{background:#080b09;padding:7px;min-height:82px}.dow{min-height:auto;text-align:center;color:var(--mut);font-size:11px;font-weight:800}.day.pos{background:#0a1d15}.day.neg{background:#211010}.day.clickable{cursor:pointer}.day.clickable:hover{filter:brightness(1.15)}.reviewDot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);margin-left:5px;vertical-align:middle}.dnum{font-size:11px;color:#aaa}.dpnl{font-weight:850;margin-top:12px}.dmeta{font-size:10px;color:var(--mut);margin-top:3px}.calhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.month{font-size:20px;font-weight:900}
 .btn{border:1px solid var(--line);background:#0d1511;color:var(--txt);padding:9px 12px;border-radius:11px;cursor:pointer}.btn:hover{filter:brightness(1.12)}.btn.primary{background:#0b6b47;border-color:#0b6b47}.btn.danger{background:#421617;border-color:#6d2425}.input,.select,.textarea{background:#070a08;border:1px solid var(--line);color:var(--txt);border-radius:11px;padding:10px 11px;width:100%;outline:none}.input:focus,.select:focus,.textarea:focus{border-color:#2c6a4b}
 .toolbar{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:12px}.toolbar .input,.toolbar .select{width:auto;min-width:150px}
 table{width:100%;border-collapse:collapse}th,td{padding:12px 8px;border-bottom:1px solid var(--line);text-align:left;font-size:12px;white-space:nowrap}th{color:var(--mut);font-size:10px;letter-spacing:.07em}.click{cursor:pointer}.click:hover{background:#0a120e}
@@ -158,10 +158,34 @@ table{width:100%;border-collapse:collapse}th,td{padding:12px 8px;border-bottom:1
   </div>
 </div>
 
+<div id="dailyModal" class="modal hide">
+  <div class="modalbox">
+    <div class="modalhead">
+      <div><div class="panelTitle" style="margin:0 0 4px">DAILY REVIEW</div><h2 id="dailyTitle">—</h2></div>
+      <button class="btn" id="closeDailyModal">Закрыть</button>
+    </div>
+    <div id="dailyStats" class="detail"></div>
+    <div class="form">
+      <div class="wide"><div class="metricLabel">What worked?</div><textarea id="dWorked" class="textarea" rows="3" placeholder="Что сегодня сработало хорошо?"></textarea></div>
+      <div class="wide"><div class="metricLabel">What went wrong?</div><textarea id="dWrong" class="textarea" rows="3" placeholder="Какие ошибки, нарушения или плохие решения были?"></textarea></div>
+      <div class="wide"><div class="metricLabel">Tomorrow focus</div><textarea id="dTomorrow" class="textarea" rows="3" placeholder="На чём сфокусироваться в следующий торговый день?"></textarea></div>
+      <div class="wide"><div class="metricLabel">Notes</div><textarea id="dNotes" class="textarea" rows="3"></textarea></div>
+    </div>
+    <div style="text-align:right;margin-top:14px"><button class="btn primary" id="saveDailyReview">Save daily review</button></div>
+  </div>
+</div>
+
 <div id="tradeModal" class="modal hide">
   <div class="modalbox">
     <div class="modalhead"><div><div class="panelTitle" style="margin:0 0 4px">TRADE REVIEW</div><h2 id="modalTitle"></h2></div><button class="btn" id="closeModal">Закрыть</button></div>
     <div id="tradeDetails" class="detail"></div>
+    <div class="panel" style="margin:10px 0 16px">
+      <div class="panelTitle">MT ORDERS / EVENTS</div>
+      <div style="overflow:auto"><table>
+        <thead><tr><th>ID</th><th>Open / Time</th><th>Close / Type</th><th>Side</th><th>Lots</th><th>Price</th><th>Net P&L</th></tr></thead>
+        <tbody id="orderRows"></tbody>
+      </table></div>
+    </div>
     <div class="form">
       <div><div class="metricLabel">Setup</div><input id="fSetup" class="input"></div>
       <div><div class="metricLabel">Tags</div><input id="fTags" class="input"></div>
@@ -187,7 +211,7 @@ const SUPABASE_KEY='sb_publishable_FHpGzrS604yrbzE8ciM83Q_2045GubX';
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const el=id=>document.getElementById(id);
 let model={trades:[],daily:[],symbols:[],weekday:[],summary:{}},monthDate=null,activeTrade=null,liveToken='';
-let membership=null,allTrades=[],accountSettings=[],detectedAccounts=[],memberRows=[],selectedAccountKey='all',declineTarget=null;
+let membership=null,allTrades=[],accountSettings=[],detectedAccounts=[],memberRows=[],selectedAccountKey='all',declineTarget=null,rawEvents=[],dailyReviewMap={},activeReviewDate=null;
 
 const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=n=>{n=Number(n||0);return (n<0?'-$':n>0?'+$':'$')+Math.abs(n).toLocaleString(undefined,{maximumFractionDigits:2})};
@@ -299,7 +323,7 @@ function summarizeMT4(group){
   const first=group[0],strategy=first._strategy,gid=first._gid,t=freshTrade(first,first.side,strategy,gid);
   t.openedAt=group.reduce((v,e)=>new Date(e.open_time)<new Date(v)?e.open_time:v,first.open_time);
   t.closedAt=group.reduce((v,e)=>new Date(e.close_time)>new Date(v)?e.close_time:v,first.close_time);
-  group.forEach(e=>{const q=Math.abs(Number(e.volume||0));t.entryQty+=q;t.entryVal+=q*Number(e.open_price||e.price||0);t.exitQty+=q;t.exitVal+=q*Number(e.close_price||0);t.pnl+=Number(e.profit||0)+Number(e.commission||0)+Number(e.swap||0)+Number(e.fee||0);t.entries++;t.exits++;t.orders[String(e.order_id||e.event_id)]=1});
+  group.forEach(e=>{const q=Math.abs(Number(e.volume||0));t.entryQty+=q;t.entryVal+=q*Number(e.open_price||e.price||0);t.exitQty+=q;t.exitVal+=q*Number(e.close_price||0);t.pnl+=Number(e.profit||0)+Number(e.commission||0)+Number(e.swap||0)+Number(e.fee||0);t.entries++;t.exits++;t.orders[String(e.order_id||e.event_id)]=1;t.events.push(String(e.event_id||e.order_id));});
   return finalize(t);
 }
 function groupMT4(rows){
@@ -334,8 +358,10 @@ function buildModel(trades){
 async function loadData(){
   try{
     el('sync').textContent='Syncing…';
-    const [events,notes,settings]=await Promise.all([fetchAll('raw_events'),fetchAll('trade_notes'),fetchAll('account_settings')]);
+    const [events,notes,settings,dailyReviews]=await Promise.all([fetchAll('raw_events'),fetchAll('trade_notes'),fetchAll('account_settings'),fetchAll('daily_reviews')]);
+    rawEvents=events||[];
     accountSettings=settings||[];
+    dailyReviewMap={};(dailyReviews||[]).forEach(r=>dailyReviewMap[r.review_date]=r);
     const noteMap={};notes.forEach(n=>noteMap[n.trade_id]=n);
     allTrades=groupMT5(events.filter(e=>String(e.source).toUpperCase()==='MT5')).concat(groupMT4(events.filter(e=>String(e.source).toUpperCase()==='MT4'))).filter(t=>t.closedAt).map(t=>Object.assign(t,noteMap[t.id]||{})).sort((a,b)=>new Date(b.closedAt)-new Date(a.closedAt));
     buildDetectedAccounts(events);
@@ -454,8 +480,12 @@ function renderCalendar(){
   const y=monthDate.getFullYear(),m=monthDate.getMonth();el('monthLabel').textContent=monthDate.toLocaleDateString(undefined,{month:'long',year:'numeric'});
   const map={};model.daily.forEach(d=>map[d.date]=d);let html=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(x=>'<div class="dow">'+x+'</div>').join('');
   const first=new Date(y,m,1).getDay(),days=new Date(y,m+1,0).getDate();for(let i=0;i<first;i++)html+='<div class="day"></div>';
-  for(let d=1;d<=days;d++){const k=y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0'),x=map[k];html+='<div class="day '+(x?(x.pnl>=0?'pos':'neg'):'')+'"><div class="dnum">'+d+'</div>'+(x?'<div class="dpnl '+(x.pnl>=0?'green':'red')+'">'+money(x.pnl)+'</div><div class="dmeta">'+(x.wr==null?'—':x.wr.toFixed(0)+'%')+' · '+x.trades+'T</div>':'')+'</div>'}
+  for(let d=1;d<=days;d++){
+    const k=y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0'),x=map[k],review=dailyReviewMap[k];
+    html+='<div class="day clickable '+(x?(x.pnl>=0?'pos':'neg'):'')+'" data-review-date="'+k+'"><div class="dnum">'+d+(review?'<span class="reviewDot" title="Daily review saved"></span>':'')+'</div>'+(x?'<div class="dpnl '+(x.pnl>=0?'green':'red')+'">'+money(x.pnl)+'</div><div class="dmeta">'+(x.wr==null?'—':x.wr.toFixed(0)+'%')+' · '+x.trades+'T</div>':'')+'</div>'
+  }
   el('calendar').innerHTML=html;
+  document.querySelectorAll('[data-review-date]').forEach(x=>x.onclick=()=>openDailyReview(x.dataset.reviewDate));
 }
 el('prevMonth').onclick=()=>{monthDate=new Date(monthDate.getFullYear(),monthDate.getMonth()-1,1);renderCalendar()};
 el('nextMonth').onclick=()=>{monthDate=new Date(monthDate.getFullYear(),monthDate.getMonth()+1,1);renderCalendar()};
@@ -469,11 +499,47 @@ function renderTrades(){
 }
 el('search').oninput=renderTrades;el('sideFilter').onchange=renderTrades;el('sourceFilter').onchange=renderTrades;
 
+function openDailyReview(date){
+  activeReviewDate=date;
+  const dayTrades=allTrades.filter(t=>dayKey(new Date(t.closedAt))===date);
+  const pnl=dayTrades.reduce((s,t)=>s+t.pnl,0),wins=dayTrades.filter(t=>t.pnl>0).length,losses=dayTrades.filter(t=>t.pnl<0).length;
+  const wr=(wins+losses)?wins/(wins+losses)*100:0;
+  el('dailyTitle').textContent=new Date(date+'T12:00:00').toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'});
+  const stats=[['P&L',money(pnl)],['Logical Trades',dayTrades.length],['Win Rate',wr.toFixed(1)+'%'],['Wins / Losses',wins+' / '+losses]];
+  el('dailyStats').innerHTML=stats.map(x=>'<div class="kv"><small>'+esc(x[0])+'</small><b>'+esc(x[1])+'</b></div>').join('');
+  const r=dailyReviewMap[date]||{};
+  el('dWorked').value=r.what_worked||'';
+  el('dWrong').value=r.what_wrong||'';
+  el('dTomorrow').value=r.tomorrow_focus||'';
+  el('dNotes').value=r.notes||'';
+  el('dailyModal').classList.remove('hide');
+}
+function closeDailyReview(){el('dailyModal').classList.add('hide');activeReviewDate=null}
+el('closeDailyModal').onclick=closeDailyReview;
+el('saveDailyReview').onclick=async()=>{
+  if(!activeReviewDate)return;
+  const u=(await sb.auth.getUser()).data.user;
+  const row={user_id:u.id,review_date:activeReviewDate,what_worked:el('dWorked').value,what_wrong:el('dWrong').value,tomorrow_focus:el('dTomorrow').value,notes:el('dNotes').value,updated_at:new Date().toISOString()};
+  const {error}=await sb.from('daily_reviews').upsert(row,{onConflict:'user_id,review_date'});
+  if(error)return alert(error.message);
+  closeDailyReview();
+  await loadData();
+}
+
 function openTrade(id){
   const t=model.trades.find(x=>x.id===id);if(!t)return;activeTrade=t;
   el('modalTitle').textContent=t.symbol+' '+t.side+' · '+money(t.pnl);
   const details=[['Source',t.source],['Account',t.account+(t.server?' · '+t.server:'')],['Opened',new Date(t.openedAt).toLocaleString()],['Closed',new Date(t.closedAt).toLocaleString()],['Orders',t.orderCount],['Entries / exits',t.entries+' / '+t.exits],['Strategy',t.strategy],['Trade ID',t.id]];
   el('tradeDetails').innerHTML=details.map(x=>'<div class="kv"><small>'+esc(x[0])+'</small><b>'+esc(x[1])+'</b></div>').join('');
+  const ids=new Set((t.events||[]).map(String));
+  const orders=rawEvents.filter(e=>ids.has(String(e.event_id||e.order_id))).sort((a,b)=>new Date(a.open_time||a.event_time)-new Date(b.open_time||b.event_time));
+  el('orderRows').innerHTML=orders.length?orders.map(e=>{
+    const net=Number(e.profit||0)+Number(e.commission||0)+Number(e.swap||0)+Number(e.fee||0);
+    const open=e.open_time||e.event_time,close=e.close_time||'';
+    const kind=e.source==='MT4'?(close?new Date(close).toLocaleString():'—'):(e.entry_type||'EVENT');
+    const px=e.source==='MT4'?(price(e.open_price||e.price)+' → '+price(e.close_price||0)):price(e.price||0);
+    return '<tr><td>'+esc(e.order_id||e.event_id||'')+'</td><td>'+(open?new Date(open).toLocaleString():'—')+'</td><td>'+esc(kind)+'</td><td>'+esc(e.side||'')+'</td><td>'+Number(e.volume||0).toLocaleString(undefined,{maximumFractionDigits:3})+'</td><td>'+esc(px)+'</td><td class="'+(net>=0?'green':'red')+'"><b>'+money(net)+'</b></td></tr>';
+  }).join(''):'<tr><td colspan="7" class="muted">No raw order details found</td></tr>';
   el('fSetup').value=t.setup||'';el('fTags').value=t.tags||'';el('fTier').value=t.tier||'';el('fSession').value=t.session||'';el('fConfirmation').value=t.confirmation||'';el('fProbability').value=t.probability==null?'':t.probability;el('fCr').value=t.cr_value==null?'':t.cr_value;el('fRisk').value=t.risk_amount==null?'':t.risk_amount;el('fPlan').value=t.plan_ok||'';el('fNews').value=t.news_context||'';el('fMistake').value=t.mistake||'';el('fNotes').value=t.notes||'';
   el('tradeModal').classList.remove('hide');
 }
