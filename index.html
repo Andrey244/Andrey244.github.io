@@ -188,15 +188,11 @@ table{width:100%;border-collapse:collapse}th,td{padding:12px 8px;border-bottom:1
     </div>
     <div class="form">
       <div><div class="metricLabel">Setup</div><input id="fSetup" class="input"></div>
-      <div><div class="metricLabel">Tags</div><input id="fTags" class="input"></div>
       <div><div class="metricLabel">Tier / Model</div><input id="fTier" class="input" placeholder="MID / Intraday / Daily / EURUSD v0.5"></div>
-      <div><div class="metricLabel">Session</div><input id="fSession" class="input"></div>
-      <div><div class="metricLabel">Confirmation</div><input id="fConfirmation" class="input"></div>
       <div><div class="metricLabel">Probability %</div><input id="fProbability" type="number" class="input"></div>
       <div><div class="metricLabel">CR</div><input id="fCr" type="number" class="input"></div>
       <div><div class="metricLabel">Risk $</div><input id="fRisk" type="number" class="input"></div>
       <div><div class="metricLabel">Plan followed?</div><select id="fPlan" class="select"><option></option><option>YES</option><option>NO</option><option>PARTIAL</option></select></div>
-      <div class="wide"><div class="metricLabel">News / fundamental context</div><input id="fNews" class="input"></div>
       <div class="wide"><div class="metricLabel">Mistake / violation</div><input id="fMistake" class="input"></div>
       <div class="wide"><div class="metricLabel">Notes</div><textarea id="fNotes" class="textarea" rows="4"></textarea></div>
     </div>
@@ -540,13 +536,13 @@ function openTrade(id){
     const px=e.source==='MT4'?(price(e.open_price||e.price)+' → '+price(e.close_price||0)):price(e.price||0);
     return '<tr><td>'+esc(e.order_id||e.event_id||'')+'</td><td>'+(open?new Date(open).toLocaleString():'—')+'</td><td>'+esc(kind)+'</td><td>'+esc(e.side||'')+'</td><td>'+Number(e.volume||0).toLocaleString(undefined,{maximumFractionDigits:3})+'</td><td>'+esc(px)+'</td><td class="'+(net>=0?'green':'red')+'"><b>'+money(net)+'</b></td></tr>';
   }).join(''):'<tr><td colspan="7" class="muted">No raw order details found</td></tr>';
-  el('fSetup').value=t.setup||'';el('fTags').value=t.tags||'';el('fTier').value=t.tier||'';el('fSession').value=t.session||'';el('fConfirmation').value=t.confirmation||'';el('fProbability').value=t.probability==null?'':t.probability;el('fCr').value=t.cr_value==null?'':t.cr_value;el('fRisk').value=t.risk_amount==null?'':t.risk_amount;el('fPlan').value=t.plan_ok||'';el('fNews').value=t.news_context||'';el('fMistake').value=t.mistake||'';el('fNotes').value=t.notes||'';
+  el('fSetup').value=t.setup||'';el('fTier').value=t.tier||'';el('fProbability').value=t.probability==null?'':t.probability;el('fCr').value=t.cr_value==null?'':t.cr_value;el('fRisk').value=t.risk_amount==null?'':t.risk_amount;el('fPlan').value=t.plan_ok||'';el('fMistake').value=t.mistake||'';el('fNotes').value=t.notes||'';
   el('tradeModal').classList.remove('hide');
 }
 el('closeModal').onclick=()=>{el('tradeModal').classList.add('hide');activeTrade=null};
 el('saveReview').onclick=async()=>{
   if(!activeTrade)return;const u=(await sb.auth.getUser()).data.user;
-  const row={user_id:u.id,trade_id:activeTrade.id,setup:el('fSetup').value,tags:el('fTags').value,tier:el('fTier').value,session:el('fSession').value,confirmation:el('fConfirmation').value,probability:el('fProbability').value===''?null:Number(el('fProbability').value),cr_value:el('fCr').value===''?null:Number(el('fCr').value),risk_amount:el('fRisk').value===''?null:Number(el('fRisk').value),plan_ok:el('fPlan').value,news_context:el('fNews').value,mistake:el('fMistake').value,notes:el('fNotes').value,updated_at:new Date().toISOString()};
+  const row={user_id:u.id,trade_id:activeTrade.id,setup:el('fSetup').value,tier:el('fTier').value,probability:el('fProbability').value===''?null:Number(el('fProbability').value),cr_value:el('fCr').value===''?null:Number(el('fCr').value),risk_amount:el('fRisk').value===''?null:Number(el('fRisk').value),plan_ok:el('fPlan').value,mistake:el('fMistake').value,notes:el('fNotes').value,updated_at:new Date().toISOString()};
   const {error}=await sb.from('trade_notes').upsert(row,{onConflict:'user_id,trade_id'});if(error)return alert(error.message);
   el('tradeModal').classList.add('hide');activeTrade=null;await loadData();
 };
