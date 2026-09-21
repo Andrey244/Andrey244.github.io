@@ -251,7 +251,16 @@ el('signupBtn').onclick=async()=>{
   }
 
   const {error}=await sb.auth.signUp({email,password:el('password').value});
-  el('authMsg').textContent=error?error.message:'Аккаунт создан. После подтверждения email владелец журнала должен одобрить доступ.';
+  if(error){
+    const msg=String(error.message||'');
+    if(/email.*rate|rate.*email/i.test(msg)){
+      el('authMsg').textContent='Лимит Supabase на отправку confirmation email исчерпан. Аккаунт не создан. Для этого приватного журнала лучше отключить email confirmation в Supabase и оставить ручной Approve владельцем.';
+    }else{
+      el('authMsg').textContent=msg;
+    }
+    return;
+  }
+  el('authMsg').textContent='Аккаунт создан. Теперь владелец журнала должен одобрить доступ.';
 };
 el('logoutBtn').onclick=()=>sb.auth.signOut();
 el('pendingLogoutBtn').onclick=()=>sb.auth.signOut();
