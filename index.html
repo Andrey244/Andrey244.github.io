@@ -318,8 +318,23 @@ function hash(s){let a=2166136261;for(let i=0;i<s.length;i++){a^=s.charCodeAt(i)
 function tag(comment,key){const m=String(comment||'').match(new RegExp('(?:^|\\s|\\|)'+key+':([A-Za-z0-9_\\-]+)','i'));return m?m[1]:''}
 
 async function boot(){
+  // Supabase recovery links can establish the session before onAuthStateChange
+  // is attached, especially in Safari. Detect recovery directly from the URL too.
+  const recoveryFromUrl=(()=>{
+    try{
+      const hashParams=new URLSearchParams((window.location.hash||'').replace(/^#/,''));
+      const queryParams=new URLSearchParams(window.location.search||'');
+      return hashParams.get('type')==='recovery' || queryParams.get('type')==='recovery';
+    }catch(_e){return false}
+  })();
+
   const {data}=await sb.auth.getSession();
   await handleSession(data.session);
+
+  if(recoveryFromUrl && data.session){
+    el('recoveryModal').classList.remove('hide');
+  }
+
   sb.auth.onAuthStateChange((event,session)=>{
     if(event==='PASSWORD_RECOVERY'){
       el('recoveryModal').classList.remove('hide');
@@ -392,6 +407,7 @@ el('saveRecoveryPassword').onclick=async()=>{
   if(error){msg.textContent=error.message;return}
   el('recoveryPassword').value='';el('recoveryPassword2').value='';
   msg.textContent='Пароль изменён. Теперь можно войти с новым паролем.';
+  try{history.replaceState(null,'',window.location.pathname)}catch(_e){}
 };
 
 el('logoutBtn').onclick=()=>sb.auth.signOut();
