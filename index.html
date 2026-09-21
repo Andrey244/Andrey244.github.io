@@ -21,7 +21,7 @@ h1,h2,h3{margin:0}.sub,.muted{color:var(--mut);font-size:12px}.pill{display:inli
 .toolbar{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:12px}.toolbar .input,.toolbar .select{width:auto;min-width:150px}
 table{width:100%;border-collapse:collapse}th,td{padding:12px 8px;border-bottom:1px solid var(--line);text-align:left;font-size:12px;white-space:nowrap}th{color:var(--mut);font-size:10px;letter-spacing:.07em}.click{cursor:pointer}.click:hover{background:#0a120e}
 .auth{min-height:100vh;display:grid;place-items:center;padding:20px}.card{width:min(430px,100%);background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:23px}.card .input{margin-top:9px}.actions{display:flex;gap:9px;margin-top:13px}.status{color:var(--mut);font-size:12px;margin-top:11px;line-height:1.5}.code{background:#040604;border:1px solid var(--line);border-radius:11px;padding:10px;word-break:break-all;font-family:ui-monospace,SFMono-Regular,monospace;font-size:11px}.warning{border-left:3px solid var(--amber);background:#18140a;color:#d8cfb7;padding:10px 11px;border-radius:8px;font-size:12px;line-height:1.5}
-.modal{position:fixed;inset:0;background:#000c;display:grid;place-items:center;padding:16px;z-index:10}.modalbox{width:min(760px,100%);max-height:92vh;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:19px}.modalhead{display:flex;justify-content:space-between;gap:10px;align-items:center}.detail{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:15px 0}.kv{border:1px solid var(--line);border-radius:11px;padding:10px;background:#070a08}.kv small{color:var(--mut);display:block;margin-bottom:3px}.form{display:grid;grid-template-columns:1fr 1fr;gap:10px}.wide{grid-column:1/-1}.hint{font-size:11px;color:var(--mut);line-height:1.55}.empty{padding:24px;text-align:center;color:var(--mut)}.accountbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.accountbar .select{width:auto;min-width:240px}.accountList{display:grid;gap:10px}.accountRow,.memberRow{display:grid;grid-template-columns:1.2fr 1.5fr auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:13px;padding:12px;background:#070a08}.memberMeta{min-width:0}.memberMeta b{display:block;overflow:hidden;text-overflow:ellipsis}.badge{display:inline-block;border:1px solid var(--line);padding:3px 7px;border-radius:999px;font-size:10px;margin-top:4px}
+.modal{position:fixed;inset:0;background:#000c;display:grid;place-items:center;padding:16px;z-index:10}.modalbox{width:min(760px,100%);max-height:92vh;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:19px}.modalhead{display:flex;justify-content:space-between;gap:10px;align-items:center}.detail{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:15px 0}.kv{border:1px solid var(--line);border-radius:11px;padding:10px;background:#070a08}.kv small{color:var(--mut);display:block;margin-bottom:3px}.form{display:grid;grid-template-columns:1fr 1fr;gap:10px}.wide{grid-column:1/-1}.hint{font-size:11px;color:var(--mut);line-height:1.55}.empty{padding:24px;text-align:center;color:var(--mut)}.accountbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.accountbar .select{width:auto;min-width:240px}.accountList{display:grid;gap:10px}.accountRow,.memberRow{display:grid;grid-template-columns:1.2fr 1.5fr auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:13px;padding:12px;background:#070a08}.memberActions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}.memberMeta{min-width:0}.memberMeta b{display:block;overflow:hidden;text-overflow:ellipsis}.badge{display:inline-block;border:1px solid var(--line);padding:3px 7px;border-radius:999px;font-size:10px;margin-top:4px}
 @media(max-width:820px){.metrics{grid-template-columns:repeat(2,1fr)}.grid2{grid-template-columns:1fr}.symgrid{grid-template-columns:1fr 1fr}.detail{grid-template-columns:1fr 1fr}}
 @media(max-width:540px){.wrap{padding:14px 9px 50px}.panel{padding:14px}.metricValue{font-size:23px}.symgrid{grid-template-columns:1fr}.form{grid-template-columns:1fr}.wide{grid-column:auto}.day{min-height:68px;padding:5px}.dpnl{font-size:11px}.rowbar{grid-template-columns:36px 1fr 82px}.top{align-items:flex-start}.tabs{top:4px}.tab{font-size:12px;padding:10px 6px}}
 </style>
@@ -138,6 +138,26 @@ table{width:100%;border-collapse:collapse}th,td{padding:12px 8px;border-bottom:1
   </section>
 </div>
 
+<div id="declineModal" class="modal hide">
+  <div class="modalbox" style="width:min(560px,100%)">
+    <div class="modalhead">
+      <div><div class="panelTitle" style="margin:0 0 4px">DECLINE REQUEST</div><h2 id="declineEmail">—</h2></div>
+      <button class="btn" id="closeDeclineModal">Закрыть</button>
+    </div>
+    <div class="warning" style="margin-top:14px">
+      Выбери, что сделать с этой заявкой. В обоих вариантах pending-аккаунт удаляется полностью, чтобы он не висел в списке.
+    </div>
+    <div class="actions" style="margin-top:16px;flex-wrap:wrap">
+      <button class="btn" id="declineRemoveBtn">Просто удалить заявку</button>
+      <button class="btn danger" id="declineBlockBtn">Удалить + блок 5 минут</button>
+    </div>
+    <div class="hint" style="margin-top:12px">
+      «Просто удалить» — человек сможет зарегистрироваться снова сразу (полезно, если ошиблись email).<br>
+      «Блок 5 минут» — этот email не сможет создать новую заявку в течение 5 минут.
+    </div>
+  </div>
+</div>
+
 <div id="tradeModal" class="modal hide">
   <div class="modalbox">
     <div class="modalhead"><div><div class="panelTitle" style="margin:0 0 4px">TRADE REVIEW</div><h2 id="modalTitle"></h2></div><button class="btn" id="closeModal">Закрыть</button></div>
@@ -169,7 +189,7 @@ const SUPABASE_KEY='sb_publishable_FHpGzrS604yrbzE8ciM83Q_2045GubX';
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const el=id=>document.getElementById(id);
 let model={trades:[],daily:[],symbols:[],weekday:[],summary:{}},monthDate=null,activeTrade=null,liveToken='';
-let membership=null,allTrades=[],accountSettings=[],detectedAccounts=[],memberRows=[],selectedAccountKey='all';
+let membership=null,allTrades=[],accountSettings=[],detectedAccounts=[],memberRows=[],selectedAccountKey='all',declineTarget=null;
 
 const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=n=>{n=Number(n||0);return (n<0?'-$':n>0?'+$':'$')+Math.abs(n).toLocaleString(undefined,{maximumFractionDigits:2})};
@@ -209,7 +229,17 @@ el('loginBtn').onclick=async()=>{
   el('authMsg').textContent=error?error.message:'Вход выполнен';
 };
 el('signupBtn').onclick=async()=>{
-  const {error}=await sb.auth.signUp({email:el('email').value.trim(),password:el('password').value});
+  const email=el('email').value.trim();
+  if(!email){el('authMsg').textContent='Введи email.';return;}
+
+  const wait=await sb.rpc('signup_wait_seconds',{p_email:email});
+  if(!wait.error && Number(wait.data||0)>0){
+    const sec=Number(wait.data||0),min=Math.floor(sec/60),rem=sec%60;
+    el('authMsg').textContent='Новая заявка для этого email временно заблокирована. Попробуй через '+(min?min+' мин ':'')+rem+' сек.';
+    return;
+  }
+
+  const {error}=await sb.auth.signUp({email,password:el('password').value});
   el('authMsg').textContent=error?error.message:'Аккаунт создан. После подтверждения email владелец журнала должен одобрить доступ.';
 };
 el('logoutBtn').onclick=()=>sb.auth.signOut();
@@ -358,13 +388,56 @@ async function loadMembers(){
   memberRows=data||[];renderMembers();
 }
 function renderMembers(){
-  el('memberList').innerHTML=memberRows.map((m,i)=>'<div class="memberRow"><div class="memberMeta"><b>'+esc(m.email||'No email')+'</b><span class="badge">'+esc(m.role)+'</span><div class="sub">'+(m.approved?'Approved':'Waiting approval')+'</div></div><div class="'+(m.approved?'green':'amber')+'">'+(m.approved?'ACCESS ON':'PENDING')+'</div>'+(m.role==='owner'?'<span class="pill">Owner</span>':'<button class="btn '+(m.approved?'danger':'primary')+'" data-member-index="'+i+'">'+(m.approved?'Revoke':'Approve')+'</button>')+'</div>').join('');
-  document.querySelectorAll('[data-member-index]').forEach(b=>b.onclick=()=>toggleMember(Number(b.dataset.memberIndex)));
+  el('memberList').innerHTML=memberRows.map((m,i)=>{
+    let actions='';
+    if(m.role==='owner'){
+      actions='<span class="pill">Owner</span>';
+    }else if(m.approved){
+      actions='<div class="memberActions"><button class="btn danger" data-revoke-index="'+i+'">Revoke</button></div>';
+    }else{
+      actions='<div class="memberActions"><button class="btn primary" data-approve-index="'+i+'">Approve</button><button class="btn danger" data-decline-index="'+i+'">Decline</button></div>';
+    }
+    return '<div class="memberRow"><div class="memberMeta"><b>'+esc(m.email||'No email')+'</b><span class="badge">'+esc(m.role)+'</span><div class="sub">'+(m.approved?'Approved':'Waiting approval')+'</div></div><div class="'+(m.approved?'green':'amber')+'">'+(m.approved?'ACCESS ON':'PENDING')+'</div>'+actions+'</div>';
+  }).join('');
+
+  document.querySelectorAll('[data-approve-index]').forEach(b=>b.onclick=()=>approveMember(Number(b.dataset.approveIndex)));
+  document.querySelectorAll('[data-revoke-index]').forEach(b=>b.onclick=()=>revokeMember(Number(b.dataset.revokeIndex)));
+  document.querySelectorAll('[data-decline-index]').forEach(b=>b.onclick=()=>openDecline(Number(b.dataset.declineIndex)));
 }
-async function toggleMember(i){
-  const m=memberRows[i];if(!m||m.role==='owner')return;
-  const {error}=await sb.rpc('approve_member',{p_user_id:m.user_id,p_approved:!m.approved});
+async function approveMember(i){
+  const m=memberRows[i];if(!m||m.role==='owner'||m.approved)return;
+  const {error}=await sb.rpc('approve_member',{p_user_id:m.user_id,p_approved:true});
   if(error)return alert(error.message);
+  await loadMembers();
+}
+async function revokeMember(i){
+  const m=memberRows[i];if(!m||m.role==='owner'||!m.approved)return;
+  if(!confirm('Отключить доступ для '+m.email+'? Его аккаунт останется, но журнал и token будут недоступны.'))return;
+  const {error}=await sb.rpc('approve_member',{p_user_id:m.user_id,p_approved:false});
+  if(error)return alert(error.message);
+  await loadMembers();
+}
+function openDecline(i){
+  const m=memberRows[i];if(!m||m.role==='owner'||m.approved)return;
+  declineTarget=m;
+  el('declineEmail').textContent=m.email||'No email';
+  el('declineModal').classList.remove('hide');
+}
+function closeDecline(){
+  el('declineModal').classList.add('hide');
+  declineTarget=null;
+}
+async function declineMember(mode){
+  if(!declineTarget)return;
+  const email=declineTarget.email||'этот email';
+  const text=mode==='block_5m'
+    ? 'Удалить заявку '+email+' и заблокировать новые заявки от этого email на 5 минут?'
+    : 'Полностью удалить pending-заявку '+email+'? Повторная регистрация будет доступна сразу.';
+  if(!confirm(text))return;
+
+  const {error}=await sb.rpc('decline_member',{p_user_id:declineTarget.user_id,p_mode:mode});
+  if(error)return alert(error.message);
+  closeDecline();
   await loadMembers();
 }
 function renderAll(){
@@ -413,6 +486,10 @@ el('saveReview').onclick=async()=>{
   const {error}=await sb.from('trade_notes').upsert(row,{onConflict:'user_id,trade_id'});if(error)return alert(error.message);
   el('tradeModal').classList.add('hide');activeTrade=null;await loadData();
 };
+
+el('closeDeclineModal').onclick=closeDecline;
+el('declineRemoveBtn').onclick=()=>declineMember('remove');
+el('declineBlockBtn').onclick=()=>declineMember('block_5m');
 
 el('tokenBtn').onclick=async()=>{
   if(!confirm('Создать новый ingest token? Если старый уже был, он перестанет работать.'))return;
