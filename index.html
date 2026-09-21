@@ -355,7 +355,7 @@ el('forgotPasswordBtn').onclick=async()=>{
   const email=el('email').value.trim();
   if(!email){el('authMsg').textContent='Сначала введи email аккаунта.';return}
   el('authMsg').textContent='Отправляю письмо для сброса пароля…';
-  const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin+window.location.pathname});
+  const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:'https://andrey244.github.io/'});
   el('authMsg').textContent=error?error.message:'Письмо для сброса пароля отправлено. Открой его на этом устройстве.';
 };
 
