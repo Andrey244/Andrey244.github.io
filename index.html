@@ -179,13 +179,6 @@ table{width:100%;border-collapse:collapse}th,td{padding:12px 8px;border-bottom:1
   <div class="modalbox">
     <div class="modalhead"><div><div class="panelTitle" style="margin:0 0 4px">TRADE REVIEW</div><h2 id="modalTitle"></h2></div><button class="btn" id="closeModal">Закрыть</button></div>
     <div id="tradeDetails" class="detail"></div>
-    <div class="panel" style="margin:10px 0 16px">
-      <div class="panelTitle">MT ORDERS / EVENTS</div>
-      <div style="overflow:auto"><table>
-        <thead><tr><th>ID</th><th>Open / Time</th><th>Close / Type</th><th>Side</th><th>Lots</th><th>Price</th><th>Net P&L</th></tr></thead>
-        <tbody id="orderRows"></tbody>
-      </table></div>
-    </div>
     <div class="form">
       <div><div class="metricLabel">Setup</div><input id="fSetup" class="input"></div>
       <div><div class="metricLabel">Tier / Model</div><input id="fTier" class="input" placeholder="MID / Intraday / Daily / EURUSD v0.5"></div>
@@ -525,17 +518,8 @@ el('saveDailyReview').onclick=async()=>{
 function openTrade(id){
   const t=model.trades.find(x=>x.id===id);if(!t)return;activeTrade=t;
   el('modalTitle').textContent=t.symbol+' '+t.side+' · '+money(t.pnl);
-  const details=[['Source',t.source],['Account',t.account+(t.server?' · '+t.server:'')],['Opened',new Date(t.openedAt).toLocaleString()],['Closed',new Date(t.closedAt).toLocaleString()],['Orders',t.orderCount],['Entries / exits',t.entries+' / '+t.exits],['Strategy',t.strategy],['Trade ID',t.id]];
+  const details=[['Source',t.source],['Account',t.account+(t.server?' · '+t.server:'')],['Opened',new Date(t.openedAt).toLocaleString()],['Closed',new Date(t.closedAt).toLocaleString()],['Orders',t.orderCount],['Entries / exits',t.entries+' / '+t.exits],['Strategy',t.strategy]];
   el('tradeDetails').innerHTML=details.map(x=>'<div class="kv"><small>'+esc(x[0])+'</small><b>'+esc(x[1])+'</b></div>').join('');
-  const ids=new Set((t.events||[]).map(String));
-  const orders=rawEvents.filter(e=>ids.has(String(e.event_id||e.order_id))).sort((a,b)=>new Date(a.open_time||a.event_time)-new Date(b.open_time||b.event_time));
-  el('orderRows').innerHTML=orders.length?orders.map(e=>{
-    const net=Number(e.profit||0)+Number(e.commission||0)+Number(e.swap||0)+Number(e.fee||0);
-    const open=e.open_time||e.event_time,close=e.close_time||'';
-    const kind=e.source==='MT4'?(close?new Date(close).toLocaleString():'—'):(e.entry_type||'EVENT');
-    const px=e.source==='MT4'?(price(e.open_price||e.price)+' → '+price(e.close_price||0)):price(e.price||0);
-    return '<tr><td>'+esc(e.order_id||e.event_id||'')+'</td><td>'+(open?new Date(open).toLocaleString():'—')+'</td><td>'+esc(kind)+'</td><td>'+esc(e.side||'')+'</td><td>'+Number(e.volume||0).toLocaleString(undefined,{maximumFractionDigits:3})+'</td><td>'+esc(px)+'</td><td class="'+(net>=0?'green':'red')+'"><b>'+money(net)+'</b></td></tr>';
-  }).join(''):'<tr><td colspan="7" class="muted">No raw order details found</td></tr>';
   el('fSetup').value=t.setup||'';el('fTier').value=t.tier||'';el('fProbability').value=t.probability==null?'':t.probability;el('fCr').value=t.cr_value==null?'':t.cr_value;el('fRisk').value=t.risk_amount==null?'':t.risk_amount;el('fPlan').value=t.plan_ok||'';el('fMistake').value=t.mistake||'';el('fNotes').value=t.notes||'';
   el('tradeModal').classList.remove('hide');
 }
