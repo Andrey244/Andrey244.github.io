@@ -21,7 +21,7 @@ h1,h2,h3{margin:0}.sub,.muted{color:var(--mut);font-size:12px}.pill{display:inli
 .toolbar{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:12px}.toolbar .input,.toolbar .select{width:auto;min-width:150px}
 table{width:100%;border-collapse:collapse}th,td{padding:12px 8px;border-bottom:1px solid var(--line);text-align:left;font-size:12px;white-space:nowrap}th{color:var(--mut);font-size:10px;letter-spacing:.07em}.click{cursor:pointer}.click:hover{background:#0a120e}
 .auth{min-height:100vh;display:grid;place-items:center;padding:20px}.card{width:min(430px,100%);background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:23px}.card .input{margin-top:9px}.actions{display:flex;gap:9px;margin-top:13px}.status{color:var(--mut);font-size:12px;margin-top:11px;line-height:1.5}.code{background:#040604;border:1px solid var(--line);border-radius:11px;padding:10px;word-break:break-all;font-family:ui-monospace,SFMono-Regular,monospace;font-size:11px}.warning{border-left:3px solid var(--amber);background:#18140a;color:#d8cfb7;padding:10px 11px;border-radius:8px;font-size:12px;line-height:1.5}
-.modal{position:fixed;inset:0;background:#000c;display:grid;place-items:center;padding:16px;z-index:10}.modalbox{width:min(760px,100%);max-height:92vh;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:19px}.modalhead{display:flex;justify-content:space-between;gap:10px;align-items:center}.detail{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:15px 0}.kv{border:1px solid var(--line);border-radius:11px;padding:10px;background:#070a08}.kv small{color:var(--mut);display:block;margin-bottom:3px}.form{display:grid;grid-template-columns:1fr 1fr;gap:10px}.wide{grid-column:1/-1}.hint{font-size:11px;color:var(--mut);line-height:1.55}.empty{padding:24px;text-align:center;color:var(--mut)}.accountbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.accountbar .select{width:auto;min-width:240px}.accountList{display:grid;gap:10px}.accountRow,.memberRow{display:grid;grid-template-columns:1.2fr 1.5fr auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:13px;padding:12px;background:#070a08}.memberActions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}.memberMeta{min-width:0}.memberMeta b{display:block;overflow:hidden;text-overflow:ellipsis}.badge{display:inline-block;border:1px solid var(--line);padding:3px 7px;border-radius:999px;font-size:10px;margin-top:4px}
+.modal{position:fixed;inset:0;background:#000c;display:grid;place-items:center;padding:16px;z-index:10}.modalbox{width:min(760px,100%);max-height:92vh;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:19px}.modalhead{display:flex;justify-content:space-between;gap:10px;align-items:center}.detail{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:15px 0}.kv{border:1px solid var(--line);border-radius:11px;padding:10px;background:#070a08}.kv small{color:var(--mut);display:block;margin-bottom:3px}.form{display:grid;grid-template-columns:1fr 1fr;gap:10px}.wide{grid-column:1/-1}.hint{font-size:11px;color:var(--mut);line-height:1.55}.empty{padding:24px;text-align:center;color:var(--mut)}.accountbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.accountbar .select{width:auto;min-width:240px}.filterbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:-4px 0 16px}.periodBtn{display:flex;gap:9px;align-items:center;font-weight:800}.periodSummary{color:var(--mut);font-size:11px}.rangeModalGrid{display:grid;grid-template-columns:190px 1fr;gap:16px}.presetList{display:grid;gap:7px}.presetBtn{text-align:left;width:100%}.presetBtn.on{border-color:#8b5cf6;background:#1b132e}.customRange{display:grid;grid-template-columns:1fr 1fr;gap:10px}.dateInput{color-scheme:dark}.accountList{display:grid;gap:10px}.accountRow,.memberRow{display:grid;grid-template-columns:1.2fr 1.5fr auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:13px;padding:12px;background:#070a08}.memberActions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}.memberMeta{min-width:0}.memberMeta b{display:block;overflow:hidden;text-overflow:ellipsis}.badge{display:inline-block;border:1px solid var(--line);padding:3px 7px;border-radius:999px;font-size:10px;margin-top:4px}
 @media(max-width:820px){.metrics{grid-template-columns:repeat(2,1fr)}.grid2{grid-template-columns:1fr}.symgrid{grid-template-columns:1fr 1fr}.detail{grid-template-columns:1fr 1fr}}
 @media(max-width:540px){.wrap{padding:14px 9px 50px}.panel{padding:14px}.metricValue{font-size:23px}.symgrid{grid-template-columns:1fr}.form{grid-template-columns:1fr}.wide{grid-column:auto}.day{min-height:68px;padding:5px}.dpnl{font-size:11px}.rowbar{grid-template-columns:36px 1fr 82px}.top{align-items:flex-start}.tabs{top:4px}.tab{font-size:12px;padding:10px 6px}}
 </style>
@@ -57,6 +57,12 @@ table{width:100%;border-collapse:collapse}th,td{padding:12px 8px;border-bottom:1
     <div class="tab" data-view="accounts">Accounts</div>
     <div class="tab" data-view="connection">Connection</div>
     <div class="tab hide" id="accessTab" data-view="access">Access</div>
+  </div>
+
+  <div class="filterbar">
+    <button class="btn periodBtn" id="periodBtn">📅 <span id="periodLabel">All time</span></button>
+    <button class="btn hide" id="clearPeriodBtn" title="Сбросить период">↻</button>
+    <span id="periodSummary" class="periodSummary">Вся история</span>
   </div>
 
   <section id="insights">
@@ -138,6 +144,41 @@ table{width:100%;border-collapse:collapse}th,td{padding:12px 8px;border-bottom:1
   </section>
 </div>
 
+<div id="rangeModal" class="modal hide">
+  <div class="modalbox" style="width:min(720px,100%)">
+    <div class="modalhead">
+      <div><div class="panelTitle" style="margin:0 0 4px">ПЕРИОД ЖУРНАЛА</div><h2>Выберите период</h2></div>
+      <button class="btn" id="closeRangeModal">Закрыть</button>
+    </div>
+    <div class="rangeModalGrid" style="margin-top:16px">
+      <div class="presetList">
+        <button class="btn presetBtn" data-range-preset="all">Всё время</button>
+        <button class="btn presetBtn" data-range-preset="today">Сегодня</button>
+        <button class="btn presetBtn" data-range-preset="yesterday">Вчера</button>
+        <button class="btn presetBtn" data-range-preset="week">Эта неделя</button>
+        <button class="btn presetBtn" data-range-preset="last7">Последние 7 дней</button>
+        <button class="btn presetBtn" data-range-preset="last30">Последние 30 дней</button>
+        <button class="btn presetBtn" data-range-preset="month">Этот месяц</button>
+        <button class="btn presetBtn" data-range-preset="custom">Свой период</button>
+      </div>
+      <div>
+        <div class="panel" style="margin:0">
+          <div class="panelTitle">CUSTOM RANGE</div>
+          <div class="customRange">
+            <div><div class="metricLabel">От</div><input id="rangeStart" class="input dateInput" type="date"></div>
+            <div><div class="metricLabel">До</div><input id="rangeEnd" class="input dateInput" type="date"></div>
+          </div>
+          <div id="rangePreview" class="hint" style="margin-top:12px">Выбери начальную и конечную дату.</div>
+          <div class="actions" style="margin-top:16px;justify-content:flex-end">
+            <button class="btn" id="cancelRangeBtn">Отмена</button>
+            <button class="btn primary" id="applyCustomRangeBtn">Применить</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div id="declineModal" class="modal hide">
   <div class="modalbox" style="width:min(560px,100%)">
     <div class="modalhead">
@@ -201,12 +242,44 @@ const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const el=id=>document.getElementById(id);
 let model={trades:[],daily:[],symbols:[],weekday:[],summary:{}},monthDate=null,activeTrade=null,liveToken='';
 let membership=null,allTrades=[],accountSettings=[],detectedAccounts=[],memberRows=[],selectedAccountKey='all',declineTarget=null,rawEvents=[],dailyReviewMap={},activeReviewDate=null;
+let dateRange={mode:'all',start:null,end:null,label:'All time'};
 
 const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=n=>{n=Number(n||0);return (n<0?'-$':n>0?'+$':'$')+Math.abs(n).toLocaleString(undefined,{maximumFractionDigits:2})};
 const price=n=>Number(n||0).toLocaleString(undefined,{maximumFractionDigits:5});
 function paint(node,n){node.classList.remove('green','red');if(n>0)node.classList.add('green');if(n<0)node.classList.add('red')}
 function dayKey(d){return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Tashkent',year:'numeric',month:'2-digit',day:'2-digit'}).format(d)}
+function dateFromKey(k){const [y,m,d]=String(k).split('-').map(Number);return new Date(y,m-1,d,12,0,0)}
+function shiftKey(k,days){const d=dateFromKey(k);d.setDate(d.getDate()+days);return dayKey(d)}
+function firstOfMonthKey(k){return String(k).slice(0,7)+'-01'}
+function mondayOfWeekKey(k){
+  const d=dateFromKey(k),dow=d.getDay(),back=dow===0?6:dow-1;
+  d.setDate(d.getDate()-back);return dayKey(d);
+}
+function formatRangeDate(k){return dateFromKey(k).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'})}
+function rangeLabel(r){
+  if(r.mode==='all')return 'All time';
+  if(r.start===r.end)return formatRangeDate(r.start);
+  return formatRangeDate(r.start)+' — '+formatRangeDate(r.end);
+}
+function persistRange(){try{localStorage.setItem('tj_date_range',JSON.stringify(dateRange))}catch(_e){}}
+function restoreRange(){
+  try{
+    const x=JSON.parse(localStorage.getItem('tj_date_range')||'null');
+    if(x&&x.mode&&((x.mode==='all')||(x.start&&x.end))) dateRange=x;
+  }catch(_e){}
+}
+function makePresetRange(mode){
+  const today=dayKey(new Date());
+  if(mode==='all')return{mode:'all',start:null,end:null,label:'All time'};
+  if(mode==='today')return{mode,start:today,end:today,label:'Сегодня'};
+  if(mode==='yesterday'){const y=shiftKey(today,-1);return{mode,start:y,end:y,label:'Вчера'}}
+  if(mode==='week')return{mode,start:mondayOfWeekKey(today),end:today,label:'Эта неделя'};
+  if(mode==='last7')return{mode,start:shiftKey(today,-6),end:today,label:'Последние 7 дней'};
+  if(mode==='last30')return{mode,start:shiftKey(today,-29),end:today,label:'Последние 30 дней'};
+  if(mode==='month')return{mode,start:firstOfMonthKey(today),end:today,label:'Этот месяц'};
+  return dateRange;
+}
 function hash(s){let a=2166136261;for(let i=0;i<s.length;i++){a^=s.charCodeAt(i);a=Math.imul(a,16777619)}return (a>>>0).toString(36)}
 function tag(comment,key){const m=String(comment||'').match(new RegExp('(?:^|\\s|\\|)'+key+':([A-Za-z0-9_\\-]+)','i'));return m?m[1]:''}
 
@@ -363,7 +436,8 @@ async function loadData(){
     const noteMap={};notes.forEach(n=>noteMap[n.trade_id]=n);
     allTrades=groupMT5(events.filter(e=>String(e.source).toUpperCase()==='MT5')).concat(groupMT4(events.filter(e=>String(e.source).toUpperCase()==='MT4'))).filter(t=>t.closedAt).map(t=>Object.assign(t,noteMap[t.id]||{})).sort((a,b)=>new Date(b.closedAt)-new Date(a.closedAt));
     buildDetectedAccounts(events);
-    applyAccountFilter();
+    restoreRange();
+    applyFilters();
     renderAccounts();
     el('sync').textContent='Synced · '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
   }catch(e){el('sync').textContent='Sync error';alert(e.message||String(e))}
@@ -384,11 +458,69 @@ function buildDetectedAccounts(events){
   if(!detectedAccounts.some(a=>a.key===selectedAccountKey))selectedAccountKey='all';
   select.value=selectedAccountKey;
 }
-function applyAccountFilter(){
-  const trades=selectedAccountKey==='all'?allTrades:allTrades.filter(t=>accountKey(t)===selectedAccountKey);
-  model=buildModel(trades);renderAll();
+function applyFilters(){
+  let trades=selectedAccountKey==='all'?allTrades:allTrades.filter(t=>accountKey(t)===selectedAccountKey);
+  if(dateRange.mode!=='all'){
+    trades=trades.filter(t=>{
+      const k=dayKey(new Date(t.closedAt));
+      return k>=dateRange.start && k<=dateRange.end;
+    });
+  }
+  model=buildModel(trades);
+  renderPeriodFilter();
+  renderAll();
 }
-el('accountScope').onchange=()=>{selectedAccountKey=el('accountScope').value;applyAccountFilter()};
+el('accountScope').onchange=()=>{selectedAccountKey=el('accountScope').value;applyFilters()};
+
+function renderPeriodFilter(){
+  el('periodLabel').textContent=dateRange.mode==='all'?'All time':rangeLabel(dateRange);
+  el('periodSummary').textContent=dateRange.mode==='all'?'Вся история':(dateRange.label+' · '+rangeLabel(dateRange));
+  el('clearPeriodBtn').classList.toggle('hide',dateRange.mode==='all');
+}
+function openRangeModal(){
+  el('rangeStart').value=dateRange.start||dayKey(new Date());
+  el('rangeEnd').value=dateRange.end||dayKey(new Date());
+  updateRangePreview();
+  document.querySelectorAll('[data-range-preset]').forEach(b=>b.classList.toggle('on',b.dataset.rangePreset===dateRange.mode));
+  el('rangeModal').classList.remove('hide');
+}
+function closeRangeModal(){el('rangeModal').classList.add('hide')}
+function setRange(r){
+  dateRange=r;
+  persistRange();
+  if(dateRange.mode!=='all'&&dateRange.start)monthDate=new Date(dateFromKey(dateRange.start).getFullYear(),dateFromKey(dateRange.start).getMonth(),1);
+  else monthDate=null;
+  closeRangeModal();
+  applyFilters();
+}
+function updateRangePreview(){
+  const s=el('rangeStart').value,e=el('rangeEnd').value;
+  if(!s||!e){el('rangePreview').textContent='Выбери начальную и конечную дату.';return}
+  if(s>e){el('rangePreview').textContent='Начальная дата не может быть позже конечной.';return}
+  const days=Math.round((dateFromKey(e)-dateFromKey(s))/86400000)+1;
+  el('rangePreview').textContent=rangeLabel({mode:'custom',start:s,end:e})+' · '+days+' дн.';
+}
+el('periodBtn').onclick=openRangeModal;
+el('clearPeriodBtn').onclick=()=>setRange(makePresetRange('all'));
+el('closeRangeModal').onclick=closeRangeModal;
+el('cancelRangeBtn').onclick=closeRangeModal;
+el('rangeStart').onchange=updateRangePreview;
+el('rangeEnd').onchange=updateRangePreview;
+el('applyCustomRangeBtn').onclick=()=>{
+  const s=el('rangeStart').value,e=el('rangeEnd').value;
+  if(!s||!e)return alert('Выбери обе даты.');
+  if(s>e)return alert('Начальная дата не может быть позже конечной.');
+  setRange({mode:'custom',start:s,end:e,label:'Свой период'});
+};
+document.querySelectorAll('[data-range-preset]').forEach(b=>b.onclick=()=>{
+  const mode=b.dataset.rangePreset;
+  if(mode==='custom'){
+    document.querySelectorAll('[data-range-preset]').forEach(x=>x.classList.toggle('on',x===b));
+    el('rangeStart').focus();
+    return;
+  }
+  setRange(makePresetRange(mode));
+});
 
 function renderAccounts(){
   el('accountList').innerHTML=detectedAccounts.length?detectedAccounts.map((a,i)=>'<div class="accountRow"><div class="memberMeta"><b>'+esc(a.label||a.account)+'</b><span class="badge">'+esc(a.source)+'</span><div class="sub">'+esc(a.account)+(a.server?' · '+esc(a.server):'')+' · '+a.raw+' raw events</div></div><input class="input" id="accountLabel_'+i+'" value="'+esc(a.label||'')+'" placeholder="Название счёта"><button class="btn" data-account-index="'+i+'">Save</button></div>').join(''):'<div class="empty">Подключённых счетов пока нет.</div>';
@@ -499,7 +631,7 @@ el('search').oninput=renderTrades;el('sideFilter').onchange=renderTrades;el('sou
 
 function openDailyReview(date){
   activeReviewDate=date;
-  const dayTrades=allTrades.filter(t=>dayKey(new Date(t.closedAt))===date);
+  const dayTrades=model.trades.filter(t=>dayKey(new Date(t.closedAt))===date);
   const pnl=dayTrades.reduce((s,t)=>s+t.pnl,0),wins=dayTrades.filter(t=>t.pnl>0).length,losses=dayTrades.filter(t=>t.pnl<0).length;
   const wr=(wins+losses)?wins/(wins+losses)*100:0;
   el('dailyTitle').textContent=new Date(date+'T12:00:00').toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'});
