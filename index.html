@@ -246,7 +246,8 @@ const el=id=>document.getElementById(id);
 let model={trades:[],daily:[],symbols:[],weekday:[],summary:{}},monthDate=null,activeTrade=null,liveToken='';
 let membership=null,allTrades=[],accountSettings=[],detectedAccounts=[],memberRows=[],selectedAccountKey='all',declineTarget=null,rawEvents=[],dailyReviewMap={},activeReviewDate=null;
 let dateRange={mode:'all',start:null,end:null,label:'All time'};
-let rangeDraft={mode:'custom',start:null,end:null,label:'Свой период'},rangeViewMonth=null,rangeDragAnchor=null,rangeDragMoved=false;
+let rangeDraft={mode:'custom',start:null,end:null,label:'Свой период'},rangeViewMonth=null;
+let rangeDrag={active:false,pointerId:null,anchor:null,last:null};
 
 const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=n=>{n=Number(n||0);return (n<0?'-$':n>0?'+$':'$')+Math.abs(n).toLocaleString(undefined,{maximumFractionDigits:2})};
@@ -497,11 +498,11 @@ function openRangeModal(){
     rangeDraft={...dateRange};
     rangeViewMonth=monthStart(dateFromKey(dateRange.start));
   }
-  rangeDragAnchor=null;rangeDragMoved=false;
+  stopRangeDrag();
   renderRangePicker();
   el('rangeModal').classList.remove('hide');
 }
-function closeRangeModal(){el('rangeModal').classList.add('hide');rangeDragAnchor=null}
+function closeRangeModal(){stopRangeDrag();el('rangeModal').classList.add('hide')}
 function setRange(r){
   dateRange=r;
   persistRange();
@@ -539,28 +540,76 @@ function renderRangePicker(){
     el('rangePreview').textContent='Выбери период';
   }
   document.querySelectorAll('[data-range-preset]').forEach(b=>b.classList.toggle('on',b.dataset.rangePreset===rangeDraft.mode));
-  bindRangeDays();
+  setupRangeDragHandlers();
 }
-function bindRangeDays(){
-  document.querySelectorAll('[data-range-day]').forEach(btn=>{
-    btn.onpointerdown=e=>{
-      if(e.button!==undefined&&e.button!==0)return;
-      e.preventDefault();
-      const key=btn.dataset.rangeDay;
-      rangeDragAnchor=key;rangeDragMoved=false;
-      rangeDraft={mode:'custom',start:key,end:key,label:'Свой период'};
-      renderRangePicker();
-    };
-    btn.onpointerenter=()=>{
-      if(!rangeDragAnchor)return;
-      const key=btn.dataset.rangeDay;
-      rangeDragMoved=rangeDragMoved||key!==rangeDragAnchor;
-      rangeDraft={mode:'custom',start:rangeDragAnchor<key?rangeDragAnchor:key,end:rangeDragAnchor<key?key:rangeDragAnchor,label:'Свой период'};
-      renderRangePicker();
-    };
+
+function rangeDayAtPoint(x,y){
+  const hit=document.elementFromPoint(x,y);
+  const day=hit&&hit.closest?hit.closest('[data-range-day]'):null;
+  return day&&el('rangeMonths').contains(day)?day.dataset.rangeDay:null;
+}
+function updateRangeDragTo(key){
+  if(!rangeDrag.active||!rangeDrag.anchor||!key||key===rangeDrag.last)return;
+  rangeDrag.last=key;
+  const a=rangeDrag.anchor;
+  rangeDraft={mode:'custom',start:a<=key?a:key,end:a<=key?key:a,label:'Свой период'};
+  renderRangePicker();
+}
+function stopRangeDrag(e){
+  const box=el('rangeMonths');
+  if(e&&rangeDrag.active&&e.pointerId===rangeDrag.pointerId){
+    const finalKey=rangeDayAtPoint(e.clientX,e.clientY);
+    if(finalKey)updateRangeDragTo(finalKey);
+  }
+  if(box&&rangeDrag.pointerId!==null&&box.hasPointerCapture&&box.hasPointerCapture(rangeDrag.pointerId)){
+    try{box.releasePointerCapture(rangeDrag.pointerId)}catch(_e){}
+  }
+  rangeDrag={active:false,pointerId:null,anchor:null,last:null};
+}
+function setupRangeDragHandlers(){
+  const box=el('rangeMonths');
+  if(!box||box.dataset.dragBound==='1')return;
+  box.dataset.dragBound='1';
+
+  box.addEventListener('pointerdown',e=>{
+    const day=e.target.closest&&e.target.closest('[data-range-day]');
+    if(!day||!box.contains(day))return;
+    if(e.pointerType==='mouse'&&e.button!==0)return;
+
+    e.preventDefault();
+    const key=day.dataset.rangeDay;
+    rangeDrag={active:true,pointerId:e.pointerId,anchor:key,last:key};
+    rangeDraft={mode:'custom',start:key,end:key,label:'Свой период'};
+
+    try{box.setPointerCapture(e.pointerId)}catch(_e){}
+    renderRangePicker();
   });
+
+  box.addEventListener('pointermove',e=>{
+    if(!rangeDrag.active||e.pointerId!==rangeDrag.pointerId)return;
+
+    // Critical: range may extend ONLY while the primary button/contact is held.
+    if(e.pointerType==='mouse'&&(e.buttons&1)!==1){
+      stopRangeDrag(e);
+      return;
+    }
+
+    const key=rangeDayAtPoint(e.clientX,e.clientY);
+    if(key)updateRangeDragTo(key);
+  });
+
+  box.addEventListener('pointerup',e=>{
+    if(rangeDrag.active&&e.pointerId===rangeDrag.pointerId)stopRangeDrag(e);
+  });
+  box.addEventListener('pointercancel',e=>{
+    if(rangeDrag.active&&e.pointerId===rangeDrag.pointerId)stopRangeDrag();
+  });
+  box.addEventListener('lostpointercapture',()=>{
+    if(rangeDrag.active)rangeDrag={active:false,pointerId:null,anchor:null,last:null};
+  });
+
+  window.addEventListener('blur',()=>stopRangeDrag());
 }
-document.addEventListener('pointerup',()=>{rangeDragAnchor=null});
 el('periodBtn').onclick=openRangeModal;
 el('clearPeriodBtn').onclick=()=>setRange(makePresetRange('all'));
 el('closeRangeModal').onclick=closeRangeModal;
