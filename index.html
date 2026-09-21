@@ -36,6 +36,7 @@ table{width:100%;border-collapse:collapse}th,td{padding:12px 8px;border-bottom:1
       <button class="btn passwordEyeBtn" id="togglePasswordBtn" type="button" aria-label="Показать пароль" title="Показать пароль"><svg class="eyeOn" viewBox="0 0 24 24"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6S2.5 12 2.5 12Z"></path><circle cx="12" cy="12" r="2.7"></circle></svg><svg class="eyeOff" viewBox="0 0 24 24"><path d="M3 3l18 18"></path><path d="M10.7 6.1A10.8 10.8 0 0 1 12 6c6 0 9.5 6 9.5 6a16.7 16.7 0 0 1-3.2 3.8"></path><path d="M6.1 6.1C3.8 7.7 2.5 12 2.5 12s3.5 6 9.5 6a9.9 9.9 0 0 0 3-.5"></path><path d="M9.9 9.9A3 3 0 0 0 14.1 14.1"></path></svg></button>
     </div>
     <div class="actions"><button class="btn primary" id="loginBtn">Войти</button><button class="btn" id="signupBtn">Создать аккаунт</button></div>
+    <div class="actions" style="margin-top:6px"><button class="btn" id="forgotPasswordBtn" type="button">Забыли пароль?</button></div>
     <div id="authMsg" class="status"></div>
   </div>
 </div>
@@ -155,6 +156,21 @@ table{width:100%;border-collapse:collapse}th,td{padding:12px 8px;border-bottom:1
       <div class="hint" style="margin-top:12px">MT5: группировка идёт по TG, а если его нет — по экспозиции внутри Account + Symbol + Strategy/Magic. MT4: одинаковые Symbol + Side + Strategy/Magic объединяются только пока периоды жизни ордеров реально пересекаются. Как только позиция полностью закрыта, следующий ордер считается новым Logical Trade — даже если EA переоткрыл его в ту же секунду.</div>
     </div>
   </section>
+</div>
+
+<div id="recoveryModal" class="modal hide">
+  <div class="modalbox" style="width:min(520px,100%)">
+    <div class="modalhead">
+      <div><div class="panelTitle" style="margin:0 0 4px">PASSWORD RECOVERY</div><h2>Новый пароль</h2></div>
+      <button class="btn" id="closeRecoveryModal" type="button">Закрыть</button>
+    </div>
+    <div class="form" style="margin-top:16px">
+      <div class="wide"><div class="metricLabel">Новый пароль</div><input id="recoveryPassword" class="input" type="password" autocomplete="new-password" placeholder="Минимум 6 символов"></div>
+      <div class="wide"><div class="metricLabel">Повтори пароль</div><input id="recoveryPassword2" class="input" type="password" autocomplete="new-password" placeholder="Повтори пароль"></div>
+    </div>
+    <div class="actions"><button class="btn primary" id="saveRecoveryPassword" type="button">Сохранить новый пароль</button></div>
+    <div id="recoveryMsg" class="status"></div>
+  </div>
 </div>
 
 <div id="rangeModal" class="modal hide">
@@ -304,7 +320,12 @@ function tag(comment,key){const m=String(comment||'').match(new RegExp('(?:^|\\s
 async function boot(){
   const {data}=await sb.auth.getSession();
   await handleSession(data.session);
-  sb.auth.onAuthStateChange((_event,session)=>handleSession(session));
+  sb.auth.onAuthStateChange((event,session)=>{
+    if(event==='PASSWORD_RECOVERY'){
+      el('recoveryModal').classList.remove('hide');
+    }
+    handleSession(session);
+  });
 }
 async function handleSession(session){
   el('auth').classList.toggle('hide',!!session);
@@ -330,6 +351,14 @@ el('loginBtn').onclick=async()=>{
   const {error}=await sb.auth.signInWithPassword({email:el('email').value.trim(),password:el('password').value});
   el('authMsg').textContent=error?error.message:'Вход выполнен';
 };
+el('forgotPasswordBtn').onclick=async()=>{
+  const email=el('email').value.trim();
+  if(!email){el('authMsg').textContent='Сначала введи email аккаунта.';return}
+  el('authMsg').textContent='Отправляю письмо для сброса пароля…';
+  const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin+window.location.pathname});
+  el('authMsg').textContent=error?error.message:'Письмо для сброса пароля отправлено. Открой его на этом устройстве.';
+};
+
 el('signupBtn').onclick=async()=>{
   const email=el('email').value.trim();
   if(!email){el('authMsg').textContent='Введи email.';return;}
@@ -353,6 +382,18 @@ el('signupBtn').onclick=async()=>{
   }
   el('authMsg').textContent='Аккаунт создан. Теперь владелец журнала должен одобрить доступ.';
 };
+el('closeRecoveryModal').onclick=()=>el('recoveryModal').classList.add('hide');
+el('saveRecoveryPassword').onclick=async()=>{
+  const p1=el('recoveryPassword').value,p2=el('recoveryPassword2').value,msg=el('recoveryMsg');
+  msg.textContent='';
+  if(p1.length<6){msg.textContent='Пароль должен быть минимум 6 символов.';return}
+  if(p1!==p2){msg.textContent='Пароли не совпадают.';return}
+  const {error}=await sb.auth.updateUser({password:p1});
+  if(error){msg.textContent=error.message;return}
+  el('recoveryPassword').value='';el('recoveryPassword2').value='';
+  msg.textContent='Пароль изменён. Теперь можно войти с новым паролем.';
+};
+
 el('logoutBtn').onclick=()=>sb.auth.signOut();
 el('pendingLogoutBtn').onclick=()=>sb.auth.signOut();
 el('togglePasswordBtn').onclick=()=>{
