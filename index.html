@@ -139,7 +139,7 @@ table{width:100%;border-collapse:collapse}th,td{padding:12px 8px;border-bottom:1
     <div class="panel">
       <div class="panelTitle">LOGICAL TRADE GROUPING</div>
       <div class="warning">Журнал не считает каждый MT order отдельным трейдом. Доливки и частичные закрытия объединяются в одну campaign. Для максимально точного разделения одновременно живущих стратегий используй comment вида <b>TG:EU_0551 STRAT:EURUSD_V05</b>.</div>
-      <div class="hint" style="margin-top:12px">MT5: группировка идёт по TG, а если его нет — по экспозиции внутри Account + Symbol + Strategy/Magic. MT4: одинаковые Symbol + Side + Strategy/Magic объединяются, если периоды жизни ордеров пересекаются или находятся рядом.</div>
+      <div class="hint" style="margin-top:12px">MT5: группировка идёт по TG, а если его нет — по экспозиции внутри Account + Symbol + Strategy/Magic. MT4: одинаковые Symbol + Side + Strategy/Magic объединяются только пока периоды жизни ордеров реально пересекаются. Как только позиция полностью закрыта, следующий ордер считается новым Logical Trade — даже если EA переоткрыл его в ту же секунду.</div>
     </div>
   </section>
 </div>
@@ -403,7 +403,7 @@ function summarizeMT4(group){
   return finalize(t);
 }
 function groupMT4(rows){
-  const exact={},normal={},out=[],gapMs=2*60*1000;
+  const exact={},normal={},out=[];
   rows.forEach(e=>{
     if(!e.symbol||!e.side||!e.open_time||!e.close_time)return;
     const gid=tag(e.comment,'TG'),strategy=tag(e.comment,'STRAT')||('MAGIC:'+String(e.magic||'0'));e._gid=gid;e._strategy=strategy;
@@ -413,7 +413,20 @@ function groupMT4(rows){
   Object.values(exact).forEach(g=>out.push(summarizeMT4(g)));
   Object.values(normal).forEach(g=>{
     g.sort((a,b)=>new Date(a.open_time)-new Date(b.open_time));let campaign=[],maxClose=0;
-    g.forEach(e=>{const open=new Date(e.open_time).getTime(),close=new Date(e.close_time).getTime();if(!campaign.length||open<=maxClose+gapMs){campaign.push(e);maxClose=Math.max(maxClose,close)}else{out.push(summarizeMT4(campaign));campaign=[e];maxClose=close}});
+    g.forEach(e=>{
+      const open=new Date(e.open_time).getTime(),close=new Date(e.close_time).getTime();
+      // Without an explicit TG id, MT4 orders are one Logical Trade only while
+      // their lifetimes truly overlap. If the previous exposure is already flat,
+      // even an immediate same-second EA re-entry is a NEW trade.
+      if(!campaign.length||open<maxClose){
+        campaign.push(e);
+        maxClose=Math.max(maxClose,close);
+      }else{
+        out.push(summarizeMT4(campaign));
+        campaign=[e];
+        maxClose=close;
+      }
+    });
     if(campaign.length)out.push(summarizeMT4(campaign));
   });
   return out;
