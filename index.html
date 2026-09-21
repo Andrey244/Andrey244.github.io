@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#050706">
+<title>Trading Journal</title>
+<style>
+:root{--bg:#050706;--panel:#090d0a;--panel2:#0c120e;--line:#1b2821;--txt:#f5f7f6;--mut:#7f8a84;--green:#21df8c;--red:#ff7070;--amber:#ffb52e}
+*{box-sizing:border-box}html{background:var(--bg)}body{margin:0;background:var(--bg);color:var(--txt);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+button,input,select,textarea{font:inherit}.hide{display:none!important}.wrap{max-width:1120px;margin:auto;padding:22px 14px 70px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:14px}.brand{display:flex;gap:12px;align-items:center}.orb{width:46px;height:46px;border-radius:14px;background:radial-gradient(circle at 35% 30%,#d4efff,#3e718f 19%,#0b1922 55%,#010302 76%);box-shadow:0 0 25px #1d769933}
+h1,h2,h3{margin:0}.sub,.muted{color:var(--mut);font-size:12px}.pill{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:999px;padding:4px 8px;font-size:10px;color:#cbd4cf}
+.tabs{display:flex;border:1px solid var(--line);border-radius:18px;padding:5px;margin:20px 0;position:sticky;top:8px;background:#050706e8;backdrop-filter:blur(10px);z-index:3}.tab{flex:1;text-align:center;padding:11px;border-radius:13px;color:var(--mut);font-weight:800;cursor:pointer}.tab.on{background:#08261a;color:var(--green)}
+.panel{background:linear-gradient(180deg,#0a0e0b,#070a08);border:1px solid var(--line);border-radius:20px;padding:19px;margin-bottom:16px}.panelTitle{font-size:12px;letter-spacing:.16em;color:#a2aaa6;font-weight:850;margin-bottom:16px}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}.metricLabel{color:var(--mut);font-size:12px}.metricValue{font-size:28px;font-weight:900;margin-top:4px;letter-spacing:-.02em}.green{color:var(--green)}.red{color:var(--red)}.amber{color:var(--amber)}
+.grid2{display:grid;grid-template-columns:1.15fr .85fr;gap:16px}.rowbar{display:grid;grid-template-columns:44px 1fr 100px;gap:10px;align-items:center;margin:12px 0}.track{height:18px;background:#0d100e;border-radius:6px;overflow:hidden}.fill{height:100%;background:#145c3d}
+.symgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.sym{border:1px solid var(--line);border-radius:15px;padding:14px;background:#070a08}.sym b{font-size:18px}
+.calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:13px;overflow:hidden}.dow,.day{background:#080b09;padding:7px;min-height:82px}.dow{min-height:auto;text-align:center;color:var(--mut);font-size:11px;font-weight:800}.day.pos{background:#0a1d15}.day.neg{background:#211010}.dnum{font-size:11px;color:#aaa}.dpnl{font-weight:850;margin-top:12px}.dmeta{font-size:10px;color:var(--mut);margin-top:3px}.calhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.month{font-size:20px;font-weight:900}
+.btn{border:1px solid var(--line);background:#0d1511;color:var(--txt);padding:9px 12px;border-radius:11px;cursor:pointer}.btn:hover{filter:brightness(1.12)}.btn.primary{background:#0b6b47;border-color:#0b6b47}.btn.danger{background:#421617;border-color:#6d2425}.input,.select,.textarea{background:#070a08;border:1px solid var(--line);color:var(--txt);border-radius:11px;padding:10px 11px;width:100%;outline:none}.input:focus,.select:focus,.textarea:focus{border-color:#2c6a4b}
+.toolbar{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:12px}.toolbar .input,.toolbar .select{width:auto;min-width:150px}
+table{width:100%;border-collapse:collapse}th,td{padding:12px 8px;border-bottom:1px solid var(--line);text-align:left;font-size:12px;white-space:nowrap}th{color:var(--mut);font-size:10px;letter-spacing:.07em}.click{cursor:pointer}.click:hover{background:#0a120e}
+.auth{min-height:100vh;display:grid;place-items:center;padding:20px}.card{width:min(430px,100%);background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:23px}.card .input{margin-top:9px}.actions{display:flex;gap:9px;margin-top:13px}.status{color:var(--mut);font-size:12px;margin-top:11px;line-height:1.5}.code{background:#040604;border:1px solid var(--line);border-radius:11px;padding:10px;word-break:break-all;font-family:ui-monospace,SFMono-Regular,monospace;font-size:11px}.warning{border-left:3px solid var(--amber);background:#18140a;color:#d8cfb7;padding:10px 11px;border-radius:8px;font-size:12px;line-height:1.5}
+.modal{position:fixed;inset:0;background:#000c;display:grid;place-items:center;padding:16px;z-index:10}.modalbox{width:min(760px,100%);max-height:92vh;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:19px}.modalhead{display:flex;justify-content:space-between;gap:10px;align-items:center}.detail{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:15px 0}.kv{border:1px solid var(--line);border-radius:11px;padding:10px;background:#070a08}.kv small{color:var(--mut);display:block;margin-bottom:3px}.form{display:grid;grid-template-columns:1fr 1fr;gap:10px}.wide{grid-column:1/-1}.hint{font-size:11px;color:var(--mut);line-height:1.55}.empty{padding:24px;text-align:center;color:var(--mut)}
+@media(max-width:820px){.metrics{grid-template-columns:repeat(2,1fr)}.grid2{grid-template-columns:1fr}.symgrid{grid-template-columns:1fr 1fr}.detail{grid-template-columns:1fr 1fr}}
+@media(max-width:540px){.wrap{padding:14px 9px 50px}.panel{padding:14px}.metricValue{font-size:23px}.symgrid{grid-template-columns:1fr}.form{grid-template-columns:1fr}.wide{grid-column:auto}.day{min-height:68px;padding:5px}.dpnl{font-size:11px}.rowbar{grid-template-columns:36px 1fr 82px}.top{align-items:flex-start}.tabs{top:4px}.tab{font-size:12px;padding:10px 6px}}
+</style>
+</head>
+<body>
+<div id="auth" class="auth">
+  <div class="card">
+    <div class="brand"><div class="orb"></div><div><h2>Trading Journal</h2><div class="sub">MT4 / MT5 · Logical Trades</div></div></div>
+    <input id="email" class="input" type="email" placeholder="Email" autocomplete="email">
+    <input id="password" class="input" type="password" placeholder="Пароль (минимум 6 символов)" autocomplete="current-password">
+    <div class="actions"><button class="btn primary" id="loginBtn">Войти</button><button class="btn" id="signupBtn">Создать аккаунт</button></div>
+    <div id="authMsg" class="status"></div>
+  </div>
+</div>
+
+<div id="app" class="wrap hide">
+  <div class="top">
+    <div class="brand"><div class="orb"></div><div><h1>Trading Journal</h1><div class="sub">Один торговый замысел = один Logical Trade</div></div></div>
+    <div style="text-align:right"><div id="sync" class="sub">—</div><button class="btn" id="logoutBtn" style="margin-top:6px">Выйти</button></div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab on" data-view="insights">Insights</div>
+    <div class="tab" data-view="trades">Trades</div>
+    <div class="tab" data-view="connection">Connection</div>
+  </div>
+
+  <section id="insights">
+    <div class="panel">
+      <div class="panelTitle">PERFORMANCE</div>
+      <div class="metrics">
+        <div><div class="metricLabel">Total P&L</div><div id="mPnl" class="metricValue">—</div></div>
+        <div><div class="metricLabel">Win Rate</div><div id="mWr" class="metricValue">—</div></div>
+        <div><div class="metricLabel">Trading Days</div><div id="mDays" class="metricValue">—</div></div>
+        <div><div class="metricLabel">Logical Trades</div><div id="mTrades" class="metricValue">—</div></div>
+        <div><div class="metricLabel">Best Day</div><div id="mBest" class="metricValue">—</div></div>
+        <div><div class="metricLabel">Worst Day</div><div id="mWorst" class="metricValue">—</div></div>
+        <div><div class="metricLabel">Avg / Day</div><div id="mAvg" class="metricValue">—</div></div>
+        <div><div class="metricLabel">Streak</div><div id="mStreak" class="metricValue amber">—</div></div>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="panel"><div class="panelTitle">AVG P&L BY DAY OF WEEK</div><div id="weekday"></div></div>
+      <div class="panel"><div class="panelTitle">RISK / QUALITY</div><div class="metrics" style="grid-template-columns:1fr 1fr"><div><div class="metricLabel">Profit Factor</div><div id="mPf" class="metricValue">—</div></div><div><div class="metricLabel">Max Drawdown</div><div id="mDd" class="metricValue">—</div></div></div></div>
+    </div>
+
+    <div class="panel"><div class="panelTitle">SYMBOLS</div><div id="symbols" class="symgrid"></div></div>
+
+    <div class="panel">
+      <div class="calhead"><div><div class="panelTitle" style="margin-bottom:5px">TRADING CALENDAR</div><div id="monthLabel" class="month"></div></div><div><button class="btn" id="prevMonth">‹</button> <button class="btn" id="nextMonth">›</button></div></div>
+      <div id="calendar" class="calendar"></div>
+    </div>
+  </section>
+
+  <section id="trades" class="hide">
+    <div class="panel">
+      <div class="panelTitle">TRADING HISTORY</div>
+      <div class="toolbar">
+        <input id="search" class="input" placeholder="Symbol / setup / tag">
+        <select id="sideFilter" class="select"><option value="">BUY + SELL</option><option>BUY</option><option>SELL</option></select>
+        <select id="sourceFilter" class="select"><option value="">MT4 + MT5</option><option>MT4</option><option>MT5</option></select>
+      </div>
+      <div style="overflow:auto"><table><thead><tr><th>Date</th><th>Symbol</th><th>Side</th><th>Net P&L</th><th>Avg Entry</th><th>Avg Exit</th><th>Orders</th><th>Setup</th></tr></thead><tbody id="tradeRows"></tbody></table></div>
+    </div>
+  </section>
+
+  <section id="connection" class="hide">
+    <div class="panel">
+      <div class="panelTitle">MT4 / MT5 CONNECTION</div>
+      <div class="metricLabel">Supabase URL</div><div class="code">https://ylriyjxcefovzwzinpqd.supabase.co</div>
+      <div style="height:12px"></div>
+      <div class="metricLabel">Private ingest token</div><div id="tokenBox" class="code">Нажми «Создать / обновить token».</div>
+      <div class="actions"><button class="btn primary" id="tokenBtn">Создать / обновить token</button><button class="btn" id="copyTokenBtn">Copy token</button></div>
+      <div class="warning" style="margin-top:14px">В MetaTrader добавь <b>https://ylriyjxcefovzwzinpqd.supabase.co</b> в Tools → Options → Expert Advisors → Allow WebRequest. В Connector EA вставляется только этот ingest token.</div>
+    </div>
+    <div class="panel">
+      <div class="panelTitle">LOGICAL TRADE GROUPING</div>
+      <div class="warning">Журнал не считает каждый MT order отдельным трейдом. Доливки и частичные закрытия объединяются в одну campaign. Для максимально точного разделения одновременно живущих стратегий используй comment вида <b>TG:EU_0551 STRAT:EURUSD_V05</b>.</div>
+      <div class="hint" style="margin-top:12px">MT5: группировка идёт по TG, а если его нет — по экспозиции внутри Account + Symbol + Strategy/Magic. MT4: одинаковые Symbol + Side + Strategy/Magic объединяются, если периоды жизни ордеров пересекаются или находятся рядом.</div>
+    </div>
+  </section>
+</div>
+
+<div id="tradeModal" class="modal hide">
+  <div class="modalbox">
+    <div class="modalhead"><div><div class="panelTitle" style="margin:0 0 4px">TRADE REVIEW</div><h2 id="modalTitle"></h2></div><button class="btn" id="closeModal">Закрыть</button></div>
+    <div id="tradeDetails" class="detail"></div>
+    <div class="form">
+      <div><div class="metricLabel">Setup</div><input id="fSetup" class="input"></div>
+      <div><div class="metricLabel">Tags</div><input id="fTags" class="input"></div>
+      <div><div class="metricLabel">Tier / Model</div><input id="fTier" class="input" placeholder="MID / Intraday / Daily / EURUSD v0.5"></div>
+      <div><div class="metricLabel">Session</div><input id="fSession" class="input"></div>
+      <div><div class="metricLabel">Confirmation</div><input id="fConfirmation" class="input"></div>
+      <div><div class="metricLabel">Probability %</div><input id="fProbability" type="number" class="input"></div>
+      <div><div class="metricLabel">CR</div><input id="fCr" type="number" class="input"></div>
+      <div><div class="metricLabel">Risk $</div><input id="fRisk" type="number" class="input"></div>
+      <div><div class="metricLabel">DXY</div><input id="fDxy" class="input"></div>
+      <div><div class="metricLabel">US2Y</div><input id="fUs2y" class="input"></div>
+      <div><div class="metricLabel">Plan followed?</div><select id="fPlan" class="select"><option></option><option>YES</option><option>NO</option><option>PARTIAL</option></select></div>
+      <div class="wide"><div class="metricLabel">News / fundamental context</div><input id="fNews" class="input"></div>
+      <div class="wide"><div class="metricLabel">Mistake / violation</div><input id="fMistake" class="input"></div>
+      <div class="wide"><div class="metricLabel">Notes</div><textarea id="fNotes" class="textarea" rows="4"></textarea></div>
+    </div>
+    <div style="text-align:right;margin-top:14px"><button class="btn primary" id="saveReview">Save review</button></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL='https://ylriyjxcefovzwzinpqd.supabase.co';
+const SUPABASE_KEY='sb_publishable_FHpGzrS604yrbzE8ciM83Q_2045GubX';
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const el=id=>document.getElementById(id);
+let model={trades:[],daily:[],symbols:[],weekday:[],summary:{}},monthDate=null,activeTrade=null,liveToken='';
+
+const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const money=n=>{n=Number(n||0);return (n<0?'-$':n>0?'+$':'$')+Math.abs(n).toLocaleString(undefined,{maximumFractionDigits:2})};
+const price=n=>Number(n||0).toLocaleString(undefined,{maximumFractionDigits:5});
+function paint(node,n){node.classList.remove('green','red');if(n>0)node.classList.add('green');if(n<0)node.classList.add('red')}
+function dayKey(d){return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Tashkent',year:'numeric',month:'2-digit',day:'2-digit'}).format(d)}
+function hash(s){let a=2166136261;for(let i=0;i<s.length;i++){a^=s.charCodeAt(i);a=Math.imul(a,16777619)}return (a>>>0).toString(36)}
+function tag(comment,key){const m=String(comment||'').match(new RegExp('(?:^|\\s|\\|)'+key+':([A-Za-z0-9_\\-]+)','i'));return m?m[1]:''}
+
+async function boot(){
+  const {data}=await sb.auth.getSession();
+  showSession(data.session);
+  sb.auth.onAuthStateChange((_event,session)=>showSession(session));
+}
+function showSession(session){
+  el('auth').classList.toggle('hide',!!session);
+  el('app').classList.toggle('hide',!session);
+  if(session)loadData();
+}
+el('loginBtn').onclick=async()=>{
+  const {error}=await sb.auth.signInWithPassword({email:el('email').value.trim(),password:el('password').value});
+  el('authMsg').textContent=error?error.message:'Вход выполнен';
+};
+el('signupBtn').onclick=async()=>{
+  const {error}=await sb.auth.signUp({email:el('email').value.trim(),password:el('password').value});
+  el('authMsg').textContent=error?error.message:'Аккаунт создан. Если Supabase попросит подтвердить email — открой письмо, затем вернись и войди.';
+};
+el('logoutBtn').onclick=()=>sb.auth.signOut();
+
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));t.classList.add('on');
+  ['insights','trades','connection'].forEach(v=>el(v).classList.toggle('hide',v!==t.dataset.view));
+});
+
+async function fetchAll(table){
+  let out=[],from=0;
+  for(;;){
+    const {data,error}=await sb.from(table).select('*').range(from,from+999);
+    if(error)throw error;
+    out=out.concat(data||[]);
+    if(!data||data.length<1000)break;
+    from+=1000;
+  }
+  return out;
+}
+function freshTrade(e,side,strategy,gid){
+  return {id:'LT_'+hash([e.source,e.account,e.symbol,strategy,gid||'',e.event_id].join('|')),source:e.source,account:e.account,symbol:e.symbol,side,strategy,openedAt:e.event_time||e.open_time,closedAt:null,pnl:0,entryQty:0,exitQty:0,entryVal:0,exitVal:0,entries:0,exits:0,orders:{},events:[]};
+}
+function finalize(t){t.avgEntry=t.entryQty?t.entryVal/t.entryQty:0;t.avgExit=t.exitQty?t.exitVal/t.exitQty:0;t.orderCount=Object.keys(t.orders).length;t.pnl=Math.round(t.pnl*100)/100;return t}
+function addMT5(t,e,before){
+  const v=Math.abs(Number(e.volume||0)),signed=(e.side==='BUY'?1:-1)*v,dir=t.side==='BUY'?1:-1;
+  t.pnl+=Number(e.profit||0)+Number(e.commission||0)+Number(e.swap||0)+Number(e.fee||0);
+  t.events.push(String(e.event_id));if(e.order_id)t.orders[String(e.order_id)]=1;
+  if(Math.sign(signed)===dir){t.entryQty+=v;t.entryVal+=v*Number(e.price||0);t.entries++}
+  else{const q=Math.min(v,Math.abs(before));if(q>0){t.exitQty+=q;t.exitVal+=q*Number(e.price||0);t.exits++}}
+}
+function groupMT5(rows){
+  rows=rows.slice().sort((a,b)=>Number(a.event_time_ms||0)-Number(b.event_time_ms||0));
+  const state={},out=[],eps=1e-9;
+  rows.forEach(e=>{
+    if(!e.symbol||!e.side||!Number(e.volume))return;
+    const gid=tag(e.comment,'TG'),strategy=tag(e.comment,'STRAT')||('MAGIC:'+String(e.magic||'0'));
+    const key=[e.account,e.symbol,gid?('TG:'+gid):strategy].join('|');
+    if(!state[key])state[key]={exposure:0,trade:null};
+    const s=state[key],signed=(e.side==='BUY'?1:-1)*Math.abs(Number(e.volume)),before=s.exposure;
+    let after=before+signed;if(Math.abs(after)<eps)after=0;
+    if(before===0&&after!==0)s.trade=freshTrade(e,after>0?'BUY':'SELL',strategy,gid);
+    if(!s.trade&&after!==0)s.trade=freshTrade(e,after>0?'BUY':'SELL',strategy,gid);
+    if(s.trade)addMT5(s.trade,e,before);
+    const flipped=before!==0&&after!==0&&Math.sign(before)!==Math.sign(after);
+    if(flipped&&s.trade){
+      s.trade.closedAt=e.event_time;out.push(finalize(s.trade));
+      const residue=Math.abs(after),z=Object.assign({},e,{volume:residue,profit:0,commission:0,swap:0,fee:0});
+      s.trade=freshTrade(z,after>0?'BUY':'SELL',strategy,gid);addMT5(s.trade,z,0);
+    }else if(after===0&&s.trade){s.trade.closedAt=e.event_time;out.push(finalize(s.trade));s.trade=null}
+    s.exposure=after;
+  });
+  return out;
+}
+function summarizeMT4(group){
+  const first=group[0],strategy=first._strategy,gid=first._gid,t=freshTrade(first,first.side,strategy,gid);
+  t.openedAt=group.reduce((v,e)=>new Date(e.open_time)<new Date(v)?e.open_time:v,first.open_time);
+  t.closedAt=group.reduce((v,e)=>new Date(e.close_time)>new Date(v)?e.close_time:v,first.close_time);
+  group.forEach(e=>{const q=Math.abs(Number(e.volume||0));t.entryQty+=q;t.entryVal+=q*Number(e.open_price||e.price||0);t.exitQty+=q;t.exitVal+=q*Number(e.close_price||0);t.pnl+=Number(e.profit||0)+Number(e.commission||0)+Number(e.swap||0)+Number(e.fee||0);t.entries++;t.exits++;t.orders[String(e.order_id||e.event_id)]=1});
+  return finalize(t);
+}
+function groupMT4(rows){
+  const exact={},normal={},out=[],gapMs=2*60*1000;
+  rows.forEach(e=>{
+    if(!e.symbol||!e.side||!e.open_time||!e.close_time)return;
+    const gid=tag(e.comment,'TG'),strategy=tag(e.comment,'STRAT')||('MAGIC:'+String(e.magic||'0'));e._gid=gid;e._strategy=strategy;
+    const key=gid?[e.account,e.symbol,'TG:'+gid].join('|'):[e.account,e.symbol,e.side,strategy].join('|');
+    const box=gid?exact:normal;(box[key]||(box[key]=[])).push(e);
+  });
+  Object.values(exact).forEach(g=>out.push(summarizeMT4(g)));
+  Object.values(normal).forEach(g=>{
+    g.sort((a,b)=>new Date(a.open_time)-new Date(b.open_time));let campaign=[],maxClose=0;
+    g.forEach(e=>{const open=new Date(e.open_time).getTime(),close=new Date(e.close_time).getTime();if(!campaign.length||open<=maxClose+gapMs){campaign.push(e);maxClose=Math.max(maxClose,close)}else{out.push(summarizeMT4(campaign));campaign=[e];maxClose=close}});
+    if(campaign.length)out.push(summarizeMT4(campaign));
+  });
+  return out;
+}
+function buildModel(trades){
+  const dayMap={};trades.forEach(t=>{const d=dayKey(new Date(t.closedAt));if(!dayMap[d])dayMap[d]={date:d,pnl:0,trades:0,wins:0,losses:0};const x=dayMap[d];x.pnl+=t.pnl;x.trades++;if(t.pnl>0)x.wins++;if(t.pnl<0)x.losses++});
+  const daily=Object.values(dayMap).sort((a,b)=>a.date.localeCompare(b.date));daily.forEach(d=>d.wr=(d.wins+d.losses)?d.wins/(d.wins+d.losses)*100:null);
+  const pnl=trades.reduce((s,t)=>s+t.pnl,0),wins=trades.filter(t=>t.pnl>0).length,losses=trades.filter(t=>t.pnl<0).length,gp=trades.filter(t=>t.pnl>0).reduce((s,t)=>s+t.pnl,0),gl=trades.filter(t=>t.pnl<0).reduce((s,t)=>s+t.pnl,0);
+  const best=daily.length?daily.reduce((a,b)=>a.pnl>b.pnl?a:b):null,worst=daily.length?daily.reduce((a,b)=>a.pnl<b.pnl?a:b):null;
+  let eq=0,peak=0,dd=0;trades.slice().sort((a,b)=>new Date(a.closedAt)-new Date(b.closedAt)).forEach(t=>{eq+=t.pnl;peak=Math.max(peak,eq);dd=Math.min(dd,eq-peak)});
+  let streak='—',type='',n=0;for(let i=0;i<trades.length;i++){const z=trades[i].pnl>0?'W':trades[i].pnl<0?'L':'B';if(!type){type=z;n=1}else if(z===type)n++;else break}if(n)streak=n+type;
+  const names=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],bucket={};names.forEach(n=>bucket[n]=[]);daily.forEach(d=>bucket[names[new Date(d.date+'T12:00:00').getDay()]].push(d.pnl));
+  const weekday=names.map(name=>{const a=bucket[name];return{name,value:a.length?a.reduce((p,q)=>p+q,0)/a.length:0}});
+  const sm={};trades.forEach(t=>{if(!sm[t.symbol])sm[t.symbol]={symbol:t.symbol,pnl:0,trades:0,wins:0,days:{}};const s=sm[t.symbol];s.pnl+=t.pnl;s.trades++;if(t.pnl>0)s.wins++;s.days[dayKey(new Date(t.closedAt))]=1});
+  const symbols=Object.values(sm).map(s=>({symbol:s.symbol,pnl:s.pnl,trades:s.trades,wr:s.trades?s.wins/s.trades*100:0,days:Object.keys(s.days).length})).sort((a,b)=>b.pnl-a.pnl);
+  return{trades,daily,weekday,symbols,summary:{pnl,wr:(wins+losses)?wins/(wins+losses)*100:0,days:daily.length,trades:trades.length,best:best?best.pnl:0,worst:worst?worst.pnl:0,avg:daily.length?pnl/daily.length:0,streak,pf:gl<0?gp/Math.abs(gl):(gp>0?Infinity:0),dd}};
+}
+async function loadData(){
+  try{
+    el('sync').textContent='Syncing…';
+    const [events,notes]=await Promise.all([fetchAll('raw_events'),fetchAll('trade_notes')]);
+    const noteMap={};notes.forEach(n=>noteMap[n.trade_id]=n);
+    const t=groupMT5(events.filter(e=>String(e.source).toUpperCase()==='MT5')).concat(groupMT4(events.filter(e=>String(e.source).toUpperCase()==='MT4'))).filter(t=>t.closedAt).map(t=>Object.assign(t,noteMap[t.id]||{})).sort((a,b)=>new Date(b.closedAt)-new Date(a.closedAt));
+    model=buildModel(t);renderAll();el('sync').textContent='Synced · '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  }catch(e){el('sync').textContent='Sync error';alert(e.message||String(e))}
+}
+function renderAll(){
+  const s=model.summary;[['mPnl',s.pnl],['mBest',s.best],['mWorst',s.worst],['mAvg',s.avg],['mDd',s.dd]].forEach(([id,n])=>{el(id).textContent=money(n);paint(el(id),n)});
+  el('mWr').textContent=s.wr.toFixed(1)+'%';el('mDays').textContent=s.days;el('mTrades').textContent=s.trades;el('mStreak').textContent=s.streak;el('mPf').textContent=s.pf===Infinity?'∞':Number(s.pf).toFixed(2);
+  renderWeekday();renderSymbols();renderTrades();
+  if(!monthDate){const d=model.daily.length?new Date(model.daily[model.daily.length-1].date+'T12:00:00'):new Date();monthDate=new Date(d.getFullYear(),d.getMonth(),1)}
+  renderCalendar();
+}
+function renderWeekday(){
+  const a=model.weekday.filter(x=>x.name!=='Sun'&&x.name!=='Sat'),mx=Math.max(1,...a.map(x=>Math.abs(x.value)));
+  el('weekday').innerHTML=a.map(x=>'<div class="rowbar"><div>'+x.name+'</div><div class="track"><div class="fill" style="width:'+(Math.abs(x.value)/mx*100)+'%"></div></div><div class="'+(x.value>=0?'green':'red')+'" style="text-align:right;font-weight:800">'+money(x.value)+'</div></div>').join('');
+}
+function renderSymbols(){el('symbols').innerHTML=model.symbols.length?model.symbols.map(s=>'<div class="sym"><b>'+esc(s.symbol)+'</b><div class="metricValue '+(s.pnl>=0?'green':'red')+'" style="font-size:21px">'+money(s.pnl)+'</div><div class="sub">'+s.trades+' trades · '+s.wr.toFixed(0)+'% win · '+s.days+'d</div></div>').join(''):'<div class="empty">No trades yet</div>'}
+function renderCalendar(){
+  const y=monthDate.getFullYear(),m=monthDate.getMonth();el('monthLabel').textContent=monthDate.toLocaleDateString(undefined,{month:'long',year:'numeric'});
+  const map={};model.daily.forEach(d=>map[d.date]=d);let html=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(x=>'<div class="dow">'+x+'</div>').join('');
+  const first=new Date(y,m,1).getDay(),days=new Date(y,m+1,0).getDate();for(let i=0;i<first;i++)html+='<div class="day"></div>';
+  for(let d=1;d<=days;d++){const k=y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0'),x=map[k];html+='<div class="day '+(x?(x.pnl>=0?'pos':'neg'):'')+'"><div class="dnum">'+d+'</div>'+(x?'<div class="dpnl '+(x.pnl>=0?'green':'red')+'">'+money(x.pnl)+'</div><div class="dmeta">'+(x.wr==null?'—':x.wr.toFixed(0)+'%')+' · '+x.trades+'T</div>':'')+'</div>'}
+  el('calendar').innerHTML=html;
+}
+el('prevMonth').onclick=()=>{monthDate=new Date(monthDate.getFullYear(),monthDate.getMonth()-1,1);renderCalendar()};
+el('nextMonth').onclick=()=>{monthDate=new Date(monthDate.getFullYear(),monthDate.getMonth()+1,1);renderCalendar()};
+
+function renderTrades(){
+  if(!model.trades)return;
+  const q=el('search').value.toLowerCase(),side=el('sideFilter').value,source=el('sourceFilter').value;
+  const rows=model.trades.filter(t=>(!side||t.side===side)&&(!source||t.source===source)).filter(t=>!q||[t.symbol,t.setup,t.tags,t.strategy].join(' ').toLowerCase().includes(q));
+  el('tradeRows').innerHTML=rows.length?rows.map(t=>'<tr class="click" data-id="'+esc(t.id)+'"><td>'+new Date(t.closedAt).toLocaleString()+'</td><td>'+esc(t.symbol)+'</td><td><span class="pill">'+esc(t.side)+'</span></td><td class="'+(t.pnl>=0?'green':'red')+'"><b>'+money(t.pnl)+'</b></td><td>'+price(t.avgEntry)+'</td><td>'+price(t.avgExit)+'</td><td>'+t.orderCount+'</td><td>'+esc(t.setup||t.strategy||'')+'</td></tr>').join(''):'<tr><td colspan="8" class="muted">No trades</td></tr>';
+  document.querySelectorAll('#tradeRows tr[data-id]').forEach(r=>r.onclick=()=>openTrade(r.dataset.id));
+}
+el('search').oninput=renderTrades;el('sideFilter').onchange=renderTrades;el('sourceFilter').onchange=renderTrades;
+
+function openTrade(id){
+  const t=model.trades.find(x=>x.id===id);if(!t)return;activeTrade=t;
+  el('modalTitle').textContent=t.symbol+' '+t.side+' · '+money(t.pnl);
+  const details=[['Source',t.source],['Opened',new Date(t.openedAt).toLocaleString()],['Closed',new Date(t.closedAt).toLocaleString()],['Orders',t.orderCount],['Entries / exits',t.entries+' / '+t.exits],['Avg entry',price(t.avgEntry)],['Avg exit',price(t.avgExit)],['Strategy',t.strategy],['Trade ID',t.id]];
+  el('tradeDetails').innerHTML=details.map(x=>'<div class="kv"><small>'+esc(x[0])+'</small><b>'+esc(x[1])+'</b></div>').join('');
+  el('fSetup').value=t.setup||'';el('fTags').value=t.tags||'';el('fTier').value=t.tier||'';el('fSession').value=t.session||'';el('fConfirmation').value=t.confirmation||'';el('fProbability').value=t.probability==null?'':t.probability;el('fCr').value=t.cr_value==null?'':t.cr_value;el('fRisk').value=t.risk_amount==null?'':t.risk_amount;el('fDxy').value=t.dxy_state||'';el('fUs2y').value=t.us2y_state||'';el('fPlan').value=t.plan_ok||'';el('fNews').value=t.news_context||'';el('fMistake').value=t.mistake||'';el('fNotes').value=t.notes||'';
+  el('tradeModal').classList.remove('hide');
+}
+el('closeModal').onclick=()=>{el('tradeModal').classList.add('hide');activeTrade=null};
+el('saveReview').onclick=async()=>{
+  if(!activeTrade)return;const u=(await sb.auth.getUser()).data.user;
+  const row={user_id:u.id,trade_id:activeTrade.id,setup:el('fSetup').value,tags:el('fTags').value,tier:el('fTier').value,session:el('fSession').value,confirmation:el('fConfirmation').value,probability:el('fProbability').value===''?null:Number(el('fProbability').value),cr_value:el('fCr').value===''?null:Number(el('fCr').value),risk_amount:el('fRisk').value===''?null:Number(el('fRisk').value),dxy_state:el('fDxy').value,us2y_state:el('fUs2y').value,plan_ok:el('fPlan').value,news_context:el('fNews').value,mistake:el('fMistake').value,notes:el('fNotes').value,updated_at:new Date().toISOString()};
+  const {error}=await sb.from('trade_notes').upsert(row,{onConflict:'user_id,trade_id'});if(error)return alert(error.message);
+  el('tradeModal').classList.add('hide');activeTrade=null;await loadData();
+};
+
+el('tokenBtn').onclick=async()=>{
+  if(!confirm('Создать новый ingest token? Если старый уже был, он перестанет работать.'))return;
+  const {data,error}=await sb.rpc('create_or_rotate_ingest_token');if(error)return alert(error.message);
+  liveToken=data;el('tokenBox').textContent=data;
+};
+el('copyTokenBtn').onclick=async()=>{if(!liveToken)return alert('Сначала создай token.');await navigator.clipboard.writeText(liveToken);alert('Token скопирован')};
+
+boot();
+</script>
+</body>
+</html>
