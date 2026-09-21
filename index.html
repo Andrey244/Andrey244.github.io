@@ -21,7 +21,7 @@ h1,h2,h3{margin:0}.sub,.muted{color:var(--mut);font-size:12px}.pill{display:inli
 .toolbar{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:12px}.toolbar .input,.toolbar .select{width:auto;min-width:150px}
 table{width:100%;border-collapse:collapse}th,td{padding:12px 8px;border-bottom:1px solid var(--line);text-align:left;font-size:12px;white-space:nowrap}th{color:var(--mut);font-size:10px;letter-spacing:.07em}.click{cursor:pointer}.click:hover{background:#0a120e}
 .auth{min-height:100vh;display:grid;place-items:center;padding:20px}.card{width:min(430px,100%);background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:23px}.card .input{margin-top:9px}.actions{display:flex;gap:9px;margin-top:13px}.status{color:var(--mut);font-size:12px;margin-top:11px;line-height:1.5}.code{background:#040604;border:1px solid var(--line);border-radius:11px;padding:10px;word-break:break-all;font-family:ui-monospace,SFMono-Regular,monospace;font-size:11px}.warning{border-left:3px solid var(--amber);background:#18140a;color:#d8cfb7;padding:10px 11px;border-radius:8px;font-size:12px;line-height:1.5}
-.modal{position:fixed;inset:0;background:#000c;display:grid;place-items:center;padding:16px;z-index:10}.modalbox{width:min(760px,100%);max-height:92vh;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:19px}.modalhead{display:flex;justify-content:space-between;gap:10px;align-items:center}.detail{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:15px 0}.kv{border:1px solid var(--line);border-radius:11px;padding:10px;background:#070a08}.kv small{color:var(--mut);display:block;margin-bottom:3px}.form{display:grid;grid-template-columns:1fr 1fr;gap:10px}.wide{grid-column:1/-1}.hint{font-size:11px;color:var(--mut);line-height:1.55}.empty{padding:24px;text-align:center;color:var(--mut)}
+.modal{position:fixed;inset:0;background:#000c;display:grid;place-items:center;padding:16px;z-index:10}.modalbox{width:min(760px,100%);max-height:92vh;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:19px}.modalhead{display:flex;justify-content:space-between;gap:10px;align-items:center}.detail{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:15px 0}.kv{border:1px solid var(--line);border-radius:11px;padding:10px;background:#070a08}.kv small{color:var(--mut);display:block;margin-bottom:3px}.form{display:grid;grid-template-columns:1fr 1fr;gap:10px}.wide{grid-column:1/-1}.hint{font-size:11px;color:var(--mut);line-height:1.55}.empty{padding:24px;text-align:center;color:var(--mut)}.accountbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.accountbar .select{width:auto;min-width:240px}.accountList{display:grid;gap:10px}.accountRow,.memberRow{display:grid;grid-template-columns:1.2fr 1.5fr auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:13px;padding:12px;background:#070a08}.memberMeta{min-width:0}.memberMeta b{display:block;overflow:hidden;text-overflow:ellipsis}.badge{display:inline-block;border:1px solid var(--line);padding:3px 7px;border-radius:999px;font-size:10px;margin-top:4px}
 @media(max-width:820px){.metrics{grid-template-columns:repeat(2,1fr)}.grid2{grid-template-columns:1fr}.symgrid{grid-template-columns:1fr 1fr}.detail{grid-template-columns:1fr 1fr}}
 @media(max-width:540px){.wrap{padding:14px 9px 50px}.panel{padding:14px}.metricValue{font-size:23px}.symgrid{grid-template-columns:1fr}.form{grid-template-columns:1fr}.wide{grid-column:auto}.day{min-height:68px;padding:5px}.dpnl{font-size:11px}.rowbar{grid-template-columns:36px 1fr 82px}.top{align-items:flex-start}.tabs{top:4px}.tab{font-size:12px;padding:10px 6px}}
 </style>
@@ -37,6 +37,14 @@ table{width:100%;border-collapse:collapse}th,td{padding:12px 8px;border-bottom:1
   </div>
 </div>
 
+<div id="pendingAccess" class="auth hide">
+  <div class="card">
+    <div class="brand"><div class="orb"></div><div><h2>Доступ ожидает подтверждения</h2><div class="sub">Этот журнал приватный.</div></div></div>
+    <p class="status">Аккаунт создан, но владелец журнала ещё не одобрил доступ. После одобрения просто обнови страницу.</p>
+    <div class="actions"><button class="btn" id="pendingRefreshBtn">Проверить снова</button><button class="btn danger" id="pendingLogoutBtn">Выйти</button></div>
+  </div>
+</div>
+
 <div id="app" class="wrap hide">
   <div class="top">
     <div class="brand"><div class="orb"></div><div><h1>Trading Journal</h1><div class="sub">Один торговый замысел = один Logical Trade</div></div></div>
@@ -46,10 +54,18 @@ table{width:100%;border-collapse:collapse}th,td{padding:12px 8px;border-bottom:1
   <div class="tabs">
     <div class="tab on" data-view="insights">Insights</div>
     <div class="tab" data-view="trades">Trades</div>
+    <div class="tab" data-view="accounts">Accounts</div>
     <div class="tab" data-view="connection">Connection</div>
+    <div class="tab hide" id="accessTab" data-view="access">Access</div>
   </div>
 
   <section id="insights">
+    <div class="panel">
+      <div class="accountbar">
+        <div><div class="metricLabel">Account</div><select id="accountScope" class="select"><option value="all">All accounts</option></select></div>
+        <div class="hint">Можно подключить несколько MT4/MT5 счетов и смотреть статистику вместе или отдельно.</div>
+      </div>
+    </div>
     <div class="panel">
       <div class="panelTitle">PERFORMANCE</div>
       <div class="metrics">
@@ -86,6 +102,22 @@ table{width:100%;border-collapse:collapse}th,td{padding:12px 8px;border-bottom:1
         <select id="sourceFilter" class="select"><option value="">MT4 + MT5</option><option>MT4</option><option>MT5</option></select>
       </div>
       <div style="overflow:auto"><table><thead><tr><th>Date</th><th>Symbol</th><th>Side</th><th>Net P&L</th><th>Avg Entry</th><th>Avg Exit</th><th>Orders</th><th>Setup</th></tr></thead><tbody id="tradeRows"></tbody></table></div>
+    </div>
+  </section>
+
+  <section id="accounts" class="hide">
+    <div class="panel">
+      <div class="panelTitle">ACCOUNTS</div>
+      <div class="hint" style="margin-bottom:12px">Счета определяются автоматически по данным MetaTrader. Здесь можно дать им понятные названия, например «Alpari Demo» или «Main MT4».</div>
+      <div id="accountList" class="accountList"></div>
+    </div>
+  </section>
+
+  <section id="access" class="hide">
+    <div class="panel">
+      <div class="panelTitle">PRIVATE ACCESS</div>
+      <div class="warning">Сайт может быть известен кому угодно, но новый пользователь не получает доступ к журналу автоматически. Друг регистрируется, после чего ты одобряешь его здесь.</div>
+      <div id="memberList" class="accountList" style="margin-top:12px"></div>
     </div>
   </section>
 
@@ -137,6 +169,7 @@ const SUPABASE_KEY='sb_publishable_FHpGzrS604yrbzE8ciM83Q_2045GubX';
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const el=id=>document.getElementById(id);
 let model={trades:[],daily:[],symbols:[],weekday:[],summary:{}},monthDate=null,activeTrade=null,liveToken='';
+let membership=null,allTrades=[],accountSettings=[],detectedAccounts=[],memberRows=[],selectedAccountKey='all';
 
 const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=n=>{n=Number(n||0);return (n<0?'-$':n>0?'+$':'$')+Math.abs(n).toLocaleString(undefined,{maximumFractionDigits:2})};
@@ -148,13 +181,28 @@ function tag(comment,key){const m=String(comment||'').match(new RegExp('(?:^|\\s
 
 async function boot(){
   const {data}=await sb.auth.getSession();
-  showSession(data.session);
-  sb.auth.onAuthStateChange((_event,session)=>showSession(session));
+  await handleSession(data.session);
+  sb.auth.onAuthStateChange((_event,session)=>handleSession(session));
 }
-function showSession(session){
+async function handleSession(session){
   el('auth').classList.toggle('hide',!!session);
-  el('app').classList.toggle('hide',!session);
-  if(session)loadData();
+  el('app').classList.add('hide');
+  el('pendingAccess').classList.add('hide');
+  if(!session){membership=null;return;}
+
+  const {data,error}=await sb.from('app_members').select('*').eq('user_id',session.user.id).maybeSingle();
+  if(error){el('authMsg').textContent=error.message;await sb.auth.signOut();return;}
+  membership=data;
+
+  if(!membership || !membership.approved){
+    el('pendingAccess').classList.remove('hide');
+    return;
+  }
+
+  el('app').classList.remove('hide');
+  el('accessTab').classList.toggle('hide',membership.role!=='owner');
+  await loadData();
+  if(membership.role==='owner') await loadMembers();
 }
 el('loginBtn').onclick=async()=>{
   const {error}=await sb.auth.signInWithPassword({email:el('email').value.trim(),password:el('password').value});
@@ -162,13 +210,16 @@ el('loginBtn').onclick=async()=>{
 };
 el('signupBtn').onclick=async()=>{
   const {error}=await sb.auth.signUp({email:el('email').value.trim(),password:el('password').value});
-  el('authMsg').textContent=error?error.message:'Аккаунт создан. Если Supabase попросит подтвердить email — открой письмо, затем вернись и войди.';
+  el('authMsg').textContent=error?error.message:'Аккаунт создан. После подтверждения email владелец журнала должен одобрить доступ.';
 };
 el('logoutBtn').onclick=()=>sb.auth.signOut();
+el('pendingLogoutBtn').onclick=()=>sb.auth.signOut();
+el('pendingRefreshBtn').onclick=async()=>{const {data}=await sb.auth.getSession();await handleSession(data.session)};
 
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
   document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));t.classList.add('on');
-  ['insights','trades','connection'].forEach(v=>el(v).classList.toggle('hide',v!==t.dataset.view));
+  ['insights','trades','accounts','connection','access'].forEach(v=>el(v).classList.toggle('hide',v!==t.dataset.view));
+  if(t.dataset.view==='access' && membership?.role==='owner') loadMembers();
 });
 
 async function fetchAll(table){
@@ -183,7 +234,7 @@ async function fetchAll(table){
   return out;
 }
 function freshTrade(e,side,strategy,gid){
-  return {id:'LT_'+hash([e.source,e.account,e.symbol,strategy,gid||'',e.event_id].join('|')),source:e.source,account:e.account,symbol:e.symbol,side,strategy,openedAt:e.event_time||e.open_time,closedAt:null,pnl:0,entryQty:0,exitQty:0,entryVal:0,exitVal:0,entries:0,exits:0,orders:{},events:[]};
+  return {id:'LT_'+hash([e.source,e.account,e.symbol,strategy,gid||'',e.event_id].join('|')),source:e.source,account:e.account,server:e.server||'',symbol:e.symbol,side,strategy,openedAt:e.event_time||e.open_time,closedAt:null,pnl:0,entryQty:0,exitQty:0,entryVal:0,exitVal:0,entries:0,exits:0,orders:{},events:[]};
 }
 function finalize(t){t.avgEntry=t.entryQty?t.entryVal/t.entryQty:0;t.avgExit=t.exitQty?t.exitVal/t.exitQty:0;t.orderCount=Object.keys(t.orders).length;t.pnl=Math.round(t.pnl*100)/100;return t}
 function addMT5(t,e,before){
@@ -255,11 +306,66 @@ function buildModel(trades){
 async function loadData(){
   try{
     el('sync').textContent='Syncing…';
-    const [events,notes]=await Promise.all([fetchAll('raw_events'),fetchAll('trade_notes')]);
+    const [events,notes,settings]=await Promise.all([fetchAll('raw_events'),fetchAll('trade_notes'),fetchAll('account_settings')]);
+    accountSettings=settings||[];
     const noteMap={};notes.forEach(n=>noteMap[n.trade_id]=n);
-    const t=groupMT5(events.filter(e=>String(e.source).toUpperCase()==='MT5')).concat(groupMT4(events.filter(e=>String(e.source).toUpperCase()==='MT4'))).filter(t=>t.closedAt).map(t=>Object.assign(t,noteMap[t.id]||{})).sort((a,b)=>new Date(b.closedAt)-new Date(a.closedAt));
-    model=buildModel(t);renderAll();el('sync').textContent='Synced · '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    allTrades=groupMT5(events.filter(e=>String(e.source).toUpperCase()==='MT5')).concat(groupMT4(events.filter(e=>String(e.source).toUpperCase()==='MT4'))).filter(t=>t.closedAt).map(t=>Object.assign(t,noteMap[t.id]||{})).sort((a,b)=>new Date(b.closedAt)-new Date(a.closedAt));
+    buildDetectedAccounts(events);
+    applyAccountFilter();
+    renderAccounts();
+    el('sync').textContent='Synced · '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
   }catch(e){el('sync').textContent='Sync error';alert(e.message||String(e))}
+}
+
+function accountKey(x){return [String(x.source||'').toUpperCase(),String(x.account||''),String(x.server||'')].join('|')}
+function buildDetectedAccounts(events){
+  const map={};
+  events.forEach(e=>{
+    const key=accountKey(e);
+    if(!map[key])map[key]={key,source:String(e.source||'').toUpperCase(),account:String(e.account||''),server:String(e.server||''),raw:0,last:null};
+    const a=map[key];a.raw++;const ts=e.received_at||e.event_time||e.close_time;if(ts&&(!a.last||new Date(ts)>new Date(a.last)))a.last=ts;
+  });
+  const settingsMap={};accountSettings.forEach(s=>settingsMap[[String(s.source||'').toUpperCase(),String(s.account||''),String(s.server||'')].join('|')]=s);
+  detectedAccounts=Object.values(map).map(a=>Object.assign(a,settingsMap[a.key]||{})).sort((a,b)=>(a.label||a.account).localeCompare(b.label||b.account));
+  const select=el('accountScope');
+  select.innerHTML='<option value="all">All accounts</option>'+detectedAccounts.map(a=>'<option value="'+esc(a.key)+'">'+esc(a.label||((a.source?a.source+' · ':'')+a.account+(a.server?' · '+a.server:'')))+'</option>').join('');
+  if(!detectedAccounts.some(a=>a.key===selectedAccountKey))selectedAccountKey='all';
+  select.value=selectedAccountKey;
+}
+function applyAccountFilter(){
+  const trades=selectedAccountKey==='all'?allTrades:allTrades.filter(t=>accountKey(t)===selectedAccountKey);
+  model=buildModel(trades);renderAll();
+}
+el('accountScope').onchange=()=>{selectedAccountKey=el('accountScope').value;applyAccountFilter()};
+
+function renderAccounts(){
+  el('accountList').innerHTML=detectedAccounts.length?detectedAccounts.map((a,i)=>'<div class="accountRow"><div class="memberMeta"><b>'+esc(a.label||a.account)+'</b><span class="badge">'+esc(a.source)+'</span><div class="sub">'+esc(a.account)+(a.server?' · '+esc(a.server):'')+' · '+a.raw+' raw events</div></div><input class="input" id="accountLabel_'+i+'" value="'+esc(a.label||'')+'" placeholder="Название счёта"><button class="btn" data-account-index="'+i+'">Save</button></div>').join(''):'<div class="empty">Подключённых счетов пока нет.</div>';
+  document.querySelectorAll('[data-account-index]').forEach(b=>b.onclick=()=>saveAccountLabel(Number(b.dataset.accountIndex)));
+}
+async function saveAccountLabel(i){
+  const a=detectedAccounts[i];if(!a)return;
+  const user=(await sb.auth.getUser()).data.user;
+  const row={user_id:user.id,source:a.source,account:a.account,server:a.server||'',label:el('accountLabel_'+i).value.trim()||null,enabled:true,updated_at:new Date().toISOString()};
+  const {error}=await sb.from('account_settings').upsert(row,{onConflict:'user_id,source,account,server'});
+  if(error)return alert(error.message);
+  await loadData();
+}
+
+async function loadMembers(){
+  if(membership?.role!=='owner')return;
+  const {data,error}=await sb.from('app_members').select('*').order('created_at',{ascending:true});
+  if(error){el('memberList').innerHTML='<div class="red">'+esc(error.message)+'</div>';return;}
+  memberRows=data||[];renderMembers();
+}
+function renderMembers(){
+  el('memberList').innerHTML=memberRows.map((m,i)=>'<div class="memberRow"><div class="memberMeta"><b>'+esc(m.email||'No email')+'</b><span class="badge">'+esc(m.role)+'</span><div class="sub">'+(m.approved?'Approved':'Waiting approval')+'</div></div><div class="'+(m.approved?'green':'amber')+'">'+(m.approved?'ACCESS ON':'PENDING')+'</div>'+(m.role==='owner'?'<span class="pill">Owner</span>':'<button class="btn '+(m.approved?'danger':'primary')+'" data-member-index="'+i+'">'+(m.approved?'Revoke':'Approve')+'</button>')+'</div>').join('');
+  document.querySelectorAll('[data-member-index]').forEach(b=>b.onclick=()=>toggleMember(Number(b.dataset.memberIndex)));
+}
+async function toggleMember(i){
+  const m=memberRows[i];if(!m||m.role==='owner')return;
+  const {error}=await sb.rpc('approve_member',{p_user_id:m.user_id,p_approved:!m.approved});
+  if(error)return alert(error.message);
+  await loadMembers();
 }
 function renderAll(){
   const s=model.summary;[['mPnl',s.pnl],['mBest',s.best],['mWorst',s.worst],['mAvg',s.avg],['mDd',s.dd]].forEach(([id,n])=>{el(id).textContent=money(n);paint(el(id),n)});
@@ -295,7 +401,7 @@ el('search').oninput=renderTrades;el('sideFilter').onchange=renderTrades;el('sou
 function openTrade(id){
   const t=model.trades.find(x=>x.id===id);if(!t)return;activeTrade=t;
   el('modalTitle').textContent=t.symbol+' '+t.side+' · '+money(t.pnl);
-  const details=[['Source',t.source],['Opened',new Date(t.openedAt).toLocaleString()],['Closed',new Date(t.closedAt).toLocaleString()],['Orders',t.orderCount],['Entries / exits',t.entries+' / '+t.exits],['Avg entry',price(t.avgEntry)],['Avg exit',price(t.avgExit)],['Strategy',t.strategy],['Trade ID',t.id]];
+  const details=[['Source',t.source],['Account',t.account+(t.server?' · '+t.server:'')],['Opened',new Date(t.openedAt).toLocaleString()],['Closed',new Date(t.closedAt).toLocaleString()],['Orders',t.orderCount],['Entries / exits',t.entries+' / '+t.exits],['Avg entry',price(t.avgEntry)],['Avg exit',price(t.avgExit)],['Strategy',t.strategy],['Trade ID',t.id]];
   el('tradeDetails').innerHTML=details.map(x=>'<div class="kv"><small>'+esc(x[0])+'</small><b>'+esc(x[1])+'</b></div>').join('');
   el('fSetup').value=t.setup||'';el('fTags').value=t.tags||'';el('fTier').value=t.tier||'';el('fSession').value=t.session||'';el('fConfirmation').value=t.confirmation||'';el('fProbability').value=t.probability==null?'':t.probability;el('fCr').value=t.cr_value==null?'':t.cr_value;el('fRisk').value=t.risk_amount==null?'':t.risk_amount;el('fDxy').value=t.dxy_state||'';el('fUs2y').value=t.us2y_state||'';el('fPlan').value=t.plan_ok||'';el('fNews').value=t.news_context||'';el('fMistake').value=t.mistake||'';el('fNotes').value=t.notes||'';
   el('tradeModal').classList.remove('hide');
