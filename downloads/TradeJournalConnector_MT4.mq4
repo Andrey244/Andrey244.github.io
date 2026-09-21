@@ -1,5 +1,5 @@
 #property strict
-#property version   "1.10"
+#property version   "1.11"
 #property description "Read-only MT4 -> Supabase connector for the zero-cost trading journal."
 #property description "It never opens, modifies or closes trades."
 
@@ -17,7 +17,7 @@ int OnInit()
 {
    STATE_NAME = "TJ4_LAST_" + IntegerToString(AccountNumber());
    EventSetTimer((int)MathMax(10, SyncEverySeconds));
-   Print("TradeJournal MT4 connector v1.10 started. READ-ONLY.");
+   Print("TradeJournal MT4 connector v1.11 started. READ-ONLY.");
    if(!TestConnection())
       Print("Journal connection test failed. Fix the log error before expecting sync.");
    else
@@ -50,7 +50,12 @@ void SyncHistory()
       : TimeCurrent() - (datetime)(MathMax(1,InitialSyncDays) * 86400);
 
    int total = OrdersHistoryTotal();
-   if(total <= 0) return;
+   if(PrintDebug) Print("Journal history scan: OrdersHistoryTotal=", total, ", cutoff=", TimeToString(cutoff, TIME_DATE|TIME_MINUTES));
+   if(total <= 0)
+   {
+      Print("Journal: MT4 currently exposes 0 closed history orders. Open Terminal -> Account History, right-click, choose All History, then wait up to ", MathMax(10,SyncEverySeconds), " seconds.");
+      return;
+   }
 
    string batch = "";
    int batch_count = 0;
@@ -112,9 +117,9 @@ string OrderToJson()
    j += "\"server\":\"" + JsonEscape(AccountServer()) + "\",";
    j += "\"event_id\":\"" + IntegerToString(OrderTicket()) + "\",";
    j += "\"order_id\":\"" + IntegerToString(OrderTicket()) + "\",";
-   j += "\"event_time_ms\":" + IntegerToString(close_ms) + ",";
-   j += "\"open_time_ms\":" + IntegerToString(open_ms) + ",";
-   j += "\"close_time_ms\":" + IntegerToString(close_ms) + ",";
+   j += "\"event_time_ms\":" + DoubleToString((double)close_ms,0) + ",";
+   j += "\"open_time_ms\":" + DoubleToString((double)open_ms,0) + ",";
+   j += "\"close_time_ms\":" + DoubleToString((double)close_ms,0) + ",";
    j += "\"symbol\":\"" + JsonEscape(OrderSymbol()) + "\",";
    j += "\"side\":\"" + side + "\",";
    j += "\"entry_type\":\"ORDER\",";
