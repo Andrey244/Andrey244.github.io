@@ -3,7 +3,7 @@ import vm from 'node:vm';
 
 const SITE='https://andrey244.github.io/';
 const SUPABASE='https://ylriyjxcefovzwzinpqd.supabase.co';
-const KEY='sb_publishable_FHpGzrS604yrbzE8ciM83Q_2045GubX';
+const LEGACY_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlscml5anhjZWZvdnp3emlucHFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk5ODAxNzAsImV4cCI6MjEwNTU1NjE3MH0.Y95Tu9GzSPwVfV1kpMBKxQ1ozE0LUXuJDjjkD-bhi78';
 
 function ok(cond,msg){ if(!cond) throw new Error(msg); }
 
@@ -28,6 +28,10 @@ const ids=[...html.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]);
 const dup=ids.filter((x,i)=>ids.indexOf(x)!==i);
 ok(dup.length===0,'index.html: duplicate ids: '+[...new Set(dup)].join(', '));
 
+const refs=[...html.matchAll(/\bel\('([^']+)'\)/g)].map(m=>m[1]);
+const missing=[...new Set(refs.filter(x=>!ids.includes(x)))];
+ok(missing.length===0,'index.html: JS references missing DOM ids: '+missing.join(', '));
+
 const inline=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]).filter(Boolean);
 for(const js of inline) new vm.Script(js);
 
@@ -39,12 +43,15 @@ await retry(async()=>{
   ok(body.includes('Trading Journal'),'deployed site body mismatch');
 });
 
-const root=await fetch(SUPABASE+'/rest/v1/',{headers:{apikey:KEY}});
-ok(root.ok,'Supabase REST root HTTP '+root.status);
+const headers={
+  apikey:LEGACY_ANON,
+  Authorization:'Bearer '+LEGACY_ANON,
+  'content-type':'application/json'
+};
 
 const ingest=await fetch(SUPABASE+'/rest/v1/rpc/ingest_mt_events',{
   method:'POST',
-  headers:{apikey:KEY,'content-type':'application/json'},
+  headers,
   body:JSON.stringify({p_token:'healthcheck-invalid-token',p_events:[]})
 });
 const ingestText=await ingest.text();
@@ -53,7 +60,7 @@ ok(ingestText.toLowerCase().includes('invalid ingest token'),'ingest RPC failed 
 
 const rotate=await fetch(SUPABASE+'/rest/v1/rpc/create_or_rotate_ingest_token',{
   method:'POST',
-  headers:{apikey:KEY,'content-type':'application/json'},
+  headers,
   body:'{}'
 });
 ok(!rotate.ok,'anonymous token rotation was unexpectedly allowed');
