@@ -24,13 +24,13 @@ h1,h2,h3{margin:0;line-height:1.1}.sub,.muted{color:var(--mut);font-size:12px;li
 .symgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.sym{border:1px solid var(--line);border-radius:15px;padding:14px;background:#070a08}.sym b{font-size:18px}
 .calendar{display:grid;grid-template-columns:repeat(7,1fr) minmax(78px,.78fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:13px;overflow:hidden}.dow,.day,.weekTotal{background:#080b09;padding:7px;min-height:82px}.dow{min-height:auto;text-align:center;color:var(--mut);font-size:11px;font-weight:800}.dow.weekHead{color:#637068}.day.pos{background:linear-gradient(180deg,#0b2118,#091710)}.day.neg{background:linear-gradient(180deg,#251111,#170c0c)}.day.clickable{cursor:pointer;transition:filter .15s,transform .15s}.day.clickable:hover{filter:brightness(1.18);transform:translateY(-1px)}.weekTotal{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;background:#070a08}.weekTotal.pos{background:#091811}.weekTotal.neg{background:#1a0d0d}.weekTotal .wpnl{font-size:11px;font-weight:900}.weekTotal .wmeta{font-size:9px;color:var(--mut);margin-top:4px}.reviewDot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);margin-left:5px;vertical-align:middle;box-shadow:0 0 8px #21df8c55}.dnum{font-size:11px;color:#aaa}.dpnl{font-weight:850;margin-top:12px}.dmeta{font-size:10px;color:var(--mut);margin-top:3px}.calhead{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;margin-bottom:12px}.month{font-size:20px;font-weight:900}.calSummary{display:flex;gap:8px;flex-wrap:wrap;margin-top:7px}.calChip{border:1px solid var(--line);border-radius:999px;padding:4px 8px;font-size:10px;color:var(--mut);background:#070a08}
 .btn{min-height:var(--control-h);border:1px solid var(--line);background:#0d1511;color:var(--txt);padding:0 12px;border-radius:11px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;line-height:1.2}.btn:hover{filter:brightness(1.12)}.btn.primary{background:#0b6b47;border-color:#0b6b47}.btn.danger{background:#421617;border-color:#6d2425}.input,.select,.textarea{background:#070a08;border:1px solid var(--line);color:var(--txt);border-radius:11px;padding:10px 11px;width:100%;outline:none}.input,.select{height:var(--control-h)}.input:focus,.select:focus,.textarea:focus{border-color:#2c6a4b}
-.toolbar{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-bottom:12px}.toolbar .input,.toolbar .select{width:auto;min-width:150px}.toolbar>span{display:inline-flex;align-items:center}
+.toolbar{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-bottom:12px}.toolbar .input,.toolbar .select{width:auto;min-width:150px}.toolbar>span{display:inline-flex;align-items:center}.tradeTableWrap{overflow:visible}.tradeTableWrap thead th{position:sticky;top:72px;z-index:3;background:#080c09;box-shadow:0 1px 0 var(--line)}
 table{width:100%;border-collapse:collapse}th,td{padding:12px 8px;border-bottom:1px solid var(--line);text-align:left;font-size:12px;white-space:nowrap}th{color:#6f7a74;font-size:10px;letter-spacing:.07em;font-weight:800}.tradeRow{cursor:pointer;transition:background .14s,box-shadow .14s}.tradeRow:hover{background:#0a120e;box-shadow:inset 2px 0 #1a8d5a}.tradeDate,.tradeOrders,.tradeSetup{color:#839089}.tradeSymbol{font-weight:850;color:#e8eeeb}.tradePnl{font-weight:900}.tradeSide .pill{color:#aeb9b3}.skeletonRow td{height:43px}.skeletonLine{display:block;height:9px;border-radius:999px;background:linear-gradient(90deg,#101712 20%,#18221c 50%,#101712 80%);background-size:200% 100%;animation:skeletonMove 1.2s linear infinite}.dataLoading .metricValue,.dataLoading .equityChart{opacity:.42;animation:softPulse 1.1s ease-in-out infinite alternate}@keyframes skeletonMove{to{background-position:-200% 0}}@keyframes softPulse{from{opacity:.28}to{opacity:.55}}
 .auth{min-height:100vh;display:grid;place-items:center;padding:20px}.card{width:min(430px,100%);background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:23px}.card .input{margin-top:9px}.actions{display:flex;gap:9px;margin-top:13px}.status{color:var(--mut);font-size:12px;margin-top:11px;line-height:1.5}.code{background:#040604;border:1px solid var(--line);border-radius:11px;padding:10px;word-break:break-all;font-family:ui-monospace,SFMono-Regular,monospace;font-size:11px}.warning{border-left:3px solid var(--amber);background:#18140a;color:#d8cfb7;padding:10px 11px;border-radius:8px;font-size:12px;line-height:1.5}
-.modal{position:fixed;inset:0;background:#000c;display:grid;place-items:center;padding:16px;z-index:10}.modalbox{width:min(760px,100%);max-height:92vh;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:19px}.modalhead{display:flex;justify-content:space-between;gap:10px;align-items:center}.detail{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:15px 0}.kv{border:1px solid var(--line);border-radius:11px;padding:10px;background:#070a08}.kv small{color:var(--mut);display:block;margin-bottom:4px;line-height:1.3}.form{display:grid;grid-template-columns:1fr 1fr;gap:10px}.wide{grid-column:1/-1}.hint{font-size:11px;color:var(--mut);line-height:1.45}.empty{padding:24px;text-align:center;color:var(--mut)}.accountbar{display:grid;grid-template-columns:minmax(220px,240px) minmax(0,1fr);gap:18px;align-items:end}.accountControl{display:grid;gap:6px}.accountbar .select{width:100%;min-width:0}.accountScopeStatic{height:var(--control-h);display:flex;align-items:center;border:1px solid var(--line);background:#070a08;border-radius:11px;padding:0 12px;font-weight:800;color:#e6ece9}.accountHint{height:var(--control-h);display:flex;align-items:center;max-width:620px}.filterbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:-4px 0 16px;min-height:var(--control-h)}.periodBtn{display:flex;gap:9px;align-items:center;font-weight:800}.periodIcon{width:17px;height:17px;display:inline-flex;align-items:center;justify-content:center;color:#9fb0a7;flex:0 0 auto}.periodIcon svg{width:17px;height:17px;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.periodBtn:hover .periodIcon{color:#d7e6de}.passwordEyeBtn{width:46px;height:46px;min-width:46px;padding:0;display:inline-flex;align-items:center;justify-content:center;flex:0 0 46px}.passwordEyeBtn svg{width:20px;height:20px;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;fill:none}.passwordEyeBtn .eyeOff{display:none}.passwordEyeBtn.on .eyeOn{display:none}.passwordEyeBtn.on .eyeOff{display:block}.periodSummary{color:var(--mut);font-size:11px;line-height:1.4;min-height:var(--control-h);display:inline-flex;align-items:center}.rangeBox{width:min(980px,96vw)}.rangeModalGrid{display:grid;grid-template-columns:190px 1fr;gap:16px}.presetList{display:grid;gap:7px;align-content:start}.presetBtn{text-align:left;width:100%}.presetBtn.on{border-color:#8b5cf6;background:#1b132e}.rangePicker{border:1px solid var(--line);border-radius:16px;background:#070a08;padding:14px}.rangeNav{display:grid;grid-template-columns:36px 1fr 36px;gap:8px;align-items:start}.rangeArrow{width:34px;height:34px;border:1px solid var(--line);background:#0d1511;color:var(--txt);border-radius:10px;cursor:pointer;font-size:20px}.rangeMonths{display:grid;grid-template-columns:1fr 1fr;gap:18px;user-select:none}.rangeMonth{min-width:0}.rangeMonthTitle{text-align:center;font-weight:900;margin:4px 0 12px}.rangeWeek{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:4px}.rangeWeek span{text-align:center;color:var(--mut);font-size:10px;font-weight:800}.rangeDays{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}.rangeDay{height:34px;border:0;border-radius:9px;background:transparent;color:var(--txt);cursor:pointer;position:relative;font-size:12px}.rangeDay:hover{background:#171d19}.rangeDay.blank{cursor:default}.rangeDay.inRange{background:#3c255e;border-radius:4px}.rangeDay.edge{background:#7c3aed;color:white;border-radius:10px;font-weight:900}.rangeDay.today{outline:1px solid #466258}.rangeDay:focus{outline:1px solid #8b5cf6}.rangeFooter{display:flex;justify-content:space-between;align-items:center;gap:12px;border-top:1px solid var(--line);margin-top:14px;padding-top:14px}.rangeSelectionText{font-weight:850;font-size:13px}.equityChart{height:260px;border:1px solid var(--line);border-radius:15px;background:#060907;overflow:hidden;position:relative;touch-action:pan-y}.equityChart svg{display:block;width:100%;height:100%}.equityHoverLine{stroke:#718078;stroke-width:1;stroke-dasharray:4 5;opacity:0;pointer-events:none}.equityHoverDot{fill:#21df8c;stroke:#06100b;stroke-width:2;opacity:0;pointer-events:none}.equityTooltip{position:absolute;z-index:2;pointer-events:none;min-width:150px;padding:9px 10px;border:1px solid #294137;border-radius:10px;background:#080d0af2;box-shadow:0 10px 28px #0008;transform:translate(-50%,-100%);opacity:0;transition:opacity .08s}.equityTooltip.on{opacity:1}.equityTooltip .eqDate{font-size:9px;color:var(--mut);margin-bottom:4px}.equityTooltip .eqValue{font-size:15px;font-weight:900;line-height:1.15}.equityTooltip .eqMeta{font-size:9px;color:#aab5af;margin-top:4px;white-space:nowrap}.equityTooltip .eqSide{font-weight:900}.equityTooltip .eqSide.buy{color:#55a8ff}.equityTooltip .eqSide.sell{color:#ff7070}.equityTooltip .eqTradePnl{font-weight:900}.equityTooltip .eqTradePnl.win{color:var(--green)}.equityTooltip .eqTradePnl.loss{color:var(--red)}.equityTooltip .eqTradePnl.flat{color:#aab5af}.equityMeta{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px}.equityChip{border:1px solid var(--line);border-radius:999px;padding:5px 9px;font-size:10px;color:#b8c3bd;background:#070a08}.mistakeSummary{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:12px}.mistakeCard{border:1px solid var(--line);border-radius:14px;padding:13px;background:#070a08}.mistakeList{display:grid;gap:8px}.mistakeRow{display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center;border-top:1px solid var(--line);padding-top:9px}.ghostRow{opacity:.46}.ghostBadge{display:inline-flex;align-items:center;border:1px dashed #59645e;color:#89938e;border-radius:999px;padding:3px 7px;font-size:9px;font-weight:900;letter-spacing:.08em;margin-left:6px}.ghostToggle{border:1px dashed #56635d;border-radius:14px;padding:12px;background:#090c0a}.ghostToggle label{display:flex;align-items:flex-start;gap:9px;font-weight:800;line-height:1.35}.ghostToggle input[type=checkbox]{margin-top:2px;accent-color:var(--green)}.pnlBridge{margin-top:7px;font-size:10px;color:var(--mut);line-height:1.35}.pnlBridge b{color:#c8d1cc}.presetChips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.presetChip{border:1px solid var(--line);background:#090d0b;color:#9aa59f;border-radius:999px;padding:5px 8px;font-size:10px;cursor:pointer}.presetChip:hover,.presetChip.on{border-color:#315c48;color:#d6e5dd;background:#0c1c14}.healthTop{display:flex;align-items:center;justify-content:space-between;gap:12px}.healthStatus{display:inline-flex;align-items:center;gap:7px;font-weight:900;font-size:12px}.healthDot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 9px #21df8c55}.healthStatus.warn .healthDot{background:var(--amber);box-shadow:none}.healthGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:13px}.healthCell{border:1px solid var(--line);background:#070a08;border-radius:12px;padding:10px}.healthCell b{display:block;font-size:13px;margin-top:3px}.versionLine{font-size:10px;color:var(--mut);margin-top:10px}.exportGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.exportGrid .btn{text-align:left}.mobileNav{display:none}.mobileSheet{display:none}
+.modal{position:fixed;inset:0;background:#000c;display:grid;place-items:center;padding:16px;z-index:10}.modalbox{width:min(760px,100%);max-height:92vh;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:19px}.modalhead{display:flex;justify-content:space-between;gap:10px;align-items:center}.detail{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:15px 0}.kv{border:1px solid var(--line);border-radius:11px;padding:10px;background:#070a08}.kv small{color:var(--mut);display:block;margin-bottom:4px;line-height:1.3}.form{display:grid;grid-template-columns:1fr 1fr;gap:10px}.wide{grid-column:1/-1}.hint{font-size:11px;color:var(--mut);line-height:1.45}.empty{padding:24px;text-align:center;color:var(--mut)}.accountbar{display:grid;grid-template-columns:minmax(220px,240px) minmax(0,1fr);gap:18px;align-items:end}.accountControl{display:grid;gap:6px}.accountbar .select{width:100%;min-width:0}.accountScopeStatic{height:var(--control-h);display:flex;align-items:center;border:1px solid var(--line);background:#070a08;border-radius:11px;padding:0 12px;font-weight:800;color:#e6ece9}.accountHint{height:var(--control-h);display:flex;align-items:center;max-width:620px}.filterbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:-4px 0 16px;min-height:var(--control-h)}.periodBtn{display:flex;gap:9px;align-items:center;font-weight:800}.periodIcon{width:17px;height:17px;display:inline-flex;align-items:center;justify-content:center;color:#9fb0a7;flex:0 0 auto}.periodIcon svg{width:17px;height:17px;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.periodBtn:hover .periodIcon{color:#d7e6de}.passwordEyeBtn{width:46px;height:46px;min-width:46px;padding:0;display:inline-flex;align-items:center;justify-content:center;flex:0 0 46px}.passwordEyeBtn svg{width:20px;height:20px;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;fill:none}.passwordEyeBtn .eyeOff{display:none}.passwordEyeBtn.on .eyeOn{display:none}.passwordEyeBtn.on .eyeOff{display:block}.periodSummary{color:var(--mut);font-size:11px;line-height:1.4;min-height:var(--control-h);display:inline-flex;align-items:center}.rangeBox{width:min(980px,96vw)}.rangeModalGrid{display:grid;grid-template-columns:190px 1fr;gap:16px}.presetList{display:grid;gap:7px;align-content:start}.presetBtn{text-align:left;width:100%}.presetBtn.on{border-color:#8b5cf6;background:#1b132e}.rangePicker{border:1px solid var(--line);border-radius:16px;background:#070a08;padding:14px}.rangeNav{display:grid;grid-template-columns:36px 1fr 36px;gap:8px;align-items:start}.rangeArrow{width:34px;height:34px;border:1px solid var(--line);background:#0d1511;color:var(--txt);border-radius:10px;cursor:pointer;font-size:20px}.rangeMonths{display:grid;grid-template-columns:1fr 1fr;gap:18px;user-select:none}.rangeMonth{min-width:0}.rangeMonthTitle{text-align:center;font-weight:900;margin:4px 0 12px}.rangeWeek{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:4px}.rangeWeek span{text-align:center;color:var(--mut);font-size:10px;font-weight:800}.rangeDays{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}.rangeDay{height:34px;border:0;border-radius:9px;background:transparent;color:var(--txt);cursor:pointer;position:relative;font-size:12px}.rangeDay:hover{background:#171d19}.rangeDay.blank{cursor:default}.rangeDay.inRange{background:#3c255e;border-radius:4px}.rangeDay.edge{background:#7c3aed;color:white;border-radius:10px;font-weight:900}.rangeDay.today{outline:1px solid #466258}.rangeDay:focus{outline:1px solid #8b5cf6}.rangeFooter{display:flex;justify-content:space-between;align-items:center;gap:12px;border-top:1px solid var(--line);margin-top:14px;padding-top:14px}.rangeSelectionText{font-weight:850;font-size:13px}.equityChart{height:260px;border:1px solid var(--line);border-radius:15px;background:#060907;overflow:hidden;position:relative;touch-action:pan-y}.equityChart svg{display:block;width:100%;height:100%}.equityHoverLine{stroke:#718078;stroke-width:1;stroke-dasharray:4 5;opacity:0;pointer-events:none}.equityHoverDot{fill:#21df8c;stroke:#06100b;stroke-width:2;opacity:0;pointer-events:none}.equityTooltip{position:absolute;z-index:2;pointer-events:none;min-width:150px;padding:9px 10px;border:1px solid #294137;border-radius:10px;background:#080d0af2;box-shadow:0 10px 28px #0008;transform:translate(-50%,-100%);opacity:0;transition:opacity .08s}.equityTooltip.on{opacity:1}.equityTooltip .eqDate{font-size:9px;color:var(--mut);margin-bottom:4px}.equityTooltip .eqValue{font-size:15px;font-weight:900;line-height:1.15}.equityTooltip .eqMeta{font-size:9px;color:#aab5af;margin-top:4px;white-space:nowrap}.equityTooltip .eqSide{font-weight:900}.equityTooltip .eqSide.buy{color:#55a8ff}.equityTooltip .eqSide.sell{color:#ff7070}.equityTooltip .eqTradePnl{font-weight:900}.equityTooltip .eqTradePnl.win{color:var(--green)}.equityTooltip .eqTradePnl.loss{color:var(--red)}.equityTooltip .eqTradePnl.flat{color:#aab5af}.equityMeta{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px}.equityChip{border:1px solid var(--line);border-radius:999px;padding:5px 9px;font-size:10px;color:#b8c3bd;background:#070a08}.qualityBreakdown{display:flex;gap:8px;flex-wrap:wrap;margin-top:13px;padding-top:12px;border-top:1px solid var(--line)}.qualityBreakdown span{font-size:10px;color:var(--mut)}.qualityBreakdown b{margin-left:4px}.connectorStatusList{display:grid;gap:8px;margin-top:12px}.connectorStatusRow{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 10px;border:1px solid var(--line);border-radius:11px;background:#070a08}.connectorStatusMeta{min-width:0}.connectorStatusMeta b{display:block;font-size:11px}.connectorStatusMeta span{display:block;font-size:9px;color:var(--mut);margin-top:2px}.connectorState{font-size:10px;font-weight:900;white-space:nowrap}.connectorState.current{color:var(--green)}.connectorState.update{color:var(--amber)}.connectorState.unknown{color:var(--mut)}.mistakeSummary{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:12px}.mistakeCard{border:1px solid var(--line);border-radius:14px;padding:13px;background:#070a08}.mistakeList{display:grid;gap:8px}.mistakeRow{display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center;border-top:1px solid var(--line);padding-top:9px}.ghostRow{opacity:.46}.bulkSelected{background:#0b1b13!important;box-shadow:inset 2px 0 var(--green)}.bulkCheck{width:34px;text-align:center}.bulkCheck input{accent-color:var(--green);cursor:pointer}.bulkBar{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:-3px 0 12px;padding:9px 10px;border:1px solid #284435;border-radius:11px;background:#08110c}.bulkCount{font-size:11px;color:#b7c3bc;font-weight:800;margin-right:auto}.ghostBadge{display:inline-flex;align-items:center;border:1px dashed #59645e;color:#89938e;border-radius:999px;padding:3px 7px;font-size:9px;font-weight:900;letter-spacing:.08em;margin-left:6px}.ghostToggle{border:1px dashed #56635d;border-radius:14px;padding:12px;background:#090c0a}.ghostToggle label{display:flex;align-items:flex-start;gap:9px;font-weight:800;line-height:1.35}.ghostToggle input[type=checkbox]{margin-top:2px;accent-color:var(--green)}.pnlBridge{margin-top:7px;font-size:10px;color:var(--mut);line-height:1.35}.pnlBridge b{color:#c8d1cc}.presetChips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.presetChip{border:1px solid var(--line);background:#090d0b;color:#9aa59f;border-radius:999px;padding:5px 8px;font-size:10px;cursor:pointer}.presetChip:hover,.presetChip.on{border-color:#315c48;color:#d6e5dd;background:#0c1c14}.healthTop{display:flex;align-items:center;justify-content:space-between;gap:12px}.healthStatus{display:inline-flex;align-items:center;gap:7px;font-weight:900;font-size:12px}.healthDot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 9px #21df8c55}.healthStatus.warn .healthDot{background:var(--amber);box-shadow:none}.healthGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:13px}.healthCell{border:1px solid var(--line);background:#070a08;border-radius:12px;padding:10px}.healthCell b{display:block;font-size:13px;margin-top:3px}.versionLine{font-size:10px;color:var(--mut);margin-top:10px}.exportGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.exportGrid .btn{text-align:left}.mobileNav{display:none}.mobileSheet{display:none}
 .accountList{display:grid;gap:10px}.accountRow{display:grid;grid-template-columns:1.2fr minmax(190px,1.1fr) minmax(145px,.6fr) auto;gap:10px;align-items:end;border:1px solid var(--line);border-radius:13px;padding:12px;background:#070a08}.memberRow{display:grid;grid-template-columns:1.2fr 1.5fr auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:13px;padding:12px;background:#070a08}.accountEdit{display:grid;gap:5px}.accountEditLabel{font-size:10px;color:var(--mut);line-height:1}.memberActions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}.memberMeta{min-width:0}.memberMeta b{display:block;overflow:hidden;text-overflow:ellipsis}.badge{display:inline-block;border:1px solid var(--line);padding:3px 7px;border-radius:999px;font-size:10px;margin-top:4px}
 @media(max-width:820px){.metrics{grid-template-columns:repeat(2,1fr)}.grid2{grid-template-columns:1fr}.symgrid{grid-template-columns:1fr 1fr}.detail{grid-template-columns:1fr 1fr}.accountRow{grid-template-columns:1fr 1fr}.accountRow .memberMeta{grid-column:1/-1}.accountRow .btn{width:100%}}
-@media(max-width:540px){.accountRow{grid-template-columns:1fr}.accountRow .memberMeta{grid-column:auto}.accountbar{grid-template-columns:1fr;gap:10px}.accountHint{height:auto;min-height:0;max-width:none}.accountScopeStatic{width:100%}.healthGrid{grid-template-columns:1fr 1fr}.exportGrid{grid-template-columns:1fr}.wrap{padding:14px 9px 96px}.panel{padding:14px}.metricValue{font-size:23px}.symgrid{grid-template-columns:1fr}.form{grid-template-columns:1fr}.wide{grid-column:auto}.calendar{grid-template-columns:repeat(7,1fr)}.weekTotal,.dow.weekHead{display:none}.day{min-height:66px;padding:5px}.dpnl{font-size:10px;margin-top:9px}.dmeta{font-size:9px}.rowbar{grid-template-columns:36px 1fr 82px}.top{align-items:flex-start}.tabs{display:none}.rangeModalGrid{grid-template-columns:1fr}.rangeMonths{grid-template-columns:1fr}.rangeMonths .rangeMonth:nth-child(2){display:none}.rangeFooter{align-items:flex-start;flex-direction:column}.filterbar{align-items:stretch}.periodBtn{justify-content:center}.equityChart{height:210px}.mistakeSummary{grid-template-columns:1fr}.mistakeRow{grid-template-columns:1fr auto}.mistakeRow .mistakeWr{display:none}.mobileNav{position:fixed;left:9px;right:9px;bottom:max(8px,env(safe-area-inset-bottom));z-index:8;display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:5px;border:1px solid #243229;border-radius:18px;background:#07100beF;backdrop-filter:blur(16px);box-shadow:0 14px 40px #000b}.mobileNav button{border:0;background:transparent;color:var(--mut);border-radius:13px;padding:8px 4px 7px;font-size:9px;font-weight:850;display:grid;place-items:center;gap:3px}.mobileNav button.on{background:#0b261b;color:var(--green)}.mobileNav svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.mobileSheet{position:fixed;left:9px;right:9px;bottom:82px;z-index:9;display:grid;gap:7px;padding:10px;border:1px solid #243229;border-radius:17px;background:#090d0b;box-shadow:0 18px 50px #000d}.mobileSheet .btn{text-align:left}.calhead{align-items:flex-start}.calSummary{gap:5px}}
+@media(max-width:540px){.tradeTableWrap{overflow-x:auto}.tradeTableWrap thead th{position:static}.accountRow{grid-template-columns:1fr}.accountRow .memberMeta{grid-column:auto}.accountbar{grid-template-columns:1fr;gap:10px}.accountHint{height:auto;min-height:0;max-width:none}.accountScopeStatic{width:100%}.healthGrid{grid-template-columns:1fr 1fr}.exportGrid{grid-template-columns:1fr}.wrap{padding:14px 9px 96px}.panel{padding:14px}.metricValue{font-size:23px}.symgrid{grid-template-columns:1fr}.form{grid-template-columns:1fr}.wide{grid-column:auto}.calendar{grid-template-columns:repeat(7,1fr)}.weekTotal,.dow.weekHead{display:none}.day{min-height:66px;padding:5px}.dpnl{font-size:10px;margin-top:9px}.dmeta{font-size:9px}.rowbar{grid-template-columns:36px 1fr 82px}.top{align-items:flex-start}.tabs{display:none}.rangeModalGrid{grid-template-columns:1fr}.rangeMonths{grid-template-columns:1fr}.rangeMonths .rangeMonth:nth-child(2){display:none}.rangeFooter{align-items:flex-start;flex-direction:column}.filterbar{align-items:stretch}.periodBtn{justify-content:center}.equityChart{height:210px}.mistakeSummary{grid-template-columns:1fr}.mistakeRow{grid-template-columns:1fr auto}.mistakeRow .mistakeWr{display:none}.mobileNav{position:fixed;left:9px;right:9px;bottom:max(8px,env(safe-area-inset-bottom));z-index:8;display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:5px;border:1px solid #243229;border-radius:18px;background:#07100beF;backdrop-filter:blur(16px);box-shadow:0 14px 40px #000b}.mobileNav button{border:0;background:transparent;color:var(--mut);border-radius:13px;padding:8px 4px 7px;font-size:9px;font-weight:850;display:grid;place-items:center;gap:3px}.mobileNav button.on{background:#0b261b;color:var(--green)}.mobileNav svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.mobileSheet{position:fixed;left:9px;right:9px;bottom:82px;z-index:9;display:grid;gap:7px;padding:10px;border:1px solid #243229;border-radius:17px;background:#090d0b;box-shadow:0 18px 50px #000d}.mobileSheet .btn{text-align:left}.calhead{align-items:flex-start}.calSummary{gap:5px}}
 </style>
 </head>
 <body>
@@ -105,7 +105,7 @@ table{width:100%;border-collapse:collapse}th,td{padding:12px 8px;border-bottom:1
 
     <div class="grid2">
       <div class="panel"><div class="panelTitle">AVG P&L BY DAY OF WEEK</div><div id="weekday"></div></div>
-      <div class="panel"><div class="panelTitle">RISK / QUALITY</div><div class="metrics" style="grid-template-columns:1fr 1fr"><div><div class="metricLabel">Profit Factor</div><div id="mPf" class="metricValue">—</div></div><div><div class="metricLabel">Max Drawdown</div><div id="mDd" class="metricValue">—</div></div></div></div>
+      <div class="panel"><div class="panelTitle">RISK / QUALITY</div><div class="metrics" style="grid-template-columns:1fr 1fr"><div><div class="metricLabel">Profit Factor</div><div id="mPf" class="metricValue">—</div></div><div><div class="metricLabel">Max Drawdown</div><div id="mDd" class="metricValue">—</div></div></div><div id="avgWinLoss" class="qualityBreakdown"></div></div>
     </div>
 
     <div class="panel"><div class="panelTitle">MISTAKE ANALYTICS</div><div id="mistakeAnalytics"></div></div>
@@ -127,9 +127,11 @@ table{width:100%;border-collapse:collapse}th,td{padding:12px 8px;border-bottom:1
         <span id="sourceFilterWrap"><select id="sourceFilter" class="select"></select></span>
         <span id="resultFilterWrap"><select id="resultFilter" class="select"><option value="">Wins + Losses</option><option value="win">Wins</option><option value="loss">Losses</option></select></span>
         <span id="ghostFilterWrap"><select id="ghostFilter" class="select"><option value="">All history</option><option value="counted">Counted only</option><option value="ghost">Ghost only</option></select></span>
+        <button class="btn" id="bulkSelectBtn" type="button">Select</button>
         <button class="btn" id="exportBtn" type="button">Export</button>
       </div>
-      <div style="overflow:auto"><table><thead><tr><th>Date</th><th>Symbol</th><th>Side</th><th>Net P&L</th><th>Orders</th><th>Setup</th></tr></thead><tbody id="tradeRows"></tbody></table></div>
+      <div id="bulkGhostBar" class="bulkBar hide"><span id="bulkGhostCount" class="bulkCount">0 selected</span><button class="btn primary" id="bulkGhostBtn" type="button">Mark as Ghost</button><button class="btn" id="bulkCancelBtn" type="button">Cancel</button></div>
+      <div class="tradeTableWrap"><table><thead><tr><th id="bulkHead" class="bulkCheck hide"></th><th>Date</th><th>Symbol</th><th>Side</th><th>Net P&L</th><th>Orders</th><th>Setup</th></tr></thead><tbody id="tradeRows"></tbody></table></div>
     </div>
   </section>
 
@@ -165,7 +167,7 @@ table{width:100%;border-collapse:collapse}th,td{padding:12px 8px;border-bottom:1
       <div class="metricLabel">Supabase URL</div><div class="code">https://ylriyjxcefovzwzinpqd.supabase.co</div>
       <div style="height:12px"></div>
       <div class="metricLabel">Private ingest token</div><div id="tokenBox" class="code">Нажми «Создать / обновить token».</div>
-      <div class="actions"><button class="btn primary" id="tokenBtn">Создать / обновить token</button><button class="btn" id="copyTokenBtn">Copy token</button></div><div class="actions"><a class="btn primary" href="downloads/TradeJournalConnector_MT4.mq4" download>Скачать MT4 Connector v1.12</a></div>
+      <div class="actions"><button class="btn primary" id="tokenBtn">Создать / обновить token</button><button class="btn" id="copyTokenBtn">Copy token</button></div><div class="actions"><a class="btn primary" href="downloads/TradeJournalConnector_MT4.mq4" download>Скачать MT4 Connector v1.13</a></div><div id="connectorStatusList" class="connectorStatusList"></div>
       <div class="warning" style="margin-top:14px">В MetaTrader добавь <b>https://ylriyjxcefovzwzinpqd.supabase.co</b> в Tools → Options → Expert Advisors → Allow WebRequest. В Connector EA вставляется только этот ingest token.</div>
     </div>
     <div class="panel">
@@ -330,10 +332,12 @@ const SUPABASE_URL='https://ylriyjxcefovzwzinpqd.supabase.co';
 const SUPABASE_KEY='sb_publishable_FHpGzrS604yrbzE8ciM83Q_2045GubX';
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const el=id=>document.getElementById(id);
-const GROUPING_VERSION='2.2';
-const GROUPING_RULE='Server-isolated MT4 overlap · MT5 exposure';
+const GROUPING_VERSION='2.3';
+const GROUPING_RULE='Server-isolated MT4 overlap · MT5 exposure · duplicate guard';
+const LATEST_MT4_CONNECTOR='1.13';
 let model={trades:[],daily:[],symbols:[],weekday:[],summary:{}},monthDate=null,activeTrade=null,liveToken='';
-let membership=null,allTrades=[],scopedTrades=[],scopedRawEvents=[],tradeNotes=[],dailyReviewRows=[],accountSettings=[],detectedAccounts=[],memberRows=[],selectedAccountKey='all',declineTarget=null,rawEvents=[],dailyReviewMap={},activeReviewDate=null;
+let membership=null,allTrades=[],scopedTrades=[],scopedRawEvents=[],tradeNotes=[],dailyReviewRows=[],accountSettings=[],connectorStatuses=[],detectedAccounts=[],memberRows=[],selectedAccountKey='all',declineTarget=null,rawEvents=[],dailyReviewMap={},activeReviewDate=null;
+let bulkSelectMode=false,selectedTradeIds=new Set(),tradeReviewSnapshot='';
 let dateRange={mode:'all',start:null,end:null,label:'All time'};
 let rangeDraft={mode:'custom',start:null,end:null,label:'Свой период'},rangeViewMonth=null;
 let rangeDrag={active:false,pointerId:null,anchor:null,last:null};
@@ -531,7 +535,8 @@ async function fetchAll(table){
     raw_events:[['id',true]],
     trade_notes:[['trade_id',true]],
     account_settings:[['source',true],['account',true],['server',true]],
-    daily_reviews:[['review_date',true]]
+    daily_reviews:[['review_date',true]],
+    connector_status:[['source',true],['account',true],['server',true]]
   };
   let out=[],from=0;
   for(;;){
@@ -544,6 +549,15 @@ async function fetchAll(table){
     from+=1000;
   }
   return out;
+}
+function dedupeEvents(events){
+  const seen=new Set();
+  return events.filter(e=>{
+    const key=accountKey(e)+'|'+String(e.event_id||e.order_id||'')+'|'+String(e.event_time_ms||e.close_time||e.event_time||'');
+    if(seen.has(key))return false;
+    seen.add(key);
+    return true;
+  });
 }
 function freshTrade(e,side,strategy,gid){
   return {id:'LT_'+hash([e.source,e.account,e.symbol,strategy,gid||'',e.event_id].join('|')),source:e.source,account:e.account,server:e.server||'',symbol:e.symbol,side,strategy,openedAt:e.event_time||e.open_time,closedAt:null,pnl:0,entryQty:0,exitQty:0,entryVal:0,exitVal:0,entries:0,exits:0,orders:{},events:[]};
@@ -639,7 +653,7 @@ function buildModel(trades){
   const weekday=names.map(name=>{const a=bucket[name];return{name,value:a.length?a.reduce((p,q)=>p+q,0)/a.length:0}});
   const sm={};trades.forEach(t=>{if(!sm[t.symbol])sm[t.symbol]={symbol:t.symbol,pnl:0,trades:0,wins:0,days:{}};const s=sm[t.symbol];s.pnl+=t.pnl;s.trades++;if(t.pnl>0)s.wins++;s.days[dayKey(new Date(t.closedAt))]=1});
   const symbols=Object.values(sm).map(s=>({symbol:s.symbol,pnl:s.pnl,trades:s.trades,wr:s.trades?s.wins/s.trades*100:0,days:Object.keys(s.days).length})).sort((a,b)=>b.pnl-a.pnl);
-  return{trades,daily,weekday,symbols,summary:{pnl,wins,losses,wr:(wins+losses)?wins/(wins+losses)*100:0,days:daily.length,trades:trades.length,best:best?best.pnl:0,worst:worst?worst.pnl:0,avg:daily.length?pnl/daily.length:0,bestTrade:bestTrade?bestTrade.pnl:0,worstTrade:worstTrade?worstTrade.pnl:0,avgTrade:trades.length?pnl/trades.length:0,streak,pf:gl<0?gp/Math.abs(gl):(gp>0?Infinity:0),dd}};
+  return{trades,daily,weekday,symbols,summary:{pnl,wins,losses,wr:(wins+losses)?wins/(wins+losses)*100:0,days:daily.length,trades:trades.length,best:best?best.pnl:0,worst:worst?worst.pnl:0,avg:daily.length?pnl/daily.length:0,bestTrade:bestTrade?bestTrade.pnl:0,worstTrade:worstTrade?worstTrade.pnl:0,avgTrade:trades.length?pnl/trades.length:0,avgWin:wins?gp/wins:0,avgLoss:losses?gl/losses:0,streak,pf:gl<0?gp/Math.abs(gl):(gp>0?Infinity:0),dd}};
 }
 function setDataLoading(on){
   el('app').classList.toggle('dataLoading',!!on);
@@ -651,19 +665,22 @@ async function loadData(){
   setDataLoading(true);
   try{
     el('sync').textContent='Syncing…';
-    const [events,notes,settings,dailyReviews]=await Promise.all([fetchAll('raw_events'),fetchAll('trade_notes'),fetchAll('account_settings'),fetchAll('daily_reviews')]);
+    const [events,notes,settings,dailyReviews,statuses]=await Promise.all([fetchAll('raw_events'),fetchAll('trade_notes'),fetchAll('account_settings'),fetchAll('daily_reviews'),fetchAll('connector_status')]);
     rawEvents=events||[];
     tradeNotes=notes||[];
     dailyReviewRows=dailyReviews||[];
     accountSettings=settings||[];
+    connectorStatuses=statuses||[];
     dailyReviewMap={};dailyReviewRows.forEach(r=>dailyReviewMap[r.review_date]=r);
     const noteMap={};tradeNotes.forEach(n=>noteMap[n.trade_id]=n);
-    const grouped=stabilizeTradeIds(groupMT5(events.filter(e=>String(e.source).toUpperCase()==='MT5')).concat(groupMT4(events.filter(e=>String(e.source).toUpperCase()==='MT4'))).filter(t=>t.closedAt));
+    const groupingEvents=dedupeEvents(events);
+    const grouped=stabilizeTradeIds(groupMT5(groupingEvents.filter(e=>String(e.source).toUpperCase()==='MT5')).concat(groupMT4(groupingEvents.filter(e=>String(e.source).toUpperCase()==='MT4'))).filter(t=>t.closedAt));
     allTrades=grouped.map(t=>Object.assign(t,noteMap[t.id]||(!t.legacyCollision?noteMap[t.legacyId]:null)||{})).sort((a,b)=>new Date(b.closedAt)-new Date(a.closedAt));
     buildDetectedAccounts(events);
     restoreRange();
     applyFilters();
     renderAccounts();
+    renderConnectorStatus();
     el('sync').textContent='Synced · '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
   }catch(e){
     el('sync').textContent='Sync error';
@@ -1013,10 +1030,10 @@ function eventEligible(e){
 function renderHealth(){
   const healthTrades=selectedAccountKey==='all'?allTrades:allTrades.filter(t=>accountKey(t)===selectedAccountKey);
   const healthEvents=selectedAccountKey==='all'?rawEvents:rawEvents.filter(e=>accountKey(e)===selectedAccountKey);
-  const rawNet=healthEvents.reduce((z,e)=>z+Number(e.profit||0)+Number(e.commission||0)+Number(e.swap||0)+Number(e.fee||0),0);
+  const eligible=healthEvents.filter(eventEligible);
+  const rawNet=eligible.reduce((z,e)=>z+Number(e.profit||0)+Number(e.commission||0)+Number(e.swap||0)+Number(e.fee||0),0);
   const logicalNet=healthTrades.reduce((z,t)=>z+Number(t.pnl||0),0);
   const counts={};healthTrades.forEach(t=>(t.events||[]).forEach(id=>{const k=accountKey(t)+'|'+String(id);counts[k]=(counts[k]||0)+1}));
-  const eligible=healthEvents.filter(eventEligible);
   const orphan=eligible.filter(e=>!counts[accountKey(e)+'|'+String(e.event_id||e.order_id)]).length;
   const dup=Object.values(counts).filter(n=>n>1).length;
   const diff=Math.round((rawNet-logicalNet)*100)/100;
@@ -1031,6 +1048,20 @@ function renderHealth(){
     ['Duplicate assignment',String(dup)]
   ].map(x=>'<div class="healthCell"><div class="metricLabel">'+esc(x[0])+'</div><b>'+esc(x[1])+'</b></div>').join('');
   el('groupingVersion').textContent='Grouping v'+GROUPING_VERSION+' · '+GROUPING_RULE;
+}
+function renderConnectorStatus(){
+  const rows=detectedAccounts.filter(a=>a.source==='MT4');
+  if(!rows.length){el('connectorStatusList').innerHTML='';return}
+  const statusMap={};
+  connectorStatuses.forEach(s=>statusMap[accountKey(s)]=s);
+  el('connectorStatusList').innerHTML=rows.map(a=>{
+    const s=statusMap[a.key],version=s?.version||'';
+    const current=version===LATEST_MT4_CONNECTOR;
+    const state=current?'Current':version?'Update available':'Install v'+LATEST_MT4_CONNECTOR;
+    const cls=current?'current':version?'update':'unknown';
+    const seen=s?.last_seen?new Date(s.last_seen).toLocaleString():'No live version report yet';
+    return '<div class="connectorStatusRow"><div class="connectorStatusMeta"><b>'+esc(a.label||a.account)+' · MT4 '+(version?'v'+version:'version unknown')+'</b><span>'+esc(seen)+'</span></div><span class="connectorState '+cls+'">'+esc(state)+'</span></div>';
+  }).join('');
 }
 function csvCell(v){
   const s=String(v==null?'':v);
@@ -1098,6 +1129,7 @@ function renderAll(){
   el('mStreak').textContent=s.streak;
   el('mPf').textContent=s.pf===Infinity?'∞':Number(s.pf).toFixed(2);
   el('mDd').textContent=money(s.dd);paint(el('mDd'),s.dd);
+  el('avgWinLoss').innerHTML='<span>Avg Win <b class="green">'+money(s.avgWin)+'</b></span><span>Avg Loss <b class="red">'+money(s.avgLoss)+'</b></span>';
 
   if(singleDay){
     el('lblDays').textContent='Wins / Losses';
@@ -1119,10 +1151,21 @@ function renderAll(){
   if(!monthDate){const d=model.daily.length?new Date(model.daily[model.daily.length-1].date+'T12:00:00'):new Date();monthDate=new Date(d.getFullYear(),d.getMonth(),1)}
   renderCalendar();
 }
+function isCashFlowEvent(e){
+  const type=String(e.entry_type||'').toUpperCase();
+  return type==='BALANCE'||type==='CREDIT';
+}
+function cashFlowAmount(e){
+  return Number(e.profit||0)+Number(e.commission||0)+Number(e.swap||0)+Number(e.fee||0);
+}
+function cashFlowTime(e){
+  return e.event_time||e.open_time||e.close_time||e.received_at||null;
+}
 function equityScopeContext(){
   const accounts=selectedAccountKey==='all'
     ? detectedAccounts
     : detectedAccounts.filter(a=>a.key===selectedAccountKey);
+  const accountKeys=new Set(accounts.map(a=>a.key));
 
   const configured=accounts.length>0&&accounts.every(a=>
     a.starting_balance!==null&&a.starting_balance!==undefined&&a.starting_balance!==''
@@ -1134,13 +1177,36 @@ function equityScopeContext(){
     : allTrades.filter(t=>accountKey(t)===selectedAccountKey);
   historyTrades=historyTrades.filter(t=>!t.excluded_from_stats);
 
-  let priorPnl=0;
+  const firstTradeByAccount={};
+  allTrades.forEach(t=>{
+    const key=accountKey(t);
+    if(!accountKeys.has(key))return;
+    const ts=new Date(t.openedAt||t.closedAt).getTime();
+    if(!Number.isFinite(ts))return;
+    if(firstTradeByAccount[key]==null||ts<firstTradeByAccount[key])firstTradeByAccount[key]=ts;
+  });
+
+  const cashFlows=rawEvents.filter(e=>{
+    const key=accountKey(e),ts=cashFlowTime(e);
+    if(!accountKeys.has(key)||!isCashFlowEvent(e)||!ts)return false;
+    const ms=new Date(ts).getTime(),first=firstTradeByAccount[key];
+    return first!=null&&ms>first;
+  }).map(e=>({kind:'cash',time:cashFlowTime(e),amount:cashFlowAmount(e),event:e}));
+
+  let priorPnl=0,priorCash=0,periodCashFlows=cashFlows;
   if(dateRange.mode!=='all'&&dateRange.start){
     priorPnl=historyTrades
       .filter(t=>dayKey(new Date(t.closedAt))<dateRange.start)
       .reduce((sum,t)=>sum+Number(t.pnl||0),0);
+    priorCash=cashFlows
+      .filter(x=>dayKey(new Date(x.time))<dateRange.start)
+      .reduce((sum,x)=>sum+Number(x.amount||0),0);
+    periodCashFlows=cashFlows.filter(x=>{
+      const k=dayKey(new Date(x.time));
+      return k>=dateRange.start&&k<=dateRange.end;
+    });
   }
-  return {base:startingBalance+priorPnl,configured};
+  return {base:startingBalance+priorPnl+priorCash,configured,periodCashFlows};
 }
 
 function renderEquity(){
@@ -1153,11 +1219,14 @@ function renderEquity(){
 
   const ctx=equityScopeContext();
   let eq=ctx.base,peak=ctx.base;
-  const points=[{equity:ctx.base,trade:null}];
-  trades.forEach(t=>{
-    eq+=Number(t.pnl||0);
+  const timeline=trades.map(t=>({kind:'trade',time:t.closedAt,amount:Number(t.pnl||0),trade:t}))
+    .concat(ctx.periodCashFlows)
+    .sort((a,b)=>new Date(a.time)-new Date(b.time));
+  const points=[{equity:ctx.base,trade:null,kind:'start'}];
+  timeline.forEach(item=>{
+    eq+=Number(item.amount||0);
     peak=Math.max(peak,eq);
-    points.push({equity:eq,trade:t});
+    points.push({equity:eq,trade:item.trade||null,kind:item.kind,cash:item.event||null,amount:item.amount,time:item.time});
   });
 
   const vals=points.map(p=>p.equity);
@@ -1221,16 +1290,23 @@ function renderEquity(){
     valueEl.textContent='Equity '+balanceMoney(p.equity);
     valueEl.className='eqValue';
 
-    if(!p.trade){
+    if(p.kind==='start'){
       dateEl.textContent='Start';
       metaEl.textContent=dateRange.mode==='all'?'Starting balance':'Balance at period start';
       return;
     }
 
-    const d=new Date(p.trade.closedAt);
+    const d=new Date(p.time||p.trade?.closedAt);
     dateEl.textContent=d.toLocaleString([],{
       year:'numeric',month:'short',day:'2-digit',hour:'2-digit',minute:'2-digit'
     });
+
+    if(p.kind==='cash'){
+      const amount=Number(p.amount||0),label=amount>=0?'Deposit / credit':'Withdrawal / adjustment';
+      metaEl.innerHTML=esc(label)+' · <span class="eqTradePnl '+(amount>=0?'win':'loss')+'">'+esc(money(amount))+'</span>';
+      return;
+    }
+
     const tradePnl=Number(p.trade.pnl||0);
     const side=String(p.trade.side||'').toUpperCase();
     const sideClass=side==='BUY'?'buy':side==='SELL'?'sell':'';
@@ -1307,16 +1383,62 @@ function tradeEmptyMessage({q,result,ghost,side,source}){
   if(source)return 'No '+source+' trades in this period.';
   return dateRange.mode==='all'?'No trades yet.':'No trades in the selected period.';
 }
+function updateBulkGhostBar(){
+  el('bulkGhostBar').classList.toggle('hide',!bulkSelectMode);
+  el('bulkHead').classList.toggle('hide',!bulkSelectMode);
+  el('bulkSelectBtn').classList.toggle('on',bulkSelectMode);
+  el('bulkGhostCount').textContent=selectedTradeIds.size+' selected';
+  el('bulkGhostBtn').disabled=selectedTradeIds.size===0;
+}
+function setBulkSelectMode(on){
+  bulkSelectMode=!!on;
+  if(!bulkSelectMode)selectedTradeIds.clear();
+  updateBulkGhostBar();
+  renderTrades();
+}
+function toggleTradeSelection(id){
+  if(selectedTradeIds.has(id))selectedTradeIds.delete(id);else selectedTradeIds.add(id);
+  updateBulkGhostBar();
+  renderTrades();
+}
+async function markSelectedGhost(){
+  const ids=[...selectedTradeIds];
+  if(!ids.length)return;
+  if(!confirm('Mark '+ids.length+' selected trade'+(ids.length===1?'':'s')+' as Ghost? They will stay in history but be excluded from analytics.'))return;
+  const u=(await sb.auth.getUser()).data.user;
+  const now=new Date().toISOString();
+  const rows=ids.map(id=>({user_id:u.id,trade_id:id,excluded_from_stats:true,exclusion_reason:'Bulk marked as accidental / technical trade',updated_at:now}));
+  const {error}=await sb.from('trade_notes').upsert(rows,{onConflict:'user_id,trade_id'});
+  if(error)return alert(error.message);
+  setBulkSelectMode(false);
+  await loadData();
+}
 function renderTrades(){
   const q=el('search').value.toLowerCase().trim(),side=el('sideFilter').value,source=el('sourceFilter').value,result=el('resultFilter').value,ghost=el('ghostFilter').value;
   const rows=scopedTrades.filter(t=>(!side||t.side===side)&&(!source||t.source===source))
     .filter(t=>result==='win'?Number(t.pnl)>0:result==='loss'?Number(t.pnl)<0:true)
     .filter(t=>ghost==='ghost'?!!t.excluded_from_stats:ghost==='counted'?!t.excluded_from_stats:true)
     .filter(t=>!q||[t.symbol,t.setup,t.tags,t.strategy,t.mistake,t.exclusion_reason].join(' ').toLowerCase().includes(q));
-  el('tradeRows').innerHTML=rows.length?rows.map(t=>'<tr class="tradeRow '+(t.excluded_from_stats?'ghostRow':'')+'" data-id="'+esc(t.id)+'"><td class="tradeDate">'+new Date(t.closedAt).toLocaleString()+'</td><td class="tradeSymbol">'+esc(t.symbol)+(t.excluded_from_stats?'<span class="ghostBadge">GHOST</span>':'')+'</td><td class="tradeSide"><span class="pill">'+esc(t.side)+'</span></td><td class="tradePnl '+(t.pnl>=0?'green':'red')+'">'+money(t.pnl)+'</td><td class="tradeOrders">'+t.orderCount+'</td><td class="tradeSetup">'+esc(t.setup||t.strategy||'')+'</td></tr>').join(''):'<tr><td colspan="6" class="empty">'+esc(tradeEmptyMessage({q,result,ghost,side,source}))+'</td></tr>';
-  document.querySelectorAll('#tradeRows tr[data-id]').forEach(r=>r.onclick=()=>openTrade(r.dataset.id));
+
+  const emptyCols=bulkSelectMode?7:6;
+  el('tradeRows').innerHTML=rows.length?rows.map(t=>{
+    const selected=selectedTradeIds.has(t.id);
+    const check=bulkSelectMode?'<td class="bulkCheck"><input type="checkbox" '+(selected?'checked':'')+' tabindex="-1" aria-label="Select trade"></td>':'';
+    return '<tr class="tradeRow '+(t.excluded_from_stats?'ghostRow ':'')+(selected?'bulkSelected':'')+'" data-id="'+esc(t.id)+'">'+check+'<td class="tradeDate">'+new Date(t.closedAt).toLocaleString()+'</td><td class="tradeSymbol">'+esc(t.symbol)+(t.excluded_from_stats?'<span class="ghostBadge">GHOST</span>':'')+'</td><td class="tradeSide"><span class="pill">'+esc(t.side)+'</span></td><td class="tradePnl '+(t.pnl>=0?'green':'red')+'">'+money(t.pnl)+'</td><td class="tradeOrders">'+t.orderCount+'</td><td class="tradeSetup">'+esc(t.setup||t.strategy||'')+'</td></tr>';
+  }).join(''):'<tr><td colspan="'+emptyCols+'" class="empty">'+esc(tradeEmptyMessage({q,result,ghost,side,source}))+'</td></tr>';
+
+  document.querySelectorAll('#tradeRows tr[data-id]').forEach(r=>r.onclick=e=>{
+    const id=r.dataset.id;
+    if(bulkSelectMode){e.preventDefault();toggleTradeSelection(id);return}
+    openTrade(id);
+  });
+  updateBulkGhostBar();
 }
+
 el('search').oninput=renderTrades;el('sideFilter').onchange=renderTrades;el('sourceFilter').onchange=renderTrades;el('resultFilter').onchange=renderTrades;el('ghostFilter').onchange=renderTrades;
+el('bulkSelectBtn').onclick=()=>setBulkSelectMode(!bulkSelectMode);
+el('bulkCancelBtn').onclick=()=>setBulkSelectMode(false);
+el('bulkGhostBtn').onclick=markSelectedGhost;
 
 function openDailyReview(date){
   activeReviewDate=date;
@@ -1345,6 +1467,28 @@ el('saveDailyReview').onclick=async()=>{
   await loadData();
 }
 
+function tradeReviewState(){
+  return JSON.stringify({
+    setup:el('fSetup').value,
+    tier:el('fTier').value,
+    probability:el('fProbability').value,
+    cr:el('fCr').value,
+    plan:el('fPlan').value,
+    mistake:el('fMistake').value,
+    excluded:el('fExcluded').checked,
+    exclusionReason:el('fExclusionReason').value,
+    notes:el('fNotes').value
+  });
+}
+function closeTradeReview(force=false){
+  if(!force&&activeTrade&&tradeReviewSnapshot&&tradeReviewState()!==tradeReviewSnapshot){
+    if(!confirm('Discard unsaved changes?'))return false;
+  }
+  el('tradeModal').classList.add('hide');
+  activeTrade=null;
+  tradeReviewSnapshot='';
+  return true;
+}
 function openTrade(id){
   const t=scopedTrades.find(x=>x.id===id)||allTrades.find(x=>x.id===id);if(!t)return;activeTrade=t;
   el('modalTitle').textContent=t.symbol+' '+t.side+' · '+money(t.pnl)+(t.excluded_from_stats?' · GHOST':'');
@@ -1352,8 +1496,9 @@ function openTrade(id){
   el('tradeDetails').innerHTML=details.map(x=>'<div class="kv"><small>'+esc(x[0])+'</small><b>'+esc(x[1])+'</b></div>').join('');
   el('fSetup').value=t.setup||'';el('fTier').value=t.tier||'';el('fProbability').value=t.probability==null?'':t.probability;el('fCr').value=t.cr_value==null?'':t.cr_value;el('fPlan').value=t.plan_ok||'';el('fMistake').value=t.mistake||'';document.querySelectorAll('[data-mistake]').forEach(b=>b.classList.toggle('on',b.dataset.mistake===(t.mistake||'')));el('fExcluded').checked=!!t.excluded_from_stats;el('fExclusionReason').value=t.exclusion_reason||'';el('fExclusionReason').disabled=!el('fExcluded').checked;el('fNotes').value=t.notes||'';
   el('tradeModal').classList.remove('hide');
+  tradeReviewSnapshot=tradeReviewState();
 }
-el('closeModal').onclick=()=>{el('tradeModal').classList.add('hide');activeTrade=null};
+el('closeModal').onclick=()=>closeTradeReview();
 el('saveReview').onclick=async()=>{
   if(!activeTrade)return;
   const probabilityRaw=el('fProbability').value.trim();
@@ -1365,7 +1510,9 @@ el('saveReview').onclick=async()=>{
   const u=(await sb.auth.getUser()).data.user;
   const row={user_id:u.id,trade_id:activeTrade.id,setup:el('fSetup').value,tier:el('fTier').value,probability,cr_value:el('fCr').value===''?null:Number(el('fCr').value),plan_ok:el('fPlan').value,mistake:el('fMistake').value,excluded_from_stats:el('fExcluded').checked,exclusion_reason:el('fExcluded').checked?(el('fExclusionReason').value.trim()||'Accidental / technical trade'):null,notes:el('fNotes').value,updated_at:new Date().toISOString()};
   const {error}=await sb.from('trade_notes').upsert(row,{onConflict:'user_id,trade_id'});if(error)return alert(error.message);
-  el('tradeModal').classList.add('hide');activeTrade=null;await loadData();
+  tradeReviewSnapshot=tradeReviewState();
+  closeTradeReview(true);
+  await loadData();
 };
 
 document.querySelectorAll('[data-mistake]').forEach(b=>b.onclick=()=>{el('fMistake').value=b.dataset.mistake||'';document.querySelectorAll('[data-mistake]').forEach(x=>x.classList.toggle('on',x===b))});
