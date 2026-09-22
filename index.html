@@ -4,6 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#050706">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Trading Journal">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/app-icon.svg">
 <title>Trading Journal</title>
 <style>
 :root{--bg:#050706;--panel:#090d0a;--panel2:#0c120e;--line:#1b2821;--txt:#f5f7f6;--mut:#7f8a84;--green:#21df8c;--red:#ff7070;--amber:#ffb52e}
@@ -16,14 +21,15 @@ h1,h2,h3{margin:0}.sub,.muted{color:var(--mut);font-size:12px}.pill{display:inli
 .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}.metricLabel{color:var(--mut);font-size:12px}.metricValue{font-size:28px;font-weight:900;margin-top:4px;letter-spacing:-.02em}.green{color:var(--green)}.red{color:var(--red)}.amber{color:var(--amber)}
 .grid2{display:grid;grid-template-columns:1.15fr .85fr;gap:16px}.rowbar{display:grid;grid-template-columns:44px 1fr 100px;gap:10px;align-items:center;margin:12px 0}.track{height:18px;background:#0d100e;border-radius:6px;overflow:hidden}.fill{height:100%;background:#145c3d}
 .symgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.sym{border:1px solid var(--line);border-radius:15px;padding:14px;background:#070a08}.sym b{font-size:18px}
-.calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:13px;overflow:hidden}.dow,.day{background:#080b09;padding:7px;min-height:82px}.dow{min-height:auto;text-align:center;color:var(--mut);font-size:11px;font-weight:800}.day.pos{background:#0a1d15}.day.neg{background:#211010}.day.clickable{cursor:pointer}.day.clickable:hover{filter:brightness(1.15)}.reviewDot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);margin-left:5px;vertical-align:middle}.dnum{font-size:11px;color:#aaa}.dpnl{font-weight:850;margin-top:12px}.dmeta{font-size:10px;color:var(--mut);margin-top:3px}.calhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.month{font-size:20px;font-weight:900}
+.calendar{display:grid;grid-template-columns:repeat(7,1fr) minmax(78px,.78fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:13px;overflow:hidden}.dow,.day,.weekTotal{background:#080b09;padding:7px;min-height:82px}.dow{min-height:auto;text-align:center;color:var(--mut);font-size:11px;font-weight:800}.dow.weekHead{color:#637068}.day.pos{background:linear-gradient(180deg,#0b2118,#091710)}.day.neg{background:linear-gradient(180deg,#251111,#170c0c)}.day.clickable{cursor:pointer;transition:filter .15s,transform .15s}.day.clickable:hover{filter:brightness(1.18);transform:translateY(-1px)}.weekTotal{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;background:#070a08}.weekTotal.pos{background:#091811}.weekTotal.neg{background:#1a0d0d}.weekTotal .wpnl{font-size:11px;font-weight:900}.weekTotal .wmeta{font-size:9px;color:var(--mut);margin-top:4px}.reviewDot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);margin-left:5px;vertical-align:middle;box-shadow:0 0 8px #21df8c55}.dnum{font-size:11px;color:#aaa}.dpnl{font-weight:850;margin-top:12px}.dmeta{font-size:10px;color:var(--mut);margin-top:3px}.calhead{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;margin-bottom:12px}.month{font-size:20px;font-weight:900}.calSummary{display:flex;gap:8px;flex-wrap:wrap;margin-top:7px}.calChip{border:1px solid var(--line);border-radius:999px;padding:4px 8px;font-size:10px;color:var(--mut);background:#070a08}
 .btn{border:1px solid var(--line);background:#0d1511;color:var(--txt);padding:9px 12px;border-radius:11px;cursor:pointer}.btn:hover{filter:brightness(1.12)}.btn.primary{background:#0b6b47;border-color:#0b6b47}.btn.danger{background:#421617;border-color:#6d2425}.input,.select,.textarea{background:#070a08;border:1px solid var(--line);color:var(--txt);border-radius:11px;padding:10px 11px;width:100%;outline:none}.input:focus,.select:focus,.textarea:focus{border-color:#2c6a4b}
 .toolbar{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:12px}.toolbar .input,.toolbar .select{width:auto;min-width:150px}
 table{width:100%;border-collapse:collapse}th,td{padding:12px 8px;border-bottom:1px solid var(--line);text-align:left;font-size:12px;white-space:nowrap}th{color:var(--mut);font-size:10px;letter-spacing:.07em}.click{cursor:pointer}.click:hover{background:#0a120e}
 .auth{min-height:100vh;display:grid;place-items:center;padding:20px}.card{width:min(430px,100%);background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:23px}.card .input{margin-top:9px}.actions{display:flex;gap:9px;margin-top:13px}.status{color:var(--mut);font-size:12px;margin-top:11px;line-height:1.5}.code{background:#040604;border:1px solid var(--line);border-radius:11px;padding:10px;word-break:break-all;font-family:ui-monospace,SFMono-Regular,monospace;font-size:11px}.warning{border-left:3px solid var(--amber);background:#18140a;color:#d8cfb7;padding:10px 11px;border-radius:8px;font-size:12px;line-height:1.5}
-.modal{position:fixed;inset:0;background:#000c;display:grid;place-items:center;padding:16px;z-index:10}.modalbox{width:min(760px,100%);max-height:92vh;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:19px}.modalhead{display:flex;justify-content:space-between;gap:10px;align-items:center}.detail{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:15px 0}.kv{border:1px solid var(--line);border-radius:11px;padding:10px;background:#070a08}.kv small{color:var(--mut);display:block;margin-bottom:3px}.form{display:grid;grid-template-columns:1fr 1fr;gap:10px}.wide{grid-column:1/-1}.hint{font-size:11px;color:var(--mut);line-height:1.55}.empty{padding:24px;text-align:center;color:var(--mut)}.accountbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.accountbar .select{width:auto;min-width:240px}.filterbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:-4px 0 16px}.periodBtn{display:flex;gap:9px;align-items:center;font-weight:800}.periodIcon{width:17px;height:17px;display:inline-flex;align-items:center;justify-content:center;color:#9fb0a7;flex:0 0 auto}.periodIcon svg{width:17px;height:17px;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.periodBtn:hover .periodIcon{color:#d7e6de}.passwordEyeBtn{width:46px;height:46px;min-width:46px;padding:0;display:inline-flex;align-items:center;justify-content:center;flex:0 0 46px}.passwordEyeBtn svg{width:20px;height:20px;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;fill:none}.passwordEyeBtn .eyeOff{display:none}.passwordEyeBtn.on .eyeOn{display:none}.passwordEyeBtn.on .eyeOff{display:block}.periodSummary{color:var(--mut);font-size:11px}.rangeBox{width:min(980px,96vw)}.rangeModalGrid{display:grid;grid-template-columns:190px 1fr;gap:16px}.presetList{display:grid;gap:7px;align-content:start}.presetBtn{text-align:left;width:100%}.presetBtn.on{border-color:#8b5cf6;background:#1b132e}.rangePicker{border:1px solid var(--line);border-radius:16px;background:#070a08;padding:14px}.rangeNav{display:grid;grid-template-columns:36px 1fr 36px;gap:8px;align-items:start}.rangeArrow{width:34px;height:34px;border:1px solid var(--line);background:#0d1511;color:var(--txt);border-radius:10px;cursor:pointer;font-size:20px}.rangeMonths{display:grid;grid-template-columns:1fr 1fr;gap:18px;user-select:none}.rangeMonth{min-width:0}.rangeMonthTitle{text-align:center;font-weight:900;margin:4px 0 12px}.rangeWeek{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:4px}.rangeWeek span{text-align:center;color:var(--mut);font-size:10px;font-weight:800}.rangeDays{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}.rangeDay{height:34px;border:0;border-radius:9px;background:transparent;color:var(--txt);cursor:pointer;position:relative;font-size:12px}.rangeDay:hover{background:#171d19}.rangeDay.blank{cursor:default}.rangeDay.inRange{background:#3c255e;border-radius:4px}.rangeDay.edge{background:#7c3aed;color:white;border-radius:10px;font-weight:900}.rangeDay.today{outline:1px solid #466258}.rangeDay:focus{outline:1px solid #8b5cf6}.rangeFooter{display:flex;justify-content:space-between;align-items:center;gap:12px;border-top:1px solid var(--line);margin-top:14px;padding-top:14px}.rangeSelectionText{font-weight:850;font-size:13px}.accountList{display:grid;gap:10px}.accountRow,.memberRow{display:grid;grid-template-columns:1.2fr 1.5fr auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:13px;padding:12px;background:#070a08}.memberActions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}.memberMeta{min-width:0}.memberMeta b{display:block;overflow:hidden;text-overflow:ellipsis}.badge{display:inline-block;border:1px solid var(--line);padding:3px 7px;border-radius:999px;font-size:10px;margin-top:4px}
+.modal{position:fixed;inset:0;background:#000c;display:grid;place-items:center;padding:16px;z-index:10}.modalbox{width:min(760px,100%);max-height:92vh;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:19px}.modalhead{display:flex;justify-content:space-between;gap:10px;align-items:center}.detail{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:15px 0}.kv{border:1px solid var(--line);border-radius:11px;padding:10px;background:#070a08}.kv small{color:var(--mut);display:block;margin-bottom:3px}.form{display:grid;grid-template-columns:1fr 1fr;gap:10px}.wide{grid-column:1/-1}.hint{font-size:11px;color:var(--mut);line-height:1.55}.empty{padding:24px;text-align:center;color:var(--mut)}.accountbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.accountbar .select{width:auto;min-width:240px}.filterbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:-4px 0 16px}.periodBtn{display:flex;gap:9px;align-items:center;font-weight:800}.periodIcon{width:17px;height:17px;display:inline-flex;align-items:center;justify-content:center;color:#9fb0a7;flex:0 0 auto}.periodIcon svg{width:17px;height:17px;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.periodBtn:hover .periodIcon{color:#d7e6de}.passwordEyeBtn{width:46px;height:46px;min-width:46px;padding:0;display:inline-flex;align-items:center;justify-content:center;flex:0 0 46px}.passwordEyeBtn svg{width:20px;height:20px;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;fill:none}.passwordEyeBtn .eyeOff{display:none}.passwordEyeBtn.on .eyeOn{display:none}.passwordEyeBtn.on .eyeOff{display:block}.periodSummary{color:var(--mut);font-size:11px}.rangeBox{width:min(980px,96vw)}.rangeModalGrid{display:grid;grid-template-columns:190px 1fr;gap:16px}.presetList{display:grid;gap:7px;align-content:start}.presetBtn{text-align:left;width:100%}.presetBtn.on{border-color:#8b5cf6;background:#1b132e}.rangePicker{border:1px solid var(--line);border-radius:16px;background:#070a08;padding:14px}.rangeNav{display:grid;grid-template-columns:36px 1fr 36px;gap:8px;align-items:start}.rangeArrow{width:34px;height:34px;border:1px solid var(--line);background:#0d1511;color:var(--txt);border-radius:10px;cursor:pointer;font-size:20px}.rangeMonths{display:grid;grid-template-columns:1fr 1fr;gap:18px;user-select:none}.rangeMonth{min-width:0}.rangeMonthTitle{text-align:center;font-weight:900;margin:4px 0 12px}.rangeWeek{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:4px}.rangeWeek span{text-align:center;color:var(--mut);font-size:10px;font-weight:800}.rangeDays{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}.rangeDay{height:34px;border:0;border-radius:9px;background:transparent;color:var(--txt);cursor:pointer;position:relative;font-size:12px}.rangeDay:hover{background:#171d19}.rangeDay.blank{cursor:default}.rangeDay.inRange{background:#3c255e;border-radius:4px}.rangeDay.edge{background:#7c3aed;color:white;border-radius:10px;font-weight:900}.rangeDay.today{outline:1px solid #466258}.rangeDay:focus{outline:1px solid #8b5cf6}.rangeFooter{display:flex;justify-content:space-between;align-items:center;gap:12px;border-top:1px solid var(--line);margin-top:14px;padding-top:14px}.rangeSelectionText{font-weight:850;font-size:13px}.equityChart{height:260px;border:1px solid var(--line);border-radius:15px;background:#060907;overflow:hidden}.equityChart svg{display:block;width:100%;height:100%}.equityMeta{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px}.equityChip{border:1px solid var(--line);border-radius:999px;padding:5px 9px;font-size:10px;color:#b8c3bd;background:#070a08}.mistakeSummary{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:12px}.mistakeCard{border:1px solid var(--line);border-radius:14px;padding:13px;background:#070a08}.mistakeList{display:grid;gap:8px}.mistakeRow{display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center;border-top:1px solid var(--line);padding-top:9px}.ghostRow{opacity:.46}.ghostBadge{display:inline-flex;align-items:center;border:1px dashed #59645e;color:#89938e;border-radius:999px;padding:3px 7px;font-size:9px;font-weight:900;letter-spacing:.08em;margin-left:6px}.ghostToggle{border:1px dashed #56635d;border-radius:14px;padding:12px;background:#090c0a}.ghostToggle label{display:flex;align-items:flex-start;gap:9px;font-weight:800;line-height:1.35}.ghostToggle input[type=checkbox]{margin-top:2px;accent-color:var(--green)}.mobileNav{display:none}.mobileSheet{display:none}
+.accountList{display:grid;gap:10px}.accountRow,.memberRow{display:grid;grid-template-columns:1.2fr 1.5fr auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:13px;padding:12px;background:#070a08}.memberActions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}.memberMeta{min-width:0}.memberMeta b{display:block;overflow:hidden;text-overflow:ellipsis}.badge{display:inline-block;border:1px solid var(--line);padding:3px 7px;border-radius:999px;font-size:10px;margin-top:4px}
 @media(max-width:820px){.metrics{grid-template-columns:repeat(2,1fr)}.grid2{grid-template-columns:1fr}.symgrid{grid-template-columns:1fr 1fr}.detail{grid-template-columns:1fr 1fr}}
-@media(max-width:540px){.wrap{padding:14px 9px 50px}.panel{padding:14px}.metricValue{font-size:23px}.symgrid{grid-template-columns:1fr}.form{grid-template-columns:1fr}.wide{grid-column:auto}.day{min-height:68px;padding:5px}.dpnl{font-size:11px}.rowbar{grid-template-columns:36px 1fr 82px}.top{align-items:flex-start}.tabs{top:4px}.tab{font-size:12px;padding:10px 6px}.rangeModalGrid{grid-template-columns:1fr}.rangeMonths{grid-template-columns:1fr}.rangeMonths .rangeMonth:nth-child(2){display:none}.rangeFooter{align-items:flex-start;flex-direction:column}.filterbar{align-items:stretch}.periodBtn{justify-content:center}}
+@media(max-width:540px){.wrap{padding:14px 9px 96px}.panel{padding:14px}.metricValue{font-size:23px}.symgrid{grid-template-columns:1fr}.form{grid-template-columns:1fr}.wide{grid-column:auto}.calendar{grid-template-columns:repeat(7,1fr)}.weekTotal,.dow.weekHead{display:none}.day{min-height:66px;padding:5px}.dpnl{font-size:10px;margin-top:9px}.dmeta{font-size:9px}.rowbar{grid-template-columns:36px 1fr 82px}.top{align-items:flex-start}.tabs{display:none}.rangeModalGrid{grid-template-columns:1fr}.rangeMonths{grid-template-columns:1fr}.rangeMonths .rangeMonth:nth-child(2){display:none}.rangeFooter{align-items:flex-start;flex-direction:column}.filterbar{align-items:stretch}.periodBtn{justify-content:center}.equityChart{height:210px}.mistakeSummary{grid-template-columns:1fr}.mistakeRow{grid-template-columns:1fr auto}.mistakeRow .mistakeWr{display:none}.mobileNav{position:fixed;left:9px;right:9px;bottom:max(8px,env(safe-area-inset-bottom));z-index:8;display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:5px;border:1px solid #243229;border-radius:18px;background:#07100beF;backdrop-filter:blur(16px);box-shadow:0 14px 40px #000b}.mobileNav button{border:0;background:transparent;color:var(--mut);border-radius:13px;padding:8px 4px 7px;font-size:9px;font-weight:850;display:grid;place-items:center;gap:3px}.mobileNav button.on{background:#0b261b;color:var(--green)}.mobileNav svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.mobileSheet{position:fixed;left:9px;right:9px;bottom:82px;z-index:9;display:grid;gap:7px;padding:10px;border:1px solid #243229;border-radius:17px;background:#090d0b;box-shadow:0 18px 50px #000d}.mobileSheet .btn{text-align:left}.calhead{align-items:flex-start}.calSummary{gap:5px}}
 </style>
 </head>
 <body>
@@ -90,15 +96,23 @@ table{width:100%;border-collapse:collapse}th,td{padding:12px 8px;border-bottom:1
       </div>
     </div>
 
+    <div class="panel">
+      <div class="panelTitle">EQUITY CURVE</div>
+      <div id="equityMeta" class="equityMeta"></div>
+      <div id="equityChart" class="equityChart"></div>
+    </div>
+
     <div class="grid2">
       <div class="panel"><div class="panelTitle">AVG P&L BY DAY OF WEEK</div><div id="weekday"></div></div>
       <div class="panel"><div class="panelTitle">RISK / QUALITY</div><div class="metrics" style="grid-template-columns:1fr 1fr"><div><div class="metricLabel">Profit Factor</div><div id="mPf" class="metricValue">—</div></div><div><div class="metricLabel">Max Drawdown</div><div id="mDd" class="metricValue">—</div></div></div></div>
     </div>
 
+    <div class="panel"><div class="panelTitle">MISTAKE ANALYTICS</div><div id="mistakeAnalytics"></div></div>
+
     <div class="panel"><div class="panelTitle">SYMBOLS</div><div id="symbols" class="symgrid"></div></div>
 
     <div class="panel">
-      <div class="calhead"><div><div class="panelTitle" style="margin-bottom:5px">TRADING CALENDAR</div><div id="monthLabel" class="month"></div></div><div><button class="btn" id="prevMonth">‹</button> <button class="btn" id="nextMonth">›</button></div></div>
+      <div class="calhead"><div><div class="panelTitle" style="margin-bottom:5px">TRADING CALENDAR</div><div id="monthLabel" class="month"></div><div id="calendarSummary" class="calSummary"></div></div><div><button class="btn" id="prevMonth">‹</button> <button class="btn" id="nextMonth">›</button></div></div>
       <div id="calendar" class="calendar"></div>
     </div>
   </section>
@@ -110,6 +124,7 @@ table{width:100%;border-collapse:collapse}th,td{padding:12px 8px;border-bottom:1
         <input id="search" class="input" placeholder="Symbol / setup / tag">
         <select id="sideFilter" class="select"><option value="">BUY + SELL</option><option>BUY</option><option>SELL</option></select>
         <select id="sourceFilter" class="select"><option value="">MT4 + MT5</option><option>MT4</option><option>MT5</option></select>
+        <select id="ghostFilter" class="select"><option value="">All history</option><option value="counted">Counted only</option><option value="ghost">Ghost only</option></select>
       </div>
       <div style="overflow:auto"><table><thead><tr><th>Date</th><th>Symbol</th><th>Side</th><th>Net P&L</th><th>Orders</th><th>Setup</th></tr></thead><tbody id="tradeRows"></tbody></table></div>
     </div>
@@ -156,6 +171,20 @@ table{width:100%;border-collapse:collapse}th,td{padding:12px 8px;border-bottom:1
       <div class="hint" style="margin-top:12px">MT5: группировка идёт по TG, а если его нет — по экспозиции внутри Account + Symbol + Strategy/Magic. MT4: одинаковые Symbol + Side + Strategy/Magic объединяются только пока периоды жизни ордеров реально пересекаются. Как только позиция полностью закрыта, следующий ордер считается новым Logical Trade — даже если EA переоткрыл его в ту же секунду.</div>
     </div>
   </section>
+
+  <div id="mobileMoreSheet" class="mobileSheet hide">
+    <button class="btn" data-more-view="accounts">Accounts</button>
+    <button class="btn" data-more-view="connection">Connection</button>
+    <button class="btn hide" id="mobileAccessBtn" data-more-view="access">Access</button>
+    <button class="btn danger" id="mobileLogoutBtn">Выйти</button>
+  </div>
+
+  <nav class="mobileNav" aria-label="Mobile navigation">
+    <button class="on" data-mobile-view="insights" aria-label="Insights"><svg viewBox="0 0 24 24"><path d="M4 18V10"></path><path d="M10 18V6"></path><path d="M16 18v-4"></path><path d="M22 18V3"></path></svg><span>Insights</span></button>
+    <button data-mobile-view="trades" aria-label="Trades"><svg viewBox="0 0 24 24"><path d="M4 5h16"></path><path d="M4 12h16"></path><path d="M4 19h16"></path><circle cx="8" cy="5" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="11" cy="19" r="1"></circle></svg><span>Trades</span></button>
+    <button id="mobileReviewBtn" aria-label="Daily review"><svg viewBox="0 0 24 24"><path d="M5 3h11l3 3v15H5z"></path><path d="M8 9h8"></path><path d="M8 13h8"></path><path d="M8 17h5"></path></svg><span>Review</span></button>
+    <button id="mobileMoreBtn" aria-label="More"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.3"></circle><circle cx="12" cy="12" r="1.3"></circle><circle cx="19" cy="12" r="1.3"></circle></svg><span>More</span></button>
+  </nav>
 </div>
 
 <div id="recoveryModal" class="modal hide">
@@ -257,9 +286,13 @@ table{width:100%;border-collapse:collapse}th,td{padding:12px 8px;border-bottom:1
       <div><div class="metricLabel">Tier / Model</div><input id="fTier" class="input" placeholder="MID / Intraday / Daily / EURUSD v0.5"></div>
       <div><div class="metricLabel">Probability %</div><input id="fProbability" type="number" class="input"></div>
       <div><div class="metricLabel">CR</div><input id="fCr" type="number" class="input"></div>
-      <div><div class="metricLabel">Risk $</div><input id="fRisk" type="number" class="input"></div>
       <div><div class="metricLabel">Plan followed?</div><select id="fPlan" class="select"><option></option><option>YES</option><option>NO</option><option>PARTIAL</option></select></div>
-      <div class="wide"><div class="metricLabel">Mistake / violation</div><input id="fMistake" class="input"></div>
+      <div class="wide"><div class="metricLabel">Mistake / violation</div><input id="fMistake" class="input" list="mistakeSuggestions" placeholder="Например: EA left enabled"></div>
+      <datalist id="mistakeSuggestions"><option value="EA left enabled"><option value="Wrong entry"><option value="Ignored bias"><option value="Entered before news"><option value="Plan violation"><option value="Overtrading"></datalist>
+      <div class="wide ghostToggle">
+        <label><input id="fExcluded" type="checkbox"><span>Ghost trade — случайная / техническая сделка. Оставить в истории, но полностью исключить из P&L, Win Rate, Drawdown и всей аналитики.</span></label>
+        <input id="fExclusionReason" class="input" style="margin-top:10px" placeholder="Причина, например: EA переоткрыл сделку после ручного закрытия">
+      </div>
       <div class="wide"><div class="metricLabel">Notes</div><textarea id="fNotes" class="textarea" rows="4"></textarea></div>
     </div>
     <div style="text-align:right;margin-top:14px"><button class="btn primary" id="saveReview">Save review</button></div>
@@ -273,7 +306,7 @@ const SUPABASE_KEY='sb_publishable_FHpGzrS604yrbzE8ciM83Q_2045GubX';
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const el=id=>document.getElementById(id);
 let model={trades:[],daily:[],symbols:[],weekday:[],summary:{}},monthDate=null,activeTrade=null,liveToken='';
-let membership=null,allTrades=[],accountSettings=[],detectedAccounts=[],memberRows=[],selectedAccountKey='all',declineTarget=null,rawEvents=[],dailyReviewMap={},activeReviewDate=null;
+let membership=null,allTrades=[],scopedTrades=[],accountSettings=[],detectedAccounts=[],memberRows=[],selectedAccountKey='all',declineTarget=null,rawEvents=[],dailyReviewMap={},activeReviewDate=null;
 let dateRange={mode:'all',start:null,end:null,label:'All time'};
 let rangeDraft={mode:'custom',start:null,end:null,label:'Свой период'},rangeViewMonth=null;
 let rangeDrag={active:false,pointerId:null,anchor:null,last:null};
@@ -359,6 +392,7 @@ async function handleSession(session){
 
   el('app').classList.remove('hide');
   el('accessTab').classList.toggle('hide',membership.role!=='owner');
+  el('mobileAccessBtn').classList.toggle('hide',membership.role!=='owner');
   await loadData();
   if(membership.role==='owner') await loadMembers();
 }
@@ -431,11 +465,20 @@ el('changeLoginPasswordBtn').onclick=async()=>{
 };
 el('pendingRefreshBtn').onclick=async()=>{const {data}=await sb.auth.getSession();await handleSession(data.session)};
 
-document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
-  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));t.classList.add('on');
-  ['insights','trades','accounts','connection','access'].forEach(v=>el(v).classList.toggle('hide',v!==t.dataset.view));
-  if(t.dataset.view==='access' && membership?.role==='owner') loadMembers();
-});
+function switchView(view){
+  if(view==='access'&&membership?.role!=='owner')view='insights';
+  ['insights','trades','accounts','connection','access'].forEach(v=>el(v).classList.toggle('hide',v!==view));
+  document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x.dataset.view===view));
+  document.querySelectorAll('[data-mobile-view]').forEach(x=>x.classList.toggle('on',x.dataset.mobileView===view));
+  el('mobileMoreSheet').classList.add('hide');
+  if(view==='access'&&membership?.role==='owner')loadMembers();
+}
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>switchView(t.dataset.view));
+document.querySelectorAll('[data-mobile-view]').forEach(t=>t.onclick=()=>switchView(t.dataset.mobileView));
+document.querySelectorAll('[data-more-view]').forEach(t=>t.onclick=()=>switchView(t.dataset.moreView));
+el('mobileReviewBtn').onclick=()=>{el('mobileMoreSheet').classList.add('hide');openDailyReview(dayKey(new Date()))};
+el('mobileMoreBtn').onclick=()=>el('mobileMoreSheet').classList.toggle('hide');
+el('mobileLogoutBtn').onclick=()=>sb.auth.signOut();
 
 async function fetchAll(table){
   let out=[],from=0;
@@ -572,7 +615,8 @@ function applyFilters(){
       return k>=dateRange.start && k<=dateRange.end;
     });
   }
-  model=buildModel(trades);
+  scopedTrades=trades;
+  model=buildModel(trades.filter(t=>!t.excluded_from_stats));
   renderPeriodFilter();
   renderAll();
 }
@@ -834,9 +878,39 @@ function renderAll(){
     [['mBest',s.best],['mWorst',s.worst],['mAvg',s.avg]].forEach(([id,n])=>{el(id).textContent=money(n);paint(el(id),n)});
   }
 
-  renderWeekday();renderSymbols();renderTrades();
+  renderEquity();renderWeekday();renderMistakes();renderSymbols();renderTrades();
   if(!monthDate){const d=model.daily.length?new Date(model.daily[model.daily.length-1].date+'T12:00:00'):new Date();monthDate=new Date(d.getFullYear(),d.getMonth(),1)}
   renderCalendar();
+}
+function renderEquity(){
+  const trades=model.trades.slice().sort((a,b)=>new Date(a.closedAt)-new Date(b.closedAt));
+  if(!trades.length){
+    el('equityMeta').innerHTML='';
+    el('equityChart').innerHTML='<div class="empty" style="padding-top:100px">No counted trades yet</div>';
+    return;
+  }
+  let eq=0,peak=0;const vals=[0];
+  trades.forEach(t=>{eq+=Number(t.pnl||0);vals.push(eq);peak=Math.max(peak,eq)});
+  const min=Math.min(0,...vals),max=Math.max(0,...vals),span=Math.max(1,max-min);
+  const W=1000,H=260,px=22,py=18,plotW=W-px*2,plotH=H-py*2;
+  const X=i=>px+(i/(vals.length-1||1))*plotW;
+  const Y=v=>py+(max-v)/span*plotH;
+  const path=vals.map((v,i)=>(i?'L':'M')+X(i).toFixed(2)+' '+Y(v).toFixed(2)).join(' ');
+  const zero=Y(0).toFixed(2);
+  const area=path+' L '+X(vals.length-1).toFixed(2)+' '+zero+' L '+X(0).toFixed(2)+' '+zero+' Z';
+  el('equityMeta').innerHTML='<span class="equityChip">Current <b class="'+(eq>=0?'green':'red')+'">'+money(eq)+'</b></span><span class="equityChip">Peak <b>'+money(peak)+'</b></span><span class="equityChip">'+trades.length+' counted trades</span>';
+  el('equityChart').innerHTML='<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" role="img" aria-label="Equity curve"><defs><linearGradient id="eqFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#21df8c" stop-opacity=".24"/><stop offset="100%" stop-color="#21df8c" stop-opacity=".01"/></linearGradient></defs><line x1="'+px+'" y1="'+zero+'" x2="'+(W-px)+'" y2="'+zero+'" stroke="#26322c" stroke-width="1"/><path d="'+area+'" fill="url(#eqFill)"/><path d="'+path+'" fill="none" stroke="#21df8c" stroke-width="3" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+}
+function renderMistakes(){
+  const trades=model.trades,withMistake=trades.filter(t=>String(t.mistake||'').trim()),clean=trades.filter(t=>!String(t.mistake||'').trim());
+  const sum=a=>a.reduce((s,t)=>s+Number(t.pnl||0),0);
+  const groups={};
+  withMistake.forEach(t=>{const label=String(t.mistake).trim(),key=label.toLowerCase();if(!groups[key])groups[key]={label,count:0,pnl:0,wins:0};const g=groups[key];g.count++;g.pnl+=Number(t.pnl||0);if(t.pnl>0)g.wins++});
+  const list=Object.values(groups).sort((a,b)=>a.pnl-b.pnl);
+  let html='<div class="mistakeSummary"><div class="mistakeCard"><div class="metricLabel">No mistake marked</div><div class="metricValue '+(sum(clean)>=0?'green':'red')+'" style="font-size:21px">'+money(sum(clean))+'</div><div class="sub">'+clean.length+' trades</div></div><div class="mistakeCard"><div class="metricLabel">With mistake / violation</div><div class="metricValue '+(sum(withMistake)>=0?'green':'red')+'" style="font-size:21px">'+money(sum(withMistake))+'</div><div class="sub">'+withMistake.length+' trades</div></div></div>';
+  if(list.length)html+='<div class="mistakeList">'+list.map(g=>'<div class="mistakeRow"><div><b>'+esc(g.label)+'</b><div class="sub">'+g.count+' trades</div></div><b class="'+(g.pnl>=0?'green':'red')+'">'+money(g.pnl)+'</b><span class="mistakeWr sub">'+(g.count?Math.round(g.wins/g.count*100):0)+'% WR</span></div>').join('')+'</div>';
+  else html+='<div class="hint">Когда начнёшь отмечать Mistake / violation в Trade Review, здесь появится влияние ошибок на результат.</div>';
+  el('mistakeAnalytics').innerHTML=html;
 }
 function renderWeekday(){
   const a=model.weekday.filter(x=>x.name!=='Sun'&&x.name!=='Sat'),mx=Math.max(1,...a.map(x=>Math.abs(x.value)));
@@ -844,12 +918,30 @@ function renderWeekday(){
 }
 function renderSymbols(){el('symbols').innerHTML=model.symbols.length?model.symbols.map(s=>'<div class="sym"><b>'+esc(s.symbol)+'</b><div class="metricValue '+(s.pnl>=0?'green':'red')+'" style="font-size:21px">'+money(s.pnl)+'</div><div class="sub">'+s.trades+' trades · '+s.wr.toFixed(0)+'% win · '+s.days+'d</div></div>').join(''):'<div class="empty">No trades yet</div>'}
 function renderCalendar(){
-  const y=monthDate.getFullYear(),m=monthDate.getMonth();el('monthLabel').textContent=monthDate.toLocaleDateString(undefined,{month:'long',year:'numeric'});
-  const map={};model.daily.forEach(d=>map[d.date]=d);let html=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(x=>'<div class="dow">'+x+'</div>').join('');
-  const first=new Date(y,m,1).getDay(),days=new Date(y,m+1,0).getDate();for(let i=0;i<first;i++)html+='<div class="day"></div>';
-  for(let d=1;d<=days;d++){
-    const k=y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0'),x=map[k],review=dailyReviewMap[k];
-    html+='<div class="day clickable '+(x?(x.pnl>=0?'pos':'neg'):'')+'" data-review-date="'+k+'"><div class="dnum">'+d+(review?'<span class="reviewDot" title="Daily review saved"></span>':'')+'</div>'+(x?'<div class="dpnl '+(x.pnl>=0?'green':'red')+'">'+money(x.pnl)+'</div><div class="dmeta">'+(x.wr==null?'—':x.wr.toFixed(0)+'%')+' · '+x.trades+'T</div>':'')+'</div>'
+  const y=monthDate.getFullYear(),m=monthDate.getMonth(),ym=y+'-'+String(m+1).padStart(2,'0');
+  el('monthLabel').textContent=monthDate.toLocaleDateString(undefined,{month:'long',year:'numeric'});
+  const map={};model.daily.forEach(d=>map[d.date]=d);
+  const monthRows=model.daily.filter(d=>d.date.startsWith(ym+'-'));
+  const mpnl=monthRows.reduce((s,d)=>s+d.pnl,0),mtr=monthRows.reduce((s,d)=>s+d.trades,0),mw=monthRows.reduce((s,d)=>s+d.wins,0),ml=monthRows.reduce((s,d)=>s+d.losses,0);
+  el('calendarSummary').innerHTML='<span class="calChip">'+money(mpnl)+'</span><span class="calChip">'+mtr+' trades</span><span class="calChip">'+((mw+ml)?(mw/(mw+ml)*100).toFixed(0):'—')+'% WR</span>';
+
+  let html=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(x=>'<div class="dow">'+x+'</div>').join('')+'<div class="dow weekHead">WEEK</div>';
+  const first=new Date(y,m,1).getDay(),days=new Date(y,m+1,0).getDate(),cells=Math.ceil((first+days)/7)*7;
+  let weekPnl=0,weekTrades=0;
+  for(let i=0;i<cells;i++){
+    const d=i-first+1;
+    if(d>=1&&d<=days){
+      const k=ym+'-'+String(d).padStart(2,'0'),x=map[k],review=dailyReviewMap[k];
+      if(x){weekPnl+=x.pnl;weekTrades+=x.trades}
+      const title=x?(money(x.pnl)+' · '+(x.wr==null?'—':x.wr.toFixed(0)+'% WR')+' · '+x.trades+' trades'):'No counted trades';
+      html+='<div class="day clickable '+(x?(x.pnl>=0?'pos':'neg'):'')+'" data-review-date="'+k+'" title="'+esc(title)+'"><div class="dnum">'+d+(review?'<span class="reviewDot" title="Daily review saved"></span>':'')+'</div>'+(x?'<div class="dpnl '+(x.pnl>=0?'green':'red')+'">'+money(x.pnl)+'</div><div class="dmeta">'+(x.wr==null?'—':x.wr.toFixed(0)+'%')+' · '+x.trades+'T</div>':'')+'</div>';
+    }else{
+      html+='<div class="day"></div>';
+    }
+    if(i%7===6){
+      html+='<div class="weekTotal '+(weekPnl>0?'pos':weekPnl<0?'neg':'')+'"><div class="wpnl '+(weekPnl>0?'green':weekPnl<0?'red':'')+'">'+money(weekPnl)+'</div><div class="wmeta">'+weekTrades+'T</div></div>';
+      weekPnl=0;weekTrades=0;
+    }
   }
   el('calendar').innerHTML=html;
   document.querySelectorAll('[data-review-date]').forEach(x=>x.onclick=()=>openDailyReview(x.dataset.reviewDate));
@@ -858,13 +950,14 @@ el('prevMonth').onclick=()=>{monthDate=new Date(monthDate.getFullYear(),monthDat
 el('nextMonth').onclick=()=>{monthDate=new Date(monthDate.getFullYear(),monthDate.getMonth()+1,1);renderCalendar()};
 
 function renderTrades(){
-  if(!model.trades)return;
-  const q=el('search').value.toLowerCase(),side=el('sideFilter').value,source=el('sourceFilter').value;
-  const rows=model.trades.filter(t=>(!side||t.side===side)&&(!source||t.source===source)).filter(t=>!q||[t.symbol,t.setup,t.tags,t.strategy].join(' ').toLowerCase().includes(q));
-  el('tradeRows').innerHTML=rows.length?rows.map(t=>'<tr class="click" data-id="'+esc(t.id)+'"><td>'+new Date(t.closedAt).toLocaleString()+'</td><td>'+esc(t.symbol)+'</td><td><span class="pill">'+esc(t.side)+'</span></td><td class="'+(t.pnl>=0?'green':'red')+'"><b>'+money(t.pnl)+'</b></td><td>'+t.orderCount+'</td><td>'+esc(t.setup||t.strategy||'')+'</td></tr>').join(''):'<tr><td colspan="6" class="muted">No trades</td></tr>';
+  const q=el('search').value.toLowerCase(),side=el('sideFilter').value,source=el('sourceFilter').value,ghost=el('ghostFilter').value;
+  const rows=scopedTrades.filter(t=>(!side||t.side===side)&&(!source||t.source===source))
+    .filter(t=>ghost==='ghost'?!!t.excluded_from_stats:ghost==='counted'?!t.excluded_from_stats:true)
+    .filter(t=>!q||[t.symbol,t.setup,t.tags,t.strategy,t.mistake,t.exclusion_reason].join(' ').toLowerCase().includes(q));
+  el('tradeRows').innerHTML=rows.length?rows.map(t=>'<tr class="click '+(t.excluded_from_stats?'ghostRow':'')+'" data-id="'+esc(t.id)+'"><td>'+new Date(t.closedAt).toLocaleString()+'</td><td>'+esc(t.symbol)+(t.excluded_from_stats?'<span class="ghostBadge">GHOST</span>':'')+'</td><td><span class="pill">'+esc(t.side)+'</span></td><td class="'+(t.pnl>=0?'green':'red')+'"><b>'+money(t.pnl)+'</b></td><td>'+t.orderCount+'</td><td>'+esc(t.setup||t.strategy||'')+'</td></tr>').join(''):'<tr><td colspan="6" class="muted">No trades</td></tr>';
   document.querySelectorAll('#tradeRows tr[data-id]').forEach(r=>r.onclick=()=>openTrade(r.dataset.id));
 }
-el('search').oninput=renderTrades;el('sideFilter').onchange=renderTrades;el('sourceFilter').onchange=renderTrades;
+el('search').oninput=renderTrades;el('sideFilter').onchange=renderTrades;el('sourceFilter').onchange=renderTrades;el('ghostFilter').onchange=renderTrades;
 
 function openDailyReview(date){
   activeReviewDate=date;
@@ -894,20 +987,22 @@ el('saveDailyReview').onclick=async()=>{
 }
 
 function openTrade(id){
-  const t=model.trades.find(x=>x.id===id);if(!t)return;activeTrade=t;
-  el('modalTitle').textContent=t.symbol+' '+t.side+' · '+money(t.pnl);
+  const t=scopedTrades.find(x=>x.id===id)||allTrades.find(x=>x.id===id);if(!t)return;activeTrade=t;
+  el('modalTitle').textContent=t.symbol+' '+t.side+' · '+money(t.pnl)+(t.excluded_from_stats?' · GHOST':'');
   const details=[['Source',t.source],['Account',t.account+(t.server?' · '+t.server:'')],['Opened',new Date(t.openedAt).toLocaleString()],['Closed',new Date(t.closedAt).toLocaleString()],['Orders',t.orderCount],['Entries / exits',t.entries+' / '+t.exits],['Strategy',t.strategy]];
   el('tradeDetails').innerHTML=details.map(x=>'<div class="kv"><small>'+esc(x[0])+'</small><b>'+esc(x[1])+'</b></div>').join('');
-  el('fSetup').value=t.setup||'';el('fTier').value=t.tier||'';el('fProbability').value=t.probability==null?'':t.probability;el('fCr').value=t.cr_value==null?'':t.cr_value;el('fRisk').value=t.risk_amount==null?'':t.risk_amount;el('fPlan').value=t.plan_ok||'';el('fMistake').value=t.mistake||'';el('fNotes').value=t.notes||'';
+  el('fSetup').value=t.setup||'';el('fTier').value=t.tier||'';el('fProbability').value=t.probability==null?'':t.probability;el('fCr').value=t.cr_value==null?'':t.cr_value;el('fPlan').value=t.plan_ok||'';el('fMistake').value=t.mistake||'';el('fExcluded').checked=!!t.excluded_from_stats;el('fExclusionReason').value=t.exclusion_reason||'';el('fExclusionReason').disabled=!el('fExcluded').checked;el('fNotes').value=t.notes||'';
   el('tradeModal').classList.remove('hide');
 }
 el('closeModal').onclick=()=>{el('tradeModal').classList.add('hide');activeTrade=null};
 el('saveReview').onclick=async()=>{
   if(!activeTrade)return;const u=(await sb.auth.getUser()).data.user;
-  const row={user_id:u.id,trade_id:activeTrade.id,setup:el('fSetup').value,tier:el('fTier').value,probability:el('fProbability').value===''?null:Number(el('fProbability').value),cr_value:el('fCr').value===''?null:Number(el('fCr').value),risk_amount:el('fRisk').value===''?null:Number(el('fRisk').value),plan_ok:el('fPlan').value,mistake:el('fMistake').value,notes:el('fNotes').value,updated_at:new Date().toISOString()};
+  const row={user_id:u.id,trade_id:activeTrade.id,setup:el('fSetup').value,tier:el('fTier').value,probability:el('fProbability').value===''?null:Number(el('fProbability').value),cr_value:el('fCr').value===''?null:Number(el('fCr').value),plan_ok:el('fPlan').value,mistake:el('fMistake').value,excluded_from_stats:el('fExcluded').checked,exclusion_reason:el('fExcluded').checked?(el('fExclusionReason').value.trim()||'Accidental / technical trade'):null,notes:el('fNotes').value,updated_at:new Date().toISOString()};
   const {error}=await sb.from('trade_notes').upsert(row,{onConflict:'user_id,trade_id'});if(error)return alert(error.message);
   el('tradeModal').classList.add('hide');activeTrade=null;await loadData();
 };
+
+el('fExcluded').onchange=()=>{el('fExclusionReason').disabled=!el('fExcluded').checked;if(el('fExcluded').checked&&!el('fExclusionReason').value)el('fExclusionReason').focus()};
 
 el('closeDeclineModal').onclick=closeDecline;
 el('declineRemoveBtn').onclick=()=>declineMember('remove');
@@ -920,6 +1015,9 @@ el('tokenBtn').onclick=async()=>{
 };
 el('copyTokenBtn').onclick=async()=>{if(!liveToken)return alert('Сначала создай token.');await navigator.clipboard.writeText(liveToken);alert('Token скопирован')};
 
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>navigator.serviceWorker.register('/service-worker.js').catch(()=>{}));
+}
 boot();
 </script>
 </body>
