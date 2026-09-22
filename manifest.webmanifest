@@ -1,0 +1,18 @@
+{
+  "name": "Trading Journal",
+  "short_name": "Journal",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#050706",
+  "theme_color": "#050706",
+  "description": "Private MT4/MT5 logical-trade journal",
+  "icons": [
+    {
+      "src": "/app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
