@@ -1,5 +1,5 @@
 #property strict
-#property version   "1.11"
+#property version   "1.12"
 #property description "Read-only MT4 -> Supabase connector for the zero-cost trading journal."
 #property description "It never opens, modifies or closes trades."
 
@@ -15,9 +15,9 @@ string STATE_NAME;
 
 int OnInit()
 {
-   STATE_NAME = "TJ4_LAST_" + IntegerToString(AccountNumber());
+   STATE_NAME = "TJ4_LAST_" + IntegerToString(AccountNumber()) + "_" + IntegerToString(ServerHash(AccountServer()));
    EventSetTimer((int)MathMax(10, SyncEverySeconds));
-   Print("TradeJournal MT4 connector v1.11 started. READ-ONLY.");
+   Print("TradeJournal MT4 connector v1.12 started. READ-ONLY.");
    if(!TestConnection())
       Print("Journal connection test failed. Fix the log error before expecting sync.");
    else
@@ -186,6 +186,14 @@ bool PostBatch(string events_json)
    Print("Journal HTTP failed. code=", code, " err=", GetLastError(), " response=", response);
    Print("Check Tools -> Options -> Expert Advisors -> Allow WebRequest for: ", base);
    return false;
+}
+
+int ServerHash(string s)
+{
+   long h = 5381;
+   for(int i=0; i<StringLen(s); i++)
+      h = (h * 33 + StringGetCharacter(s,i)) % 2147483647;
+   return((int)MathAbs(h));
 }
 
 string D(double v, int digits)
