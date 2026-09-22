@@ -3,8 +3,8 @@
 #property description "Read-only MT4 -> Supabase connector for the zero-cost trading journal."
 #property description "It never opens, modifies or closes trades."
 
-#define TJ_TJ_OP_BALANCE 6
-#define TJ_TJ_OP_CREDIT  7
+#define TJ_OP_BALANCE 6
+#define TJ_OP_CREDIT  7
 
 input string SupabaseUrl      = "https://ylriyjxcefovzwzinpqd.supabase.co";
 input string SupabaseAnonKey  = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlscml5anhjZWZvdnp3emlucHFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk5ODAxNzAsImV4cCI6MjEwNTU1NjE3MH0.Y95Tu9GzSPwVfV1kpMBKxQ1ozE0LUXuJDjjkD-bhi78";
