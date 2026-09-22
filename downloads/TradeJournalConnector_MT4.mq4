@@ -1,7 +1,10 @@
 #property strict
-#property version   "1.13"
+#property version   "1.14"
 #property description "Read-only MT4 -> Supabase connector for the zero-cost trading journal."
 #property description "It never opens, modifies or closes trades."
+
+#define TJ_TJ_OP_BALANCE 6
+#define TJ_TJ_OP_CREDIT  7
 
 input string SupabaseUrl      = "https://ylriyjxcefovzwzinpqd.supabase.co";
 input string SupabaseAnonKey  = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlscml5anhjZWZvdnp3emlucHFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk5ODAxNzAsImV4cCI6MjEwNTU1NjE3MH0.Y95Tu9GzSPwVfV1kpMBKxQ1ozE0LUXuJDjjkD-bhi78";
@@ -12,14 +15,14 @@ input int    BatchSize        = 50;
 input bool   PrintDebug       = true;
 
 string STATE_NAME;
-string CONNECTOR_VERSION = "1.13";
+string CONNECTOR_VERSION = "1.14";
 datetime LAST_STATUS_REPORT = 0;
 
 int OnInit()
 {
    STATE_NAME = "TJ4_LAST_" + IntegerToString(AccountNumber()) + "_" + IntegerToString(ServerHash(AccountServer()));
    EventSetTimer((int)MathMax(10, SyncEverySeconds));
-   Print("TradeJournal MT4 connector v1.13 started. READ-ONLY.");
+   Print("TradeJournal MT4 connector v1.14 started. READ-ONLY.");
    if(!TestConnection())
       Print("Journal connection test failed. Fix the log error before expecting sync.");
    else
@@ -74,7 +77,7 @@ void SyncHistory()
       if(!OrderSelect(i, SELECT_BY_POS, MODE_HISTORY)) continue;
       int type = OrderType();
       bool is_trade = (type == OP_BUY || type == OP_SELL);
-      bool is_cash = (type == OP_BALANCE || type == OP_CREDIT);
+      bool is_cash = (type == TJ_OP_BALANCE || type == TJ_OP_CREDIT);
       if(!is_trade && !is_cash) continue;
 
       datetime event_time = is_cash ? OrderOpenTime() : OrderCloseTime();
@@ -118,7 +121,7 @@ void SyncHistory()
 string OrderToJson()
 {
    int type = OrderType();
-   bool is_cash = (type == OP_BALANCE || type == OP_CREDIT);
+   bool is_cash = (type == TJ_OP_BALANCE || type == TJ_OP_CREDIT);
    long open_ms = (long)OrderOpenTime() * 1000;
    long close_ms = (long)OrderCloseTime() * 1000;
    long event_ms = is_cash ? open_ms : close_ms;
@@ -134,7 +137,7 @@ string OrderToJson()
 
    if(is_cash)
    {
-      string entry = type == OP_CREDIT ? "CREDIT" : "BALANCE";
+      string entry = type == TJ_OP_CREDIT ? "CREDIT" : "BALANCE";
       j += "\"symbol\":\"CASH\",";
       j += "\"entry_type\":\"" + entry + "\",";
       j += "\"volume\":0,";
