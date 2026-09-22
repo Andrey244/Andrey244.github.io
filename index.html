@@ -495,7 +495,9 @@ el('pendingRefreshBtn').onclick=async()=>{const {data}=await sb.auth.getSession(
 function hideEquityTooltip(){
   const chart=el('equityChart');
   if(!chart)return;
-  const line=chart.querySelector('.equityHoverLine'),dot=chart.querySelector('.equityHoverDot'),tip=chart.querySelector('.equityTooltip');
+  const line=chart.querySelector('.equityHoverLine');
+  const dot=chart.querySelector('.equityHoverDot');
+  const tip=chart.querySelector('.equityTooltip');
   if(line)line.style.opacity='0';
   if(dot)dot.style.opacity='0';
   if(tip)tip.classList.remove('on');
@@ -926,7 +928,16 @@ async function saveAccountLabel(i){
     return alert('Starting balance must be 0 or higher.');
   }
   const user=(await sb.auth.getUser()).data.user;
-  const row={user_id:user.id,source:a.source,account:a.account,server:a.server||'',label:el('accountLabel_'+i).value.trim()||null,starting_balance:startingBalance,enabled:true,updated_at:new Date().toISOString()};
+  const row={
+    user_id:user.id,
+    source:a.source,
+    account:a.account,
+    server:a.server||'',
+    label:el('accountLabel_'+i).value.trim()||null,
+    starting_balance:startingBalance,
+    enabled:true,
+    updated_at:new Date().toISOString()
+  };
   const {error}=await sb.from('account_settings').upsert(row,{onConflict:'user_id,source,account,server'});
   if(error)return alert(error.message);
   await loadData();
@@ -1107,11 +1118,18 @@ function renderAll(){
   renderCalendar();
 }
 function equityScopeContext(){
-  const accounts=selectedAccountKey==='all'?detectedAccounts:detectedAccounts.filter(a=>a.key===selectedAccountKey);
-  const configured=accounts.length>0&&accounts.every(a=>a.starting_balance!==null&&a.starting_balance!==undefined&&a.starting_balance!=='');
+  const accounts=selectedAccountKey==='all'
+    ? detectedAccounts
+    : detectedAccounts.filter(a=>a.key===selectedAccountKey);
+
+  const configured=accounts.length>0&&accounts.every(a=>
+    a.starting_balance!==null&&a.starting_balance!==undefined&&a.starting_balance!==''
+  );
   const startingBalance=accounts.reduce((sum,a)=>sum+Number(a.starting_balance||0),0);
 
-  let historyTrades=selectedAccountKey==='all'?allTrades:allTrades.filter(t=>accountKey(t)===selectedAccountKey);
+  let historyTrades=selectedAccountKey==='all'
+    ? allTrades
+    : allTrades.filter(t=>accountKey(t)===selectedAccountKey);
   historyTrades=historyTrades.filter(t=>!t.excluded_from_stats);
 
   let priorPnl=0;
@@ -1120,8 +1138,9 @@ function equityScopeContext(){
       .filter(t=>dayKey(new Date(t.closedAt))<dateRange.start)
       .reduce((sum,t)=>sum+Number(t.pnl||0),0);
   }
-  return {base:startingBalance+priorPnl,configured,startingBalance,priorPnl};
+  return {base:startingBalance+priorPnl,configured};
 }
+
 function renderEquity(){
   const trades=model.trades.slice().sort((a,b)=>new Date(a.closedAt)-new Date(b.closedAt));
   if(!trades.length){
@@ -1140,8 +1159,9 @@ function renderEquity(){
   });
 
   const vals=points.map(p=>p.equity);
-  const min=Math.min(...vals),max=Math.max(...vals),pad=Math.max(1,(max-min)*0.08),span=Math.max(1,(max+pad)-(min-pad));
-  const chartMin=min-pad,chartMax=max+pad;
+  const min=Math.min(...vals),max=Math.max(...vals);
+  const pad=Math.max(1,(max-min)*0.08);
+  const chartMin=min-pad,chartMax=max+pad,span=Math.max(1,chartMax-chartMin);
   const W=1000,H=260,px=22,py=18,plotW=W-px*2,plotH=H-py*2;
   const X=i=>px+(i/(vals.length-1||1))*plotW;
   const Y=v=>py+(chartMax-v)/span*plotH;
@@ -1168,8 +1188,14 @@ function renderEquity(){
     '</svg>'+
     '<div class="equityTooltip" role="status"><div class="eqDate"></div><div class="eqValue"></div><div class="eqMeta"></div></div>';
 
-  const svg=chart.querySelector('svg'),hit=chart.querySelector('.equityHitArea'),line=chart.querySelector('.equityHoverLine'),dot=chart.querySelector('.equityHoverDot'),tip=chart.querySelector('.equityTooltip');
-  const dateEl=tip.querySelector('.eqDate'),valueEl=tip.querySelector('.eqValue'),metaEl=tip.querySelector('.eqMeta');
+  const svg=chart.querySelector('svg');
+  const hit=chart.querySelector('.equityHitArea');
+  const line=chart.querySelector('.equityHoverLine');
+  const dot=chart.querySelector('.equityHoverDot');
+  const tip=chart.querySelector('.equityTooltip');
+  const dateEl=tip.querySelector('.eqDate');
+  const valueEl=tip.querySelector('.eqValue');
+  const metaEl=tip.querySelector('.eqMeta');
 
   function showPoint(clientX){
     const rect=svg.getBoundingClientRect();
@@ -1179,8 +1205,12 @@ function renderEquity(){
     const p=points[idx],cx=X(idx),cy=Y(p.equity);
     const screenX=cx/W*rect.width,screenY=cy/H*rect.height;
 
-    line.setAttribute('x1',cx);line.setAttribute('x2',cx);line.style.opacity='1';
-    dot.setAttribute('cx',cx);dot.setAttribute('cy',cy);dot.style.opacity='1';
+    line.setAttribute('x1',cx);
+    line.setAttribute('x2',cx);
+    line.style.opacity='1';
+    dot.setAttribute('cx',cx);
+    dot.setAttribute('cy',cy);
+    dot.style.opacity='1';
 
     tip.style.left=Math.max(82,Math.min(rect.width-82,screenX))+'px';
     tip.style.top=Math.max(62,screenY-8)+'px';
@@ -1203,13 +1233,16 @@ function renderEquity(){
   }
 
   function hidePoint(){
-    line.style.opacity='0';dot.style.opacity='0';tip.classList.remove('on');
+    line.style.opacity='0';
+    dot.style.opacity='0';
+    tip.classList.remove('on');
   }
 
   hit.addEventListener('pointermove',e=>showPoint(e.clientX));
   hit.addEventListener('pointerdown',e=>showPoint(e.clientX));
   hit.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse')hidePoint()});
 }
+
 function renderMistakes(){
   const trades=model.trades,withMistake=trades.filter(t=>String(t.mistake||'').trim()),clean=trades.filter(t=>!String(t.mistake||'').trim());
   const sum=a=>a.reduce((s,t)=>s+Number(t.pnl||0),0);
