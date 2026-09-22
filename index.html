@@ -124,6 +124,7 @@ table{width:100%;border-collapse:collapse}th,td{padding:12px 8px;border-bottom:1
         <input id="search" class="input" placeholder="Symbol / setup / tag">
         <select id="sideFilter" class="select"><option value="">BUY + SELL</option><option>BUY</option><option>SELL</option></select>
         <select id="sourceFilter" class="select"><option value="">MT4 + MT5</option><option>MT4</option><option>MT5</option></select>
+        <select id="resultFilter" class="select"><option value="">Wins + Losses</option><option value="win">Wins</option><option value="loss">Losses</option></select>
         <select id="ghostFilter" class="select"><option value="">All history</option><option value="counted">Counted only</option><option value="ghost">Ghost only</option></select>
       </div>
       <div style="overflow:auto"><table><thead><tr><th>Date</th><th>Symbol</th><th>Side</th><th>Net P&L</th><th>Orders</th><th>Setup</th></tr></thead><tbody id="tradeRows"></tbody></table></div>
@@ -950,14 +951,15 @@ el('prevMonth').onclick=()=>{monthDate=new Date(monthDate.getFullYear(),monthDat
 el('nextMonth').onclick=()=>{monthDate=new Date(monthDate.getFullYear(),monthDate.getMonth()+1,1);renderCalendar()};
 
 function renderTrades(){
-  const q=el('search').value.toLowerCase(),side=el('sideFilter').value,source=el('sourceFilter').value,ghost=el('ghostFilter').value;
+  const q=el('search').value.toLowerCase(),side=el('sideFilter').value,source=el('sourceFilter').value,result=el('resultFilter').value,ghost=el('ghostFilter').value;
   const rows=scopedTrades.filter(t=>(!side||t.side===side)&&(!source||t.source===source))
+    .filter(t=>result==='win'?Number(t.pnl)>0:result==='loss'?Number(t.pnl)<0:true)
     .filter(t=>ghost==='ghost'?!!t.excluded_from_stats:ghost==='counted'?!t.excluded_from_stats:true)
     .filter(t=>!q||[t.symbol,t.setup,t.tags,t.strategy,t.mistake,t.exclusion_reason].join(' ').toLowerCase().includes(q));
   el('tradeRows').innerHTML=rows.length?rows.map(t=>'<tr class="click '+(t.excluded_from_stats?'ghostRow':'')+'" data-id="'+esc(t.id)+'"><td>'+new Date(t.closedAt).toLocaleString()+'</td><td>'+esc(t.symbol)+(t.excluded_from_stats?'<span class="ghostBadge">GHOST</span>':'')+'</td><td><span class="pill">'+esc(t.side)+'</span></td><td class="'+(t.pnl>=0?'green':'red')+'"><b>'+money(t.pnl)+'</b></td><td>'+t.orderCount+'</td><td>'+esc(t.setup||t.strategy||'')+'</td></tr>').join(''):'<tr><td colspan="6" class="muted">No trades</td></tr>';
   document.querySelectorAll('#tradeRows tr[data-id]').forEach(r=>r.onclick=()=>openTrade(r.dataset.id));
 }
-el('search').oninput=renderTrades;el('sideFilter').onchange=renderTrades;el('sourceFilter').onchange=renderTrades;el('ghostFilter').onchange=renderTrades;
+el('search').oninput=renderTrades;el('sideFilter').onchange=renderTrades;el('sourceFilter').onchange=renderTrades;el('resultFilter').onchange=renderTrades;el('ghostFilter').onchange=renderTrades;
 
 function openDailyReview(date){
   activeReviewDate=date;
