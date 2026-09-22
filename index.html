@@ -309,7 +309,7 @@ table{width:100%;border-collapse:collapse}th,td{padding:12px 8px;border-bottom:1
     <div class="form">
       <div><div class="metricLabel">Setup</div><input id="fSetup" class="input"></div>
       <div><div class="metricLabel">Tier / Model</div><input id="fTier" class="input" placeholder="MID / Intraday / Daily / EURUSD v0.5"></div>
-      <div><div class="metricLabel">Probability %</div><input id="fProbability" type="number" class="input"></div>
+      <div><div class="metricLabel">Probability %</div><input id="fProbability" type="number" class="input" min="0" max="100" step="0.1" inputmode="decimal" placeholder="0–100"></div>
       <div><div class="metricLabel">CR</div><input id="fCr" type="number" class="input"></div>
       <div><div class="metricLabel">Plan followed?</div><select id="fPlan" class="select"><option></option><option>YES</option><option>NO</option><option>PARTIAL</option></select></div>
       <div class="wide"><div class="metricLabel">Mistake / violation</div><input id="fMistake" class="input" list="mistakeSuggestions" placeholder="Например: EA left enabled"><div class="presetChips" id="mistakePresets"><button type="button" class="presetChip" data-mistake="">No mistake</button><button type="button" class="presetChip" data-mistake="Wrong entry">Bad entry</button><button type="button" class="presetChip" data-mistake="Ignored bias">Against bias</button><button type="button" class="presetChip" data-mistake="Entered before news">News</button><button type="button" class="presetChip" data-mistake="EA left enabled">EA error</button><button type="button" class="presetChip" data-mistake="Overtrading">Overtrade</button><button type="button" class="presetChip" data-mistake="Plan violation">Plan violation</button></div></div>
@@ -1203,8 +1203,15 @@ function openTrade(id){
 }
 el('closeModal').onclick=()=>{el('tradeModal').classList.add('hide');activeTrade=null};
 el('saveReview').onclick=async()=>{
-  if(!activeTrade)return;const u=(await sb.auth.getUser()).data.user;
-  const row={user_id:u.id,trade_id:activeTrade.id,setup:el('fSetup').value,tier:el('fTier').value,probability:el('fProbability').value===''?null:Number(el('fProbability').value),cr_value:el('fCr').value===''?null:Number(el('fCr').value),plan_ok:el('fPlan').value,mistake:el('fMistake').value,excluded_from_stats:el('fExcluded').checked,exclusion_reason:el('fExcluded').checked?(el('fExclusionReason').value.trim()||'Accidental / technical trade'):null,notes:el('fNotes').value,updated_at:new Date().toISOString()};
+  if(!activeTrade)return;
+  const probabilityRaw=el('fProbability').value.trim();
+  const probability=probabilityRaw===''?null:Number(probabilityRaw);
+  if(probability!==null&&(!Number.isFinite(probability)||probability<0||probability>100)){
+    el('fProbability').focus();
+    return alert('Probability must be between 0% and 100%.');
+  }
+  const u=(await sb.auth.getUser()).data.user;
+  const row={user_id:u.id,trade_id:activeTrade.id,setup:el('fSetup').value,tier:el('fTier').value,probability,cr_value:el('fCr').value===''?null:Number(el('fCr').value),plan_ok:el('fPlan').value,mistake:el('fMistake').value,excluded_from_stats:el('fExcluded').checked,exclusion_reason:el('fExcluded').checked?(el('fExclusionReason').value.trim()||'Accidental / technical trade'):null,notes:el('fNotes').value,updated_at:new Date().toISOString()};
   const {error}=await sb.from('trade_notes').upsert(row,{onConflict:'user_id,trade_id'});if(error)return alert(error.message);
   el('tradeModal').classList.add('hide');activeTrade=null;await loadData();
 };
