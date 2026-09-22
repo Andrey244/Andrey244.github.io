@@ -124,7 +124,7 @@ table{width:100%;border-collapse:collapse}th,td{padding:12px 8px;border-bottom:1
       <div class="toolbar">
         <input id="search" class="input" placeholder="Symbol / setup / tag">
         <select id="sideFilter" class="select"><option value="">BUY + SELL</option><option>BUY</option><option>SELL</option></select>
-        <select id="sourceFilter" class="select"><option value="">MT4 + MT5</option><option>MT4</option><option>MT5</option></select>
+        <span id="sourceFilterWrap"><select id="sourceFilter" class="select"></select></span>
         <select id="resultFilter" class="select"><option value="">Wins + Losses</option><option value="win">Wins</option><option value="loss">Losses</option></select>
         <select id="ghostFilter" class="select"><option value="">All history</option><option value="counted">Counted only</option><option value="ghost">Ghost only</option></select>
         <button class="btn" id="exportBtn" type="button">Export</button>
@@ -636,6 +636,31 @@ function buildDetectedAccounts(events){
   if(!detectedAccounts.some(a=>a.key===selectedAccountKey))selectedAccountKey='all';
   select.value=selectedAccountKey;
 }
+function syncTradeSourceFilter(){
+  const wrap=el('sourceFilterWrap'),select=el('sourceFilter');
+  let sources=[];
+  if(selectedAccountKey==='all'){
+    sources=[...new Set(detectedAccounts.map(a=>String(a.source||'').toUpperCase()).filter(Boolean))].sort();
+  }else{
+    const account=detectedAccounts.find(a=>a.key===selectedAccountKey);
+    if(account&&account.source)sources=[String(account.source).toUpperCase()];
+  }
+
+  // Source is not a meaningful choice when the current account scope contains
+  // only one platform. Hide the redundant control and clear any stale filter.
+  if(sources.length<=1){
+    select.value='';
+    select.innerHTML=sources.length?'<option value="">'+esc(sources[0])+'</option>':'';
+    wrap.classList.add('hide');
+    return;
+  }
+
+  const allLabel=sources.join(' + ');
+  select.innerHTML='<option value="">'+esc(allLabel)+'</option>'+sources.map(s=>'<option value="'+esc(s)+'">'+esc(s)+'</option>').join('');
+  if(!sources.includes(String(select.value||'').toUpperCase()))select.value='';
+  wrap.classList.remove('hide');
+}
+
 function applyFilters(){
   let trades=selectedAccountKey==='all'?allTrades:allTrades.filter(t=>accountKey(t)===selectedAccountKey);
   let events=selectedAccountKey==='all'?rawEvents:rawEvents.filter(e=>accountKey(e)===selectedAccountKey);
@@ -653,6 +678,7 @@ function applyFilters(){
   }
   scopedTrades=trades;
   scopedRawEvents=events;
+  syncTradeSourceFilter();
   model=buildModel(trades.filter(t=>!t.excluded_from_stats));
   renderPeriodFilter();
   renderAll();
