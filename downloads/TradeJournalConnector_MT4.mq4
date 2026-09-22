@@ -1,10 +1,10 @@
 #property strict
-#property version   "1.14"
+#property version   "1.15"
 #property description "Read-only MT4 -> Supabase connector for the zero-cost trading journal."
 #property description "It never opens, modifies or closes trades."
 
-#define TJ_OP_BALANCE 6
-#define TJ_OP_CREDIT  7
+const int TJ_OP_BALANCE = 6;
+const int TJ_OP_CREDIT  = 7;
 
 input string SupabaseUrl      = "https://ylriyjxcefovzwzinpqd.supabase.co";
 input string SupabaseAnonKey  = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlscml5anhjZWZvdnp3emlucHFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk5ODAxNzAsImV4cCI6MjEwNTU1NjE3MH0.Y95Tu9GzSPwVfV1kpMBKxQ1ozE0LUXuJDjjkD-bhi78";
@@ -15,14 +15,14 @@ input int    BatchSize        = 50;
 input bool   PrintDebug       = true;
 
 string STATE_NAME;
-string CONNECTOR_VERSION = "1.14";
+string CONNECTOR_VERSION = "1.15";
 datetime LAST_STATUS_REPORT = 0;
 
 int OnInit()
 {
    STATE_NAME = "TJ4_LAST_" + IntegerToString(AccountNumber()) + "_" + IntegerToString(ServerHash(AccountServer()));
    EventSetTimer((int)MathMax(10, SyncEverySeconds));
-   Print("TradeJournal MT4 connector v1.14 started. READ-ONLY.");
+   Print("TradeJournal MT4 connector v1.15 started. READ-ONLY.");
    if(!TestConnection())
       Print("Journal connection test failed. Fix the log error before expecting sync.");
    else
