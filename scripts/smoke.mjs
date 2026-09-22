@@ -16,6 +16,12 @@ async function retry(fn, attempts=8, delayMs=15000){
 }
 
 const html=await fs.readFile('index.html','utf8');
+const mt4Connector=await fs.readFile('downloads/TradeJournalConnector_MT4.mq4','utf8');
+ok(mt4Connector.includes('#property version   "1.14"'),'MT4 connector: wrong version');
+ok(mt4Connector.includes('#define TJ_OP_BALANCE 6'),'MT4 connector: balance operation constant missing');
+ok(mt4Connector.includes('#define TJ_OP_CREDIT  7'),'MT4 connector: credit operation constant missing');
+ok(!/(^|[^A-Z_])OP_BALANCE([^A-Z_]|$)/m.test(mt4Connector.replace('#define TJ_OP_BALANCE 6','')),'MT4 connector: bare OP_BALANCE would not compile');
+ok(!/(^|[^A-Z_])OP_CREDIT([^A-Z_]|$)/m.test(mt4Connector.replace('#define TJ_OP_CREDIT  7','')),'MT4 connector: bare OP_CREDIT would not compile');
 ok(/^<!doctype html>/i.test(html),'index.html: missing doctype');
 ok(html.includes('<title>Trading Journal</title>'),'index.html: wrong/missing title');
 ok(html.includes('@supabase/supabase-js@2'),'index.html: Supabase SDK missing');
@@ -24,7 +30,7 @@ ok(html.includes('raw_events'),'index.html: raw_events integration missing');
 ok(html.includes('trade_notes'),'index.html: trade_notes integration missing');
 ok(html.includes('groupMT5') && html.includes('groupMT4'),'index.html: MT grouping functions missing');
 ok(html.includes("GROUPING_VERSION='2.3'"),'index.html: grouping version is not 2.3');
-ok(html.includes("LATEST_MT4_CONNECTOR='1.13'"),'index.html: latest MT4 connector version is not 1.13');
+ok(html.includes("LATEST_MT4_CONNECTOR='1.14'"),'index.html: latest MT4 connector version is not 1.14');
 ok(html.includes('markSelectedGhost'),'index.html: bulk Ghost workflow missing');
 ok(html.includes('closeTradeReview'),'index.html: unsaved Trade Review guard missing');
 ok(html.includes('connectorStatusList'),'index.html: connector version status UI missing');
