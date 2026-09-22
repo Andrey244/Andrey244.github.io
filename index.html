@@ -503,6 +503,7 @@ function hideEquityTooltip(){
   if(line)line.style.opacity='0';
   if(dot)dot.style.opacity='0';
   if(tip)tip.classList.remove('on');
+  delete chart.dataset.eqSelectedIndex;
 }
 function switchView(view){
   hideEquityTooltip();
@@ -1224,14 +1225,17 @@ function renderEquity(){
     if(!p.trade){
       dateEl.textContent='Start';
       metaEl.textContent=dateRange.mode==='all'?'Starting balance':'Balance at period start';
-      return;
+      return 0;
     }
 
     const d=new Date(p.trade.closedAt);
     dateEl.textContent=d.toLocaleString([],{
       year:'numeric',month:'short',day:'2-digit',hour:'2-digit',minute:'2-digit'
     });
-    metaEl.textContent='#'+idx+' · '+p.trade.symbol+' '+p.trade.side+' · Trade '+money(Number(p.trade.pnl||0));
+    const selected=chart.dataset.eqSelectedIndex===String(idx);
+    const actionHint=window.matchMedia('(pointer:coarse)').matches?'Tap again to review':'Click again to review';
+    metaEl.textContent='#'+idx+' · '+p.trade.symbol+' '+p.trade.side+' · Trade '+money(Number(p.trade.pnl||0))+(selected?' · '+actionHint:'');
+    return idx;
   }
 
   function hidePoint(){
@@ -1242,7 +1246,29 @@ function renderEquity(){
 
   hit.addEventListener('pointermove',e=>showPoint(e.clientX));
   hit.addEventListener('pointerdown',e=>showPoint(e.clientX));
-  hit.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse')hidePoint()});
+  hit.addEventListener('click',e=>{
+    const idx=showPoint(e.clientX);
+    const p=points[idx];
+    if(!p||!p.trade){
+      delete chart.dataset.eqSelectedIndex;
+      showPoint(e.clientX);
+      return;
+    }
+
+    if(chart.dataset.eqSelectedIndex===String(idx)){
+      const tradeId=p.trade.id;
+      hidePoint();
+      delete chart.dataset.eqSelectedIndex;
+      openTrade(tradeId);
+      return;
+    }
+
+    chart.dataset.eqSelectedIndex=String(idx);
+    showPoint(e.clientX);
+  });
+  hit.addEventListener('pointerleave',e=>{
+    if(e.pointerType==='mouse'&&!chart.dataset.eqSelectedIndex)hidePoint();
+  });
 }
 
 function renderMistakes(){
