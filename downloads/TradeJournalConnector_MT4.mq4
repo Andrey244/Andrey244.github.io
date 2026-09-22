@@ -1,5 +1,5 @@
 #property strict
-#property version   "1.12"
+#property version   "1.13"
 #property description "Read-only MT4 -> Supabase connector for the zero-cost trading journal."
 #property description "It never opens, modifies or closes trades."
 
@@ -12,16 +12,21 @@ input int    BatchSize        = 50;
 input bool   PrintDebug       = true;
 
 string STATE_NAME;
+string CONNECTOR_VERSION = "1.13";
+datetime LAST_STATUS_REPORT = 0;
 
 int OnInit()
 {
    STATE_NAME = "TJ4_LAST_" + IntegerToString(AccountNumber()) + "_" + IntegerToString(ServerHash(AccountServer()));
    EventSetTimer((int)MathMax(10, SyncEverySeconds));
-   Print("TradeJournal MT4 connector v1.12 started. READ-ONLY.");
+   Print("TradeJournal MT4 connector v1.13 started. READ-ONLY.");
    if(!TestConnection())
       Print("Journal connection test failed. Fix the log error before expecting sync.");
    else
+   {
+      ReportStatus();
       SyncHistory();
+   }
    return(INIT_SUCCEEDED);
 }
 
@@ -32,6 +37,8 @@ void OnDeinit(const int reason)
 
 void OnTimer()
 {
+   if(TimeCurrent() - LAST_STATUS_REPORT >= 300)
+      ReportStatus();
    SyncHistory();
 }
 
@@ -66,17 +73,21 @@ void SyncHistory()
    {
       if(!OrderSelect(i, SELECT_BY_POS, MODE_HISTORY)) continue;
       int type = OrderType();
-      if(type != OP_BUY && type != OP_SELL) continue;
-      if(OrderCloseTime() <= 0 || OrderCloseTime() < cutoff) continue;
+      bool is_trade = (type == OP_BUY || type == OP_SELL);
+      bool is_cash = (type == OP_BALANCE || type == OP_CREDIT);
+      if(!is_trade && !is_cash) continue;
 
-      long close_ms = (long)OrderCloseTime() * 1000;
+      datetime event_time = is_cash ? OrderOpenTime() : OrderCloseTime();
+      if(event_time <= 0 || event_time < cutoff) continue;
+
+      long event_ms = (long)event_time * 1000;
       string obj = OrderToJson();
       if(obj == "") continue;
 
       if(batch_count > 0) batch += ",";
       batch += obj;
       batch_count++;
-      if(close_ms > max_ms_in_batch) max_ms_in_batch = close_ms;
+      if(event_ms > max_ms_in_batch) max_ms_in_batch = event_ms;
 
       if(batch_count >= MathMax(1,BatchSize))
       {
@@ -107,9 +118,10 @@ void SyncHistory()
 string OrderToJson()
 {
    int type = OrderType();
-   string side = type == OP_BUY ? "BUY" : "SELL";
+   bool is_cash = (type == OP_BALANCE || type == OP_CREDIT);
    long open_ms = (long)OrderOpenTime() * 1000;
    long close_ms = (long)OrderCloseTime() * 1000;
+   long event_ms = is_cash ? open_ms : close_ms;
 
    string j = "{";
    j += "\"source\":\"MT4\",";
@@ -117,7 +129,27 @@ string OrderToJson()
    j += "\"server\":\"" + JsonEscape(AccountServer()) + "\",";
    j += "\"event_id\":\"" + IntegerToString(OrderTicket()) + "\",";
    j += "\"order_id\":\"" + IntegerToString(OrderTicket()) + "\",";
-   j += "\"event_time_ms\":" + DoubleToString((double)close_ms,0) + ",";
+   j += "\"event_time_ms\":" + DoubleToString((double)event_ms,0) + ",";
+   j += "\"connector_version\":\"" + CONNECTOR_VERSION + "\",";
+
+   if(is_cash)
+   {
+      string entry = type == OP_CREDIT ? "CREDIT" : "BALANCE";
+      j += "\"symbol\":\"CASH\",";
+      j += "\"entry_type\":\"" + entry + "\",";
+      j += "\"volume\":0,";
+      j += "\"profit\":" + D(OrderProfit(),2) + ",";
+      j += "\"commission\":0,";
+      j += "\"swap\":0,";
+      j += "\"fee\":0,";
+      j += "\"magic\":\"0\",";
+      j += "\"comment\":\"" + JsonEscape(OrderComment()) + "\",";
+      j += "\"status\":\"CLOSED\"";
+      j += "}";
+      return j;
+   }
+
+   string side = type == OP_BUY ? "BUY" : "SELL";
    j += "\"open_time_ms\":" + DoubleToString((double)open_ms,0) + ",";
    j += "\"close_time_ms\":" + DoubleToString((double)close_ms,0) + ",";
    j += "\"symbol\":\"" + JsonEscape(OrderSymbol()) + "\",";
@@ -136,6 +168,41 @@ string OrderToJson()
    j += "\"status\":\"CLOSED\"";
    j += "}";
    return j;
+}
+
+bool ReportStatus()
+{
+   if(StringLen(IngestToken) < 20) return false;
+
+   string base = SupabaseUrl;
+   while(StringLen(base) > 0 && StringSubstr(base,StringLen(base)-1,1) == "/")
+      base = StringSubstr(base,0,StringLen(base)-1);
+
+   string url = base + "/rest/v1/rpc/report_connector_status";
+   string body = "{\"p_token\":\"" + JsonEscape(IngestToken) +
+                 "\",\"p_source\":\"MT4\",\"p_account\":\"" + IntegerToString(AccountNumber()) +
+                 "\",\"p_server\":\"" + JsonEscape(AccountServer()) +
+                 "\",\"p_version\":\"" + CONNECTOR_VERSION + "\"}";
+   string headers = "Content-Type: application/json\r\n";
+   headers += "apikey: " + SupabaseAnonKey + "\r\n";
+   headers += "Authorization: Bearer " + SupabaseAnonKey + "\r\n";
+
+   char data[];
+   char result[];
+   string response_headers;
+   StringToCharArray(body, data, 0, WHOLE_ARRAY, CP_UTF8);
+   if(ArraySize(data) > 0) ArrayResize(data, ArraySize(data)-1);
+
+   ResetLastError();
+   int code = WebRequest("POST", url, headers, 15000, data, result, response_headers);
+   if(code >= 200 && code < 300)
+   {
+      LAST_STATUS_REPORT = TimeCurrent();
+      return true;
+   }
+
+   if(PrintDebug) Print("Journal connector status report failed. code=", code, " err=", GetLastError());
+   return false;
 }
 
 bool TestConnection()
