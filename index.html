@@ -899,9 +899,9 @@ function renderHealth(){
   const healthEvents=selectedAccountKey==='all'?rawEvents:rawEvents.filter(e=>accountKey(e)===selectedAccountKey);
   const rawNet=healthEvents.reduce((z,e)=>z+Number(e.profit||0)+Number(e.commission||0)+Number(e.swap||0)+Number(e.fee||0),0);
   const logicalNet=healthTrades.reduce((z,t)=>z+Number(t.pnl||0),0);
-  const counts={};healthTrades.forEach(t=>(t.events||[]).forEach(id=>counts[String(id)]=(counts[String(id)]||0)+1));
+  const counts={};healthTrades.forEach(t=>(t.events||[]).forEach(id=>{const k=accountKey(t)+'|'+String(id);counts[k]=(counts[k]||0)+1}));
   const eligible=healthEvents.filter(eventEligible);
-  const orphan=eligible.filter(e=>!counts[String(e.event_id||e.order_id)]).length;
+  const orphan=eligible.filter(e=>!counts[accountKey(e)+'|'+String(e.event_id||e.order_id)]).length;
   const dup=Object.values(counts).filter(n=>n>1).length;
   const diff=Math.round((rawNet-logicalNet)*100)/100;
   const ok=Math.abs(diff)<0.01&&orphan===0&&dup===0;
