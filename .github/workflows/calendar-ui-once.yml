@@ -1,0 +1,73 @@
+name: Calendar UI one-time patch
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/calendar-ui-once.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch-calendar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Polish Trading Calendar UI
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text()
+
+          old='''.calendar{display:grid;grid-template-columns:repeat(7,1fr) minmax(78px,.78fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:13px;overflow:hidden}.dow,.day,.weekTotal{background:#080b09;padding:7px;min-height:82px}.dow{min-height:auto;text-align:center;color:var(--mut);font-size:11px;font-weight:800}.dow.weekHead{color:#637068}.day.pos{background:linear-gradient(180deg,#0b2118,#091710)}.day.neg{background:linear-gradient(180deg,#251111,#170c0c)}.day.clickable{cursor:pointer;transition:filter .15s,transform .15s}.day.clickable:hover{filter:brightness(1.18);transform:translateY(-1px)}.weekTotal{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;background:#070a08}.weekTotal.pos{background:#091811}.weekTotal.neg{background:#1a0d0d}.weekTotal .wpnl{font-size:11px;font-weight:900}.weekTotal .wmeta{font-size:9px;color:var(--mut);margin-top:4px}.reviewDot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);margin-left:5px;vertical-align:middle;box-shadow:0 0 8px #21df8c55}.dnum{font-size:11px;color:#aaa}.dpnl{font-weight:850;margin-top:12px}.dmeta{font-size:10px;color:var(--mut);margin-top:3px}.calhead{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;margin-bottom:12px}.month{font-size:20px;font-weight:900}.calSummary{display:flex;gap:8px;flex-wrap:wrap;margin-top:7px}.calChip{border:1px solid var(--line);border-radius:999px;padding:4px 8px;font-size:10px;color:var(--mut);background:#070a08}'''
+          new='''.calendar{display:grid;grid-template-columns:repeat(7,1fr) minmax(82px,.76fr);gap:7px;background:transparent;border:0;border-radius:0;overflow:visible}.dow,.day,.weekTotal{background:#080b09;border:1px solid #18241e;border-radius:12px;padding:10px;min-height:88px}.dow{min-height:auto;padding:0 4px 7px;border:0;border-radius:0;background:transparent;text-align:left;color:#647068;font-size:10px;font-weight:850;letter-spacing:.06em}.dow.weekHead{text-align:center;color:#58635d}.day{position:relative;box-shadow:inset 0 1px 0 #ffffff03;transition:border-color .15s,background .15s,transform .15s,box-shadow .15s}.day.pos{background:linear-gradient(180deg,#0b1c15,#08130e);border-color:#173c2a}.day.neg{background:linear-gradient(180deg,#211010,#130b0b);border-color:#422020}.day.today{border-color:#356f55;box-shadow:inset 0 0 0 1px #2c624b,0 0 0 1px #0b1711}.day.clickable{cursor:pointer}.day.clickable:hover{transform:translateY(-2px);border-color:#355447;box-shadow:0 8px 22px #0005,inset 0 1px 0 #ffffff06}.day.pos.clickable:hover{border-color:#2b6d4c}.day.neg.clickable:hover{border-color:#754040}.weekTotal{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;background:#070a08;border-style:dashed;border-color:#243129}.weekTotal.pos{background:#08130e;border-color:#1f4a34}.weekTotal.neg{background:#140b0b;border-color:#4b2424}.weekTotal .wpnl{font-size:11px;font-weight:900}.weekTotal .wmeta{font-size:9px;color:var(--mut);margin-top:4px}.reviewDot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);margin-left:5px;vertical-align:middle;box-shadow:0 0 8px #21df8c55}.dnum{font-size:11px;color:#909c95;font-weight:800}.dpnl{font-size:14px;font-weight:900;margin-top:15px;letter-spacing:-.01em}.dmeta{font-size:9px;color:#718078;margin-top:5px}.calhead{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin-bottom:18px}.month{font-size:22px;font-weight:900;letter-spacing:-.02em;text-transform:capitalize}.calSummary{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}.calChip{border:1px solid #1d2b24;border-radius:999px;padding:5px 9px;font-size:10px;color:#8d9a93;background:#070a08}.calChip.pnl.pos{border-color:#214b36;background:#0a1811;color:var(--green)}.calChip.pnl.neg{border-color:#502626;background:#170d0d;color:var(--red)}.calNav{display:flex;gap:7px}.calNavBtn{width:38px;height:38px;min-height:38px;padding:0;border-radius:11px;font-size:20px;color:#9eaaa3;background:#09100c}.calNavBtn:hover{color:#eef5f1;border-color:#315040;background:#0d1812}'''
+          assert old in s, 'calendar CSS target not found'
+          s=s.replace(old,new)
+
+          old_mobile='''.calendar{grid-template-columns:repeat(7,1fr)}.weekTotal,.dow.weekHead{display:none}.day{min-height:66px;padding:5px}.dpnl{font-size:10px;margin-top:9px}.dmeta{font-size:9px}'''
+          new_mobile='''.calendar{grid-template-columns:repeat(7,1fr);gap:4px}.weekTotal,.dow.weekHead{display:none}.dow{font-size:9px;padding:0 2px 5px;text-align:center}.day{min-height:66px;padding:7px 5px;border-radius:9px}.dnum{font-size:10px}.dpnl{font-size:10px;margin-top:10px}.dmeta{font-size:8px}.calhead{gap:10px;margin-bottom:14px}.month{font-size:19px}.calNavBtn{width:34px;height:34px;min-height:34px}.calChip{padding:4px 7px;font-size:9px}'''
+          assert old_mobile in s, 'mobile calendar CSS target not found'
+          s=s.replace(old_mobile,new_mobile)
+
+          old_markup='''<div class="calhead"><div><div class="panelTitle" style="margin-bottom:5px">TRADING CALENDAR</div><div id="monthLabel" class="month"></div><div id="calendarSummary" class="calSummary"></div></div><div><button class="btn" id="prevMonth">‹</button> <button class="btn" id="nextMonth">›</button></div></div>'''
+          new_markup='''<div class="calhead"><div><div class="panelTitle" style="margin-bottom:5px">TRADING CALENDAR</div><div id="monthLabel" class="month"></div><div id="calendarSummary" class="calSummary"></div></div><div class="calNav"><button class="btn calNavBtn" id="prevMonth" aria-label="Previous month">‹</button><button class="btn calNavBtn" id="nextMonth" aria-label="Next month">›</button></div></div>'''
+          assert old_markup in s, 'calendar markup target not found'
+          s=s.replace(old_markup,new_markup)
+
+          old_summary="""el('calendarSummary').innerHTML='<span class=\"calChip\">'+money(mpnl)+'</span><span class=\"calChip\">'+mtr+' trades</span><span class=\"calChip\">'+((mw+ml)?(mw/(mw+ml)*100).toFixed(0):'—')+'% WR</span>';"""
+          new_summary="""el('calendarSummary').innerHTML='<span class=\"calChip pnl '+(mpnl>0?'pos':mpnl<0?'neg':'')+'\">'+money(mpnl)+'</span><span class=\"calChip\">'+mtr+' trades</span><span class=\"calChip\">'+((mw+ml)?(mw/(mw+ml)*100).toFixed(0):'—')+'% WR</span>';"""
+          assert old_summary in s, 'calendar summary target not found'
+          s=s.replace(old_summary,new_summary)
+
+          old_day="""html+='<div class=\"day clickable '+(x?(x.pnl>=0?'pos':'neg'):'')+'\" data-review-date=\"'+k+'\" title=\"'+esc(title)+'\"><div class=\"dnum\">'+d+(review?'<span class=\"reviewDot\" title=\"Daily review saved\"></span>':'')+'</div>'+(x?'<div class=\"dpnl '+(x.pnl>=0?'green':'red')+'\">'+money(x.pnl)+'</div><div class=\"dmeta\">'+(x.wr==null?'—':x.wr.toFixed(0)+'%')+' · '+x.trades+'T</div>':'')+'</div>';"""
+          new_day="""const todayClass=k===dayKey(new Date())?' today':'';\n      html+='<div class=\"day clickable '+(x?(x.pnl>=0?'pos':'neg'):'')+todayClass+'\" data-review-date=\"'+k+'\" title=\"'+esc(title)+'\"><div class=\"dnum\">'+d+(review?'<span class=\"reviewDot\" title=\"Daily review saved\"></span>':'')+'</div>'+(x?'<div class=\"dpnl '+(x.pnl>=0?'green':'red')+'\">'+money(x.pnl)+'</div><div class=\"dmeta\">'+(x.wr==null?'—':x.wr.toFixed(0)+'%')+' · '+x.trades+' trades</div>':'')+'</div>';"""
+          assert old_day in s, 'calendar day target not found'
+          s=s.replace(old_day,new_day)
+
+          p.write_text(s)
+          PY
+          node - <<'NODE'
+          const fs=require('fs');
+          const h=fs.readFileSync('index.html','utf8');
+          const scripts=[...h.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]).filter(Boolean);
+          for(const s of scripts)new Function(s);
+          if(!h.includes('.day.today')||!h.includes('calNavBtn'))throw new Error('calendar UI markers missing');
+          console.log('Calendar UI patch syntax: PASS');
+          NODE
+      - name: Commit calendar polish
+        shell: bash
+        run: |
+          if git diff --quiet -- index.html; then
+            echo "No calendar changes produced"
+            exit 1
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "Polish Trading Calendar UI"
+          git push origin main
