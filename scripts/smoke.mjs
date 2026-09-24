@@ -40,6 +40,9 @@ ok(html.includes('stabilizeTradeIds'),'index.html: trade id collision guard miss
 ok(html.includes('syncContextualTradeFilters'),'index.html: contextual filter logic missing');
 ok(html.includes('accountScopeStatic'),'index.html: single-account static scope missing');
 ok(html.includes('One idea. One logical trade.'),'index.html: header microcopy regression');
+ok(html.includes('set_member_role'),'index.html: role assignment workflow missing');
+ok(html.includes('canManageAccess'),'index.html: admin access gate missing');
+ok(html.includes("eqValue.up") && html.includes("eqValue.down"),'index.html: directional equity balance colors missing');
 
 const mt5Section=html.slice(html.indexOf('function groupMT5'),html.indexOf('function summarizeMT4'));
 const mt4Section=html.slice(html.indexOf('function groupMT4'),html.indexOf('function stabilizeTradeIds'));
@@ -110,6 +113,28 @@ const anonWrite=await fetch(SUPABASE+'/rest/v1/raw_events',{
   })
 });
 ok(!anonWrite.ok,'anonymous direct raw_events insert was unexpectedly allowed');
+
+const anonRole=await fetch(SUPABASE+'/rest/v1/rpc/set_member_role',{
+  method:'POST',
+  headers,
+  body:JSON.stringify({p_user_id:'00000000-0000-0000-0000-000000000000',p_role:'admin'})
+});
+ok(!anonRole.ok,'anonymous set_member_role execution was unexpectedly allowed');
+
+const anonAdmin=await fetch(SUPABASE+'/rest/v1/rpc/is_admin',{
+  method:'POST',
+  headers,
+  body:'{}'
+});
+ok(!anonAdmin.ok,'anonymous is_admin execution was unexpectedly allowed');
+
+const anonMembers=await fetch(SUPABASE+'/rest/v1/app_members?select=user_id,role&limit=1',{headers});
+if(anonMembers.ok){
+  const data=await anonMembers.json();
+  ok(Array.isArray(data) && data.length===0,'anonymous app_members read leaked data');
+}else{
+  ok([401,403].includes(anonMembers.status),'anonymous app_members read failed unexpectedly: '+anonMembers.status);
+}
 
 const anonApprove=await fetch(SUPABASE+'/rest/v1/rpc/approve_member',{
   method:'POST',
