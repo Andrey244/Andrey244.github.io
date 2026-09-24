@@ -46,6 +46,8 @@ ok(html.includes("eqBalance.up") && html.includes("eqBalance.down"),'index.html:
 ok(html.includes(".eqBalance.down{color:var(--red)}"),'index.html: falling equity balance must be red');
 ok(html.includes("valueEl.innerHTML='<span>Equity</span> <span class=\"eqBalance"),'index.html: Equity label/balance color split missing');
 ok(html.includes('memberTableHead') && html.includes('memberActionPlaceholder'),'index.html: Access auto-layout/typography markers missing');
+ok(html.includes('authHeader') && html.includes('authForm') && html.includes('authActions'),'index.html: auth page layout markers missing');
+ok(html.includes('One idea. One logical trade.') && html.includes('PRIVATE ACCESS'),'index.html: auth typography/microcopy regression');
 
 const mt5Section=html.slice(html.indexOf('function groupMT5'),html.indexOf('function summarizeMT4'));
 const mt4Section=html.slice(html.indexOf('function groupMT4'),html.indexOf('function stabilizeTradeIds'));
