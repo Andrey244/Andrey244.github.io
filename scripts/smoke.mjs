@@ -47,6 +47,9 @@ ok(html.includes(".eqBalance.down{color:var(--red)}"),'index.html: falling equit
 ok(html.includes("valueEl.innerHTML='<span>Equity</span> <span class=\"eqBalance"),'index.html: Equity label/balance color split missing');
 ok(html.includes('memberTableHead') && html.includes('memberActionPlaceholder'),'index.html: Access auto-layout/typography markers missing');
 ok(html.includes('authHeader') && html.includes('authForm') && html.includes('authActions'),'index.html: auth page layout markers missing');
+ok(html.includes('toggleRecoveryPasswordBtn') && html.includes('toggleRecoveryPassword2Btn'),'index.html: recovery password visibility controls missing');
+ok(html.includes("Пароль успешно изменён. Войди с новым паролем."),'index.html: recovery completion flow missing');
+ok(html.includes("Этот пароль уже установлен на аккаунте."),'index.html: same-password recovery message missing');
 ok(html.includes('One idea. One logical trade.') && html.includes('PRIVATE ACCESS'),'index.html: auth typography/microcopy regression');
 
 const mt5Section=html.slice(html.indexOf('function groupMT5'),html.indexOf('function summarizeMT4'));
