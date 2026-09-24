@@ -42,9 +42,10 @@ ok(html.includes('accountScopeStatic'),'index.html: single-account static scope 
 ok(html.includes('One idea. One logical trade.'),'index.html: header microcopy regression');
 ok(html.includes('set_member_role'),'index.html: role assignment workflow missing');
 ok(html.includes('canManageAccess'),'index.html: admin access gate missing');
-ok(html.includes("eqValue.up") && html.includes("eqValue.down"),'index.html: directional equity balance colors missing');
-ok(html.includes(".eqValue.down{color:var(--red)}"),'index.html: falling equity balance must be red');
-ok(html.includes('memberTableHead') && html.includes('Members & roles'),'index.html: Access auto-layout/typography markers missing');
+ok(html.includes("eqBalance.up") && html.includes("eqBalance.down"),'index.html: directional equity balance colors missing');
+ok(html.includes(".eqBalance.down{color:var(--red)}"),'index.html: falling equity balance must be red');
+ok(html.includes("valueEl.innerHTML='<span>Equity</span> <span class=\"eqBalance"),'index.html: Equity label/balance color split missing');
+ok(html.includes('memberTableHead') && html.includes('memberActionPlaceholder'),'index.html: Access auto-layout/typography markers missing');
 
 const mt5Section=html.slice(html.indexOf('function groupMT5'),html.indexOf('function summarizeMT4'));
 const mt4Section=html.slice(html.indexOf('function groupMT4'),html.indexOf('function stabilizeTradeIds'));
