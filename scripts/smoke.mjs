@@ -102,6 +102,14 @@ await retry(async()=>{
   ok(body.includes('Trading Journal'),'deployed site body mismatch');
 });
 
+await retry(async()=>{
+  const r=await fetch('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.1/dist/umd/supabase.js',{redirect:'follow',cache:'no-store'});
+  ok(r.ok,'pinned Supabase SDK HTTP '+r.status);
+  ok((r.headers.get('content-type')||'').includes('javascript'),'pinned Supabase SDK is not JavaScript');
+  const body=await r.text();
+  ok(body.includes('createClient'),'pinned Supabase SDK body mismatch');
+});
+
 const headers={
   apikey:LEGACY_ANON,
   Authorization:'Bearer '+LEGACY_ANON,
