@@ -90,8 +90,8 @@ def main(argv: list[str] | None = None) -> int:
         output.parent.mkdir(parents=True, exist_ok=True)
         output.write_text(serialized, encoding="utf-8")
 
-    # Deliberately never call identity.token_text() and never emit private key
-    # material. The bundle is safe to transfer to the operator registration step.
+    # The provisioning bundle contains only public-key material and the
+    # one-way collector-token hash; plaintext collector credentials stay local.
     return 0
 
 
