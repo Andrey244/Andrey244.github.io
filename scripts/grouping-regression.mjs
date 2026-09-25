@@ -28,12 +28,12 @@ function extractFunction(name){
   throw new Error('unterminated function '+name);
 }
 
-const names=['dayKey','hash','tag','accountKey','dedupeEvents','freshTrade','finalize','addMT5','groupMT5','summarizeMT4','groupMT4','stabilizeTradeIds','buildModel'];
+const names=['dayKey','utcDayKey','tradeDayKey','eventDayKey','hash','tag','accountKey','dedupeEvents','freshTrade','finalize','addMT5','groupMT5','summarizeMT4','groupMT4','stabilizeTradeIds','buildModel'];
 const context=vm.createContext({console});
 for(const name of names) vm.runInContext(extractFunction(name),context);
 
 const {
-  dedupeEvents,groupMT4,groupMT5,buildModel
+  dedupeEvents,groupMT4,groupMT5,buildModel,tradeDayKey,eventDayKey
 }=context;
 
 const base={
@@ -106,5 +106,11 @@ const analyticsInput=[
 ];
 const m=buildModel(analyticsInput.filter(t=>!t.excluded_from_stats));
 ok(m.summary.trades===1&&m.summary.pnl===10&&m.summary.wins===1&&m.summary.losses===0,'Ghost trade leaked into analytics');
+
+// 9) MT4 broker-day semantics: a late broker-time close must not roll into the next Tashkent day.
+const lateMt4Trade={source:'MT4',closedAt:'2026-09-24T19:20:00.000Z'};
+ok(tradeDayKey(lateMt4Trade)==='2026-09-24','MT4 trade was shifted into the next local calendar day');
+const lateMt4Event={source:'MT4',close_time:'2026-09-24T19:20:00.000Z'};
+ok(eventDayKey(lateMt4Event)==='2026-09-24','MT4 raw event was shifted into the next local calendar day');
 
 console.log('Grouping regression tests: PASS');
