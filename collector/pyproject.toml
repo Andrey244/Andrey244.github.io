@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=75,<76"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "trading-journal-collector"
+version = "0.1.0"
+description = "Read-only MT4/MT5 collector foundation for Trading Journal"
+requires-python = ">=3.12,<3.13"
+dependencies = []
+
+[project.optional-dependencies]
+mt5 = [
+  "MetaTrader5==5.0.6180; platform_system == 'Windows'",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]

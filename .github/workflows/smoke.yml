@@ -19,5 +19,16 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run collector contract regression
+        run: node scripts/collector-regression.mjs
+      - name: Run collector Python unit tests
+        env:
+          PYTHONPATH: collector/src
+        run: |
+          python -m compileall -q collector/src
+          python -m unittest discover -s collector/tests -v
       - name: Run end-to-end smoke checks
         run: node scripts/smoke.mjs

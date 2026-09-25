@@ -423,8 +423,33 @@ Current Supabase security-advisor warnings that are intentionally not auto-"fixe
 
 A full Strix adversarial scan is still pending until its runtime/CLI is actually available.
 
-### D. Direct Investor Password collector — PENDING
-Architecture discussed, implementation not started.
+### D. Direct Investor Password collector — FOUNDATION IMPLEMENTED / END-TO-END PENDING
+Source of truth: docs/INVESTOR_COLLECTOR_V1.md.
+
+Product contract:
+- v1 supports both MT4 and MT5;
+- one UX: Platform + Login + Investor Password + Server;
+- v1 is not complete until both adapters pass acceptance tests;
+- current Reader/Connector remains a fallback.
+
+Repository foundation:
+- common collector models and redacted in-memory credential lease;
+- MT5 read-only connection probe;
+- MT4 disposable-worker startup config with ExpertsTrades=false;
+- one-shot read-only MT4 history exporter source;
+- regression checks that forbid trade APIs;
+- Python unit tests in GitHub Actions.
+
+Security prerequisite before direct credential entry:
+- pin/self-host the frontend Supabase JS dependency and add CSP/third-party script controls, because any script already executing in the page could read Investor Password before client-side encryption.
+
+Still pending:
+- collector RSA key + Windows DPAPI protection;
+- Supabase private control-plane schema and Edge Functions;
+- MT5 history normalization/end-to-end ingest;
+- MT4 Windows launcher/compile/runtime validation;
+- frontend direct-connect form;
+- production Windows integration tests.
 ---
 
 When a new chat begins, **do not ask the user to re-explain these rules**. Read this file first and continue from current repo state.
