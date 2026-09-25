@@ -28,12 +28,12 @@ function extractFunction(name){
   throw new Error('unterminated function '+name);
 }
 
-const names=['dayKey','utcDayKey','tradeDayKey','eventDayKey','hash','tag','accountKey','dedupeEvents','freshTrade','finalize','addMT5','groupMT5','summarizeMT4','groupMT4','stabilizeTradeIds','buildModel'];
+const names=['dayKey','utcDayKey','tradeDayKey','eventDayKey','hash','tag','accountKey','dedupeEvents','freshTrade','finalize','addMT5','groupMT5','summarizeMT4','groupMT4','stabilizeTradeIds','strategyOutcome','isStrategyWin','isStrategyLoss','buildModel'];
 const context=vm.createContext({console});
 for(const name of names) vm.runInContext(extractFunction(name),context);
 
 const {
-  dedupeEvents,groupMT4,groupMT5,buildModel,tradeDayKey,eventDayKey
+  dedupeEvents,groupMT4,groupMT5,buildModel,tradeDayKey,eventDayKey,strategyOutcome
 }=context;
 
 const base={
@@ -107,7 +107,17 @@ const analyticsInput=[
 const m=buildModel(analyticsInput.filter(t=>!t.excluded_from_stats));
 ok(m.summary.trades===1&&m.summary.pnl===10&&m.summary.wins===1&&m.summary.losses===0,'Ghost trade leaked into analytics');
 
-// 9) MT4 broker-day semantics: a late broker-time close must not roll into the next Tashkent day.
+// 9) Strategy result semantics: 6 orders = worked/win, 7+ orders = SL/loss regardless of money P&L.
+ok(strategyOutcome({orderCount:6,pnl:-50})==='win','6-order worked trade must not count as SL');
+ok(strategyOutcome({orderCount:7,pnl:25})==='loss','7-order trade must count as SL even if net P&L is positive');
+const wrModel=buildModel([
+  {source:'MT4',closedAt:'2026-09-24T10:00:00Z',symbol:'EURUSD',orderCount:6,pnl:-10},
+  {source:'MT4',closedAt:'2026-09-24T11:00:00Z',symbol:'EURUSD',orderCount:7,pnl:20}
+]);
+ok(wrModel.summary.wins===1&&wrModel.summary.losses===1&&wrModel.summary.wr===50,'strategy WR must be based on 7-order SL rule');
+ok(wrModel.summary.streak==='1W'||wrModel.summary.streak==='1L','strategy streak classification failed');
+
+// 10) MT4 broker-day semantics: a late broker-time close must not roll into the next Tashkent day.
 const lateMt4Trade={source:'MT4',closedAt:'2026-09-24T19:20:00.000Z'};
 ok(tradeDayKey(lateMt4Trade)==='2026-09-24','MT4 trade was shifted into the next local calendar day');
 const lateMt4Event={source:'MT4',close_time:'2026-09-24T19:20:00.000Z'};
