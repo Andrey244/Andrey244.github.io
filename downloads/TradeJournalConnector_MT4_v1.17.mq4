@@ -160,7 +160,8 @@ string OrderToJson()
    if(point <= 0) point = 0.00001;
    double tol = point * 30.0;
    bool closed_by_sl = false;
-   string order_comment = StringToLower(OrderComment());
+   string order_comment = OrderComment();
+   StringToLower(order_comment);
    if(StringFind(order_comment,"[sl]") >= 0 || StringFind(order_comment,"stop loss") >= 0 || StringFind(order_comment,"stoploss") >= 0)
       closed_by_sl = true;
    if(!closed_by_sl && sl > 0)
