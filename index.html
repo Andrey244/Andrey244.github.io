@@ -362,6 +362,17 @@ const balanceMoney=n=>{n=Number(n||0);return (n<0?'-'+USD:USD)+Math.abs(n).toLoc
 const price=n=>Number(n||0).toLocaleString(undefined,{maximumFractionDigits:5});
 function paint(node,n){node.classList.remove('green','red');if(n>0)node.classList.add('green');if(n<0)node.classList.add('red')}
 function dayKey(d){return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Tashkent',year:'numeric',month:'2-digit',day:'2-digit'}).format(d)}
+function utcDayKey(d){return new Intl.DateTimeFormat('en-CA',{timeZone:'UTC',year:'numeric',month:'2-digit',day:'2-digit'}).format(d)}
+function tradeDayKey(t){
+  const d=new Date(t.closedAt);
+  return String(t.source||'').toUpperCase()==='MT4'?utcDayKey(d):dayKey(d);
+}
+function eventDayKey(e){
+  const ts=e.close_time||e.event_time||e.received_at;
+  if(!ts)return null;
+  const d=new Date(ts);
+  return String(e.source||'').toUpperCase()==='MT4'?utcDayKey(d):dayKey(d);
+}
 function dateFromKey(k){const [y,m,d]=String(k).split('-').map(Number);return new Date(y,m-1,d,12,0,0)}
 function shiftKey(k,days){const d=dateFromKey(k);d.setDate(d.getDate()+days);return dayKey(d)}
 function firstOfMonthKey(k){return String(k).slice(0,7)+'-01'}
@@ -688,7 +699,7 @@ function stabilizeTradeIds(trades){
   return trades;
 }
 function buildModel(trades){
-  const dayMap={};trades.forEach(t=>{const d=dayKey(new Date(t.closedAt));if(!dayMap[d])dayMap[d]={date:d,pnl:0,trades:0,wins:0,losses:0};const x=dayMap[d];x.pnl+=t.pnl;x.trades++;if(t.pnl>0)x.wins++;if(t.pnl<0)x.losses++});
+  const dayMap={};trades.forEach(t=>{const d=tradeDayKey(t);if(!dayMap[d])dayMap[d]={date:d,pnl:0,trades:0,wins:0,losses:0};const x=dayMap[d];x.pnl+=t.pnl;x.trades++;if(t.pnl>0)x.wins++;if(t.pnl<0)x.losses++});
   const daily=Object.values(dayMap).sort((a,b)=>a.date.localeCompare(b.date));daily.forEach(d=>d.wr=(d.wins+d.losses)?d.wins/(d.wins+d.losses)*100:null);
   const pnl=trades.reduce((s,t)=>s+t.pnl,0),wins=trades.filter(t=>t.pnl>0).length,losses=trades.filter(t=>t.pnl<0).length,gp=trades.filter(t=>t.pnl>0).reduce((s,t)=>s+t.pnl,0),gl=trades.filter(t=>t.pnl<0).reduce((s,t)=>s+t.pnl,0);
   const best=daily.length?daily.reduce((a,b)=>a.pnl>b.pnl?a:b):null,worst=daily.length?daily.reduce((a,b)=>a.pnl<b.pnl?a:b):null;
@@ -697,7 +708,7 @@ function buildModel(trades){
   let streak='—',type='',n=0;for(let i=0;i<trades.length;i++){const z=trades[i].pnl>0?'W':trades[i].pnl<0?'L':'B';if(!type){type=z;n=1}else if(z===type)n++;else break}if(n)streak=n+type;
   const names=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],bucket={};names.forEach(n=>bucket[n]=[]);daily.forEach(d=>bucket[names[new Date(d.date+'T12:00:00').getDay()]].push(d.pnl));
   const weekday=names.map(name=>{const a=bucket[name];return{name,value:a.length?a.reduce((p,q)=>p+q,0)/a.length:0}});
-  const sm={};trades.forEach(t=>{if(!sm[t.symbol])sm[t.symbol]={symbol:t.symbol,pnl:0,trades:0,wins:0,days:{}};const s=sm[t.symbol];s.pnl+=t.pnl;s.trades++;if(t.pnl>0)s.wins++;s.days[dayKey(new Date(t.closedAt))]=1});
+  const sm={};trades.forEach(t=>{if(!sm[t.symbol])sm[t.symbol]={symbol:t.symbol,pnl:0,trades:0,wins:0,days:{}};const s=sm[t.symbol];s.pnl+=t.pnl;s.trades++;if(t.pnl>0)s.wins++;s.days[tradeDayKey(t)]=1});
   const symbols=Object.values(sm).map(s=>({symbol:s.symbol,pnl:s.pnl,trades:s.trades,wr:s.trades?s.wins/s.trades*100:0,days:Object.keys(s.days).length})).sort((a,b)=>b.pnl-a.pnl);
   return{trades,daily,weekday,symbols,summary:{pnl,wins,losses,wr:(wins+losses)?wins/(wins+losses)*100:0,days:daily.length,trades:trades.length,best:best?best.pnl:0,worst:worst?worst.pnl:0,avg:daily.length?pnl/daily.length:0,bestTrade:bestTrade?bestTrade.pnl:0,worstTrade:worstTrade?worstTrade.pnl:0,avgTrade:trades.length?pnl/trades.length:0,avgWin:wins?gp/wins:0,avgLoss:losses?gl/losses:0,streak,pf:gl<0?gp/Math.abs(gl):(gp>0?Infinity:0),dd}};
 }
@@ -796,13 +807,12 @@ function applyFilters(){
   let events=selectedAccountKey==='all'?rawEvents:rawEvents.filter(e=>accountKey(e)===selectedAccountKey);
   if(dateRange.mode!=='all'){
     trades=trades.filter(t=>{
-      const k=dayKey(new Date(t.closedAt));
+      const k=tradeDayKey(t);
       return k>=dateRange.start && k<=dateRange.end;
     });
     events=events.filter(e=>{
-      const ts=e.close_time||e.event_time||e.received_at;
-      if(!ts)return false;
-      const k=dayKey(new Date(ts));
+      const k=eventDayKey(e);
+      if(!k)return false;
       return k>=dateRange.start && k<=dateRange.end;
     });
   }
@@ -1281,13 +1291,13 @@ function equityScopeContext(){
   let priorPnl=0,priorCash=0,periodCashFlows=cashFlows;
   if(dateRange.mode!=='all'&&dateRange.start){
     priorPnl=historyTrades
-      .filter(t=>dayKey(new Date(t.closedAt))<dateRange.start)
+      .filter(t=>tradeDayKey(t)<dateRange.start)
       .reduce((sum,t)=>sum+Number(t.pnl||0),0);
     priorCash=cashFlows
-      .filter(x=>dayKey(new Date(x.time))<dateRange.start)
+      .filter(x=>String(x.event?.source||'').toUpperCase()==='MT4'?utcDayKey(new Date(x.time))<dateRange.start:dayKey(new Date(x.time))<dateRange.start)
       .reduce((sum,x)=>sum+Number(x.amount||0),0);
     periodCashFlows=cashFlows.filter(x=>{
-      const k=dayKey(new Date(x.time));
+      const k=String(x.event?.source||'').toUpperCase()==='MT4'?utcDayKey(new Date(x.time)):dayKey(new Date(x.time));
       return k>=dateRange.start&&k<=dateRange.end;
     });
   }
@@ -1530,7 +1540,7 @@ el('bulkGhostBtn').onclick=markSelectedGhost;
 
 function openDailyReview(date){
   activeReviewDate=date;
-  const dayTrades=model.trades.filter(t=>dayKey(new Date(t.closedAt))===date);
+  const dayTrades=model.trades.filter(t=>tradeDayKey(t)===date);
   const pnl=dayTrades.reduce((s,t)=>s+t.pnl,0),wins=dayTrades.filter(t=>t.pnl>0).length,losses=dayTrades.filter(t=>t.pnl<0).length;
   const wr=(wins+losses)?wins/(wins+losses)*100:0;
   el('dailyTitle').textContent=new Date(date+'T12:00:00').toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'});
