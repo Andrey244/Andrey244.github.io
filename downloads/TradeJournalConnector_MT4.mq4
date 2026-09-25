@@ -166,6 +166,8 @@ string OrderToJson()
       if(type == OP_SELL && close_px >= sl - tol) closed_by_sl = true;
    }
 
+   string closed_by_sl_json = closed_by_sl ? "true" : "false";
+
    j += "\"open_time_ms\":" + DoubleToString((double)open_ms,0) + ",";
    j += "\"close_time_ms\":" + DoubleToString((double)close_ms,0) + ",";
    j += "\"symbol\":\"" + JsonEscape(OrderSymbol()) + "\",";
@@ -177,7 +179,7 @@ string OrderToJson()
    j += "\"close_price\":" + D(OrderClosePrice(),10) + ",";
    j += "\"stop_loss\":" + D(sl,10) + ",";
    j += "\"take_profit\":" + D(tp,10) + ",";
-   j += "\"closed_by_sl\":" + string(closed_by_sl ? "true" : "false") + ",";
+   j += "\"closed_by_sl\":" + closed_by_sl_json + ",";
    j += "\"profit\":" + D(OrderProfit(),2) + ",";
    j += "\"commission\":" + D(OrderCommission(),2) + ",";
    j += "\"swap\":" + D(OrderSwap(),2) + ",";
