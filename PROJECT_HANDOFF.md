@@ -369,33 +369,62 @@ For material UI, auth, grouping, connector, security, strategy, or data changes:
 - UI changes should follow Figma/Auto Layout thinking.
 - The user wants rollback available when experimenting with visuals.
 
-## 18. Pending work at the time of this handoff
+## 18. Current completed work and pending work
 
-### A. Full UI audit
-The user explicitly requested a **full audit of the current Trading Journal UI** using:
-- Emil Kowalski Skills;
-- UI/UX Pro Max.
+### A. UI audit + first hardening pass — COMPLETED
+A full prioritized audit was completed against:
+- Emil Kowalski Skills (`emil-design-eng` + relevant `mobile-native` guidance);
+- UI/UX Pro Max (`SKILL.md`, `quick-reference.md`, `pro-rules.md`).
 
-This audit has **not yet been delivered as a complete prioritized report**. Do this before broad UI refactoring.
+The first critical interaction/accessibility hardening pass was committed in:
+- `5b3d97e231d3e99e5fd78a3765b13468f012fca1` — `Harden UI accessibility and interaction semantics`
+- rollback branch: `rollback/ui-a11y-pre-2026-09-25`
 
-Already observed from static inspection:
-- missing global focus-visible system;
-- missing reduced-motion handling;
-- keyboard accessibility gaps in tabs/trade rows/calendar cards;
-- too many tiny font declarations;
-- design-token fragmentation / many hardcoded colors;
-- no consistent active press state;
-- some inline-style drift.
+Implemented without redesigning Insights/Trades:
+- semantic desktop nav buttons;
+- keyboard path for calendar days and trade opening;
+- global `:focus-visible`;
+- modal dialog semantics, Escape, focus trap, focus restore;
+- form labels / accessible names;
+- `prefers-reduced-motion`;
+- touch/hover capability handling and press feedback;
+- coarse-pointer target/input improvements;
+- safe-area/mobile viewport fixes;
+- Equity Curve keyboard inspection;
+- live status regions;
+- duplicate-submit protection for login/signup.
 
-### B. Browser QA
-Playwright skill was requested. Full real browser regression audit is still pending when a suitable Playwright runtime is available.
+Remaining P2 cleanup is intentionally not urgent:
+- gradual raw-hex → semantic token cleanup;
+- inline-style cleanup;
+- optional URL/deep-link SPA navigation.
 
-### C. Security
-Strix was requested as the preferred adversarial scanner. Full Strix scan is still pending when its runtime/CLI is available.
+### B. Browser QA — PENDING RUNTIME
+Playwright was requested. Full real browser regression audit remains pending until a suitable Playwright/browser runtime is actually available. Do not claim browser-verified QA from static inspection or Smoke alone.
 
-### D. Direct Investor Password collector
+### C. Security — PARTIALLY COMPLETED / STRIX PENDING
+A native Supabase security/RLS audit was run after the UI work.
+
+Fixed production schema issue:
+- legacy `app_members_role_check` allowed only `owner/member` and silently conflicted with the newer `owner/admin/member` constraint;
+- migration `remove_legacy_app_members_role_check` removed only the stale constraint;
+- the remaining role constraint correctly permits `owner/admin/member`.
+
+Performance/RLS hardening:
+- migration `optimize_rls_initplans_and_access_blocks_fk`;
+- all 19 Supabase `auth_rls_initplan` warnings were removed by preserving policy semantics while using init-plan-safe `(select auth.uid())` / helper calls;
+- added `access_blocks_created_by_idx` for the FK.
+
+Current Supabase security-advisor warnings that are intentionally not auto-"fixed":
+- `ingest_mt_events` and `report_connector_status` are anonymous SECURITY DEFINER RPCs by design because MT connectors authenticate with the private ingest token; their function bodies validate/hash the token and constrain payloads;
+- `signup_wait_seconds` must be callable before login and reads only the temporary signup block;
+- authenticated admin/member SECURITY DEFINER RPCs have explicit role grants and internal authorization checks;
+- leaked-password protection is currently disabled in Supabase Auth and should be enabled in project Auth settings when available/desired.
+
+A full Strix adversarial scan is still pending until its runtime/CLI is actually available.
+
+### D. Direct Investor Password collector — PENDING
 Architecture discussed, implementation not started.
-
 ---
 
 When a new chat begins, **do not ask the user to re-explain these rules**. Read this file first and continue from current repo state.
