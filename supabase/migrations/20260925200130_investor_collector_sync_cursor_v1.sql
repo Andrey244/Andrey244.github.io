@@ -1,3 +1,4 @@
+
 revoke all on function public.collector_lease_job_service(uuid) from public,anon,authenticated,service_role;
 drop function public.collector_lease_job_service(uuid);
 
@@ -173,34 +174,46 @@ begin
         now() + case when v_job_type='VALIDATE' then interval '1 second' else interval '30 seconds' end
       );
     end if;
+
     return true;
   end if;
 
   if v_enabled and v_attempt < 6 then
     v_delay_seconds := least(900, (30 * power(2,least(v_attempt,5)))::integer);
+
     update collector_private.collector_jobs
-    set status='QUEUED', leased_by=null, lease_until=null,
+    set status='QUEUED',
+        leased_by=null,
+        lease_until=null,
         scheduled_at=now()+make_interval(secs=>v_delay_seconds),
         last_error_code=left(coalesce(nullif(p_error_code,''),'COLLECTOR_ERROR'),128)
     where id=p_job_id;
+
     update public.broker_connections
     set state=case when v_job_type='VALIDATE' then 'ERROR' else 'DEGRADED' end,
         last_error_code=left(coalesce(nullif(p_error_code,''),'COLLECTOR_ERROR'),128),
-        last_error_at=now(), updated_at=now()
+        last_error_at=now(),
+        updated_at=now()
     where id=v_connection_id;
+
     return true;
   end if;
 
   update collector_private.collector_jobs
-  set status='FAILED', leased_by=null, lease_until=null, finished_at=now(),
+  set status='FAILED',
+      leased_by=null,
+      lease_until=null,
+      finished_at=now(),
       last_error_code=left(coalesce(nullif(p_error_code,''),'COLLECTOR_ERROR'),128)
   where id=p_job_id;
 
   update public.broker_connections
   set state='ERROR',
       last_error_code=left(coalesce(nullif(p_error_code,''),'COLLECTOR_ERROR'),128),
-      last_error_at=now(), updated_at=now()
+      last_error_at=now(),
+      updated_at=now()
   where id=v_connection_id;
+
   return true;
 end
 $$;

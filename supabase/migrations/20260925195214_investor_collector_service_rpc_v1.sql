@@ -1,3 +1,4 @@
+
 alter table collector_private.collector_nodes
   add column if not exists is_primary boolean not null default false;
 

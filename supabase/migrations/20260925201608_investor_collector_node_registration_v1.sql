@@ -1,3 +1,4 @@
+
 create or replace function public.collector_register_node_service(
   p_name text,
   p_key_id text,
