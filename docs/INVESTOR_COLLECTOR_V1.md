@@ -376,11 +376,14 @@ Phase 3 — MT5 end-to-end (repository worker foundation complete):
 - ingest/retry lifecycle is wired through the production Edge Functions;
 - still pending: live Windows MT5 terminal + real collector-node end-to-end validation.
 
-Phase 4 — MT4 end-to-end:
-- isolated terminal launcher;
-- compile/runtime validate exporter;
-- normalization;
-- cleanup.
+Phase 4 — MT4 end-to-end (repository launcher foundation complete):
+- disposable isolated terminal slot is cloned from a broker-compatible golden template;
+- startup config contains login/Investor Password/server, forces ExpertsTrades=false, opens a configurable bootstrap symbol and runs the one-shot exporter;
+- terminal launches with /portable from a writable non-system worker directory;
+- exporter v0.11 consumes an exact since-ms cursor and emits JSONL/status inside MQL4/Files;
+- launcher validates connected account/server/read-only state, overwrites/unlinks the credential config after exporter status, terminates the terminal and destroys the slot;
+- Linux CI tests the orchestration with a fake terminal process;
+- still pending: real MetaEditor EX4 compilation and live Windows/broker terminal validation, including how much Account History the broker terminal exposes automatically.
 
 Phase 5 — frontend direct-connect UX:
 Only after both adapters are operational and frontend credential-entry prerequisites are satisfied.

@@ -1,5 +1,5 @@
 #property strict
-#property version   "0.10"
+#property version   "0.11"
 #property description "One-shot read-only MT4 history exporter for Trading Journal Collector."
 #property description "It never opens, modifies or closes trades."
 
@@ -8,7 +8,8 @@ const int TJ_OP_CREDIT  = 7;
 
 input string OutputFile = "tj_export.jsonl";
 input string StatusFile = "tj_status.json";
-input int InitialSyncDays = 3650;
+input string CursorFile = "tj_since_ms.txt";
+input int InitialSyncDays = 730;
 input bool PrintDebug = true;
 
 void OnStart()
@@ -23,14 +24,14 @@ void OnStart()
 
    if(!connected)
    {
-      WriteStatus(false, trade_allowed, account, server, 0, "TERMINAL_DISCONNECTED");
+      WriteStatus(false, trade_allowed, account, server, 0, -1, "TERMINAL_DISCONNECTED");
       return;
    }
 
    if(trade_allowed)
    {
       Print("Trading Journal Collector rejected account: trading is allowed. Use Investor Password.");
-      WriteStatus(true, true, account, server, 0, "WRITE_CAPABLE_CREDENTIAL");
+      WriteStatus(true, true, account, server, 0, -1, "WRITE_CAPABLE_CREDENTIAL");
       return;
    }
 
@@ -38,11 +39,15 @@ void OnStart()
    if(handle == INVALID_HANDLE)
    {
       int err = GetLastError();
-      WriteStatus(true, false, account, server, 0, "OUTPUT_OPEN_FAILED_" + IntegerToString(err));
+      WriteStatus(true, false, account, server, 0, -1, "OUTPUT_OPEN_FAILED_" + IntegerToString(err));
       return;
    }
 
-   datetime cutoff = TimeCurrent() - (datetime)(MathMax(1, InitialSyncDays) * 86400);
+   long since_ms = ReadSinceMs();
+   datetime cutoff = since_ms > 0
+      ? (datetime)(since_ms / 1000)
+      : TimeCurrent() - (datetime)(MathMax(1, InitialSyncDays) * 86400);
+
    int total = OrdersHistoryTotal();
    int exported = 0;
 
@@ -65,13 +70,31 @@ void OnStart()
 
    FileFlush(handle);
    FileClose(handle);
-   WriteStatus(true, false, account, server, exported, "OK");
+   WriteStatus(true, false, account, server, exported, total, "OK");
 
    if(PrintDebug)
-      Print("Trading Journal Collector exported ", exported, " MT4 history rows. READ-ONLY.");
+      Print("Trading Journal Collector exported ", exported,
+            " MT4 history rows from terminal history total=", total, ". READ-ONLY.");
 }
 
-void WriteStatus(bool connected, bool trade_allowed, string account, string server, int exported, string code)
+long ReadSinceMs()
+{
+   int handle = FileOpen(CursorFile, FILE_READ|FILE_TXT|FILE_ANSI);
+   if(handle == INVALID_HANDLE)
+      return 0;
+
+   string value = FileReadString(handle);
+   FileClose(handle);
+   FileDelete(CursorFile);
+
+   double parsed = StringToDouble(value);
+   if(parsed <= 0)
+      return 0;
+   return (long)parsed;
+}
+
+void WriteStatus(bool connected, bool trade_allowed, string account, string server,
+                 int exported, int history_total, string code)
 {
    int handle = FileOpen(StatusFile, FILE_WRITE|FILE_TXT|FILE_ANSI);
    if(handle == INVALID_HANDLE) return;
@@ -83,6 +106,7 @@ void WriteStatus(bool connected, bool trade_allowed, string account, string serv
    j += "\"account\":\"" + JsonEscape(account) + "\",";
    j += "\"server\":\"" + JsonEscape(server) + "\",";
    j += "\"exported\":" + IntegerToString(exported) + ",";
+   j += "\"history_total\":" + IntegerToString(history_total) + ",";
    j += "\"code\":\"" + JsonEscape(code) + "\"";
    j += "}";
 
@@ -106,7 +130,7 @@ string OrderToJson()
    j += "\"event_id\":\"" + IntegerToString(OrderTicket()) + "\",";
    j += "\"order_id\":\"" + IntegerToString(OrderTicket()) + "\",";
    j += "\"event_time_ms\":" + DoubleToString((double)event_ms,0) + ",";
-   j += "\"collector_version\":\"0.10\",";
+   j += "\"collector_version\":\"0.11\",";
 
    if(is_cash)
    {

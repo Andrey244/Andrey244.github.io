@@ -150,6 +150,8 @@ class Mt4ContractTests(unittest.TestCase):
         self.assertIn("Script=TradeJournalExport_MT4", config)
         self.assertIn("Login=123456", config)
         self.assertIn("Server=Broker-Demo", config)
+        self.assertIn("Symbol=EURUSD", config)
+        self.assertIn("Period=H1", config)
 
     def test_status_rejects_write_capable_mt4(self):
         with self.assertRaises(WriteCapableCredentialError):

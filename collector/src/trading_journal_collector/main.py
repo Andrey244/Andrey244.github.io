@@ -4,6 +4,7 @@ import os
 import sys
 from pathlib import Path
 
+from trading_journal_collector.adapters.mt4 import Mt4Adapter
 from trading_journal_collector.adapters.mt5 import Mt5Adapter
 from trading_journal_collector.api import CollectorApi
 from trading_journal_collector.identity import CollectorIdentityStore
@@ -43,9 +44,17 @@ def build_worker() -> CollectorWorker:
     mt5_terminal = os.environ.get("TJ_MT5_TERMINAL_PATH", "").strip() or None
     adapters = {
         Platform.MT5: Mt5Adapter(terminal_path=mt5_terminal),
-        # MT4 is added only after the disposable Windows terminal launcher is
-        # implemented and runtime-validated. Until then MT4 jobs fail closed.
     }
+
+    mt4_golden = os.environ.get("TJ_MT4_GOLDEN_DIR", "").strip()
+    if mt4_golden:
+        adapters[Platform.MT4] = Mt4Adapter(
+            golden_terminal_dir=Path(mt4_golden),
+            work_root=Path(required_env("TJ_MT4_WORK_ROOT")),
+            bootstrap_symbol=os.environ.get("TJ_MT4_BOOTSTRAP_SYMBOL", "EURUSD").strip(),
+            terminal_exe_name=os.environ.get("TJ_MT4_TERMINAL_EXE", "terminal.exe").strip(),
+            timeout_seconds=float(os.environ.get("TJ_MT4_TIMEOUT_SECONDS", "90")),
+        )
     return CollectorWorker(
         api=api,
         identity=identity,

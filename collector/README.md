@@ -25,7 +25,7 @@ Not implemented yet:
 - Windows service installer / ACL provisioning;
 - registration of a real collector node on the owned Windows/VPS host;
 - live Windows MT5 terminal end-to-end validation;
-- production MT4 launcher and cleanup;
+- real MetaEditor compilation + live Windows validation of the implemented MT4 disposable-slot launcher;
 - direct-connect frontend.
 
 Never put real broker credentials in tests, fixtures, examples, GitHub Actions or repository files.
@@ -42,3 +42,14 @@ PYTHONPATH=collector/src python -m unittest discover -s collector/tests -v
 node scripts/collector-regression.mjs
 
 Linux CI validates platform-independent contracts and fake MT5 behavior. Actual terminal integration must later run on an owned Windows runner/VPS.
+
+
+## MT4 disposable worker requirements
+
+To enable MT4 on the Windows collector, configure:
+- `TJ_MT4_GOLDEN_DIR`: writable-copy source containing broker-compatible `terminal.exe`;
+- compiled `MQL4/Scripts/TradeJournalExport_MT4.ex4` inside that golden directory;
+- `TJ_MT4_WORK_ROOT`: ACL-restricted, encrypted-volume directory for disposable slots;
+- optional `TJ_MT4_BOOTSTRAP_SYMBOL` (default EURUSD), which must exist at that broker.
+
+The collector never compiles an MQ4 silently. A missing EX4 fails closed. Real compilation/login/history coverage must be verified on the owned Windows host before MT4 direct-connect is released.

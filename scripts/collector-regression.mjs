@@ -68,6 +68,15 @@ ok(worker.includes('overlap_seconds'),'worker overlap cursor missing');
 ok(worker.includes('credential.clear()'),'worker credential buffer clearing missing');
 ok(main.includes('TJ_SUPABASE_PUBLISHABLE_KEY'),'worker must use publishable key');
 ok(!main.includes('SERVICE_ROLE')&&!main.includes('SECRET_KEY'),'worker must never require Supabase elevated keys');
+ok(mt4py.includes('class Mt4Adapter'),'MT4 disposable worker adapter missing');
+ok(mt4py.includes('shutil.copytree'),'MT4 adapter must use disposable terminal slot copy');
+ok(mt4py.includes('"/portable"'),'MT4 adapter portable terminal launch missing');
+ok(mt4py.includes('ExpertsTrades=false'),'MT4 startup must explicitly disable trading');
+ok(mt4py.includes('TradeJournalExport_MT4.ex4'),'MT4 adapter must require compiled exporter');
+ok(mt4py.includes('_overwrite_and_unlink'),'MT4 secret startup config cleanup missing');
+ok(mt4mql.includes('CursorFile = "tj_since_ms.txt"'),'MT4 exporter sync cursor missing');
+ok(mt4mql.includes('ReadSinceMs()'),'MT4 exporter cursor reader missing');
+ok(main.includes('TJ_MT4_GOLDEN_DIR') && main.includes('TJ_MT4_WORK_ROOT'),'MT4 worker environment wiring missing');
 
 for(const [name,src] of [
   ['broker-key',brokerKey],['broker-connect',brokerConnect],['broker-disconnect',brokerDisconnect]
