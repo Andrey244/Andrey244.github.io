@@ -140,20 +140,24 @@ v1.17 sends extra data for reliable stop detection:
 - broker comment checks such as `[sl]` / stop-loss text.
 It also uses a versioned state key to trigger a one-time recent-history rescan so old events can be enriched without creating duplicates.
 
-### Future “Investor Password” direction
-Desired future UX:
+### Direct Investor Password connection
+Target UX:
 `Platform + Login + Investor Password + Server → Connect`
 
-Preferred architecture:
-- Keep current Reader as fallback.
-- Build an owned Windows/VPS Collector.
-- MT5: one collector terminal can cycle through accounts using official MetaTrader5 Python + `mt5.login()`; Python still requires an installed MT5 terminal process.
-- MT4: no equivalent official Python API; likely one collector terminal that is restarted/reconfigured per account and auto-runs our Reader.
-- Do not create one permanent terminal per user unless scale/latency later requires it.
-- Never store broker credentials in frontend/localStorage.
-- Investor password is still a secret even though read-only.
+Current architecture:
+- current Reader/Connector remains the fallback path;
+- owned Windows/VPS Collector supports both MT4 and MT5 adapters;
+- MT5 uses the official MetaTrader5 Python integration and installed terminal;
+- MT4 uses a disposable isolated terminal slot, short-lived startup config and read-only exporter;
+- no permanent terminal per user;
+- broker credentials never go to localStorage or public Supabase tables;
+- Investor Password remains a secret even though read-only.
 
-This direct-account project is **not implemented yet**.
+Implementation status:
+- backend control plane, encrypted credential storage, service-only RPCs and Edge Functions are deployed;
+- Python worker, MT5 history sync, MT4 disposable worker and Windows service installer exist in the repository;
+- direct-connect UI exists but is fail-closed until `broker-key` reports a real registered primary collector;
+- real owned Windows/VPS provisioning plus live MT4/MT5 terminal validation is still pending.
 
 ## 6. Logical Trade grouping
 

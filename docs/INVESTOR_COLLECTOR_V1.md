@@ -147,7 +147,7 @@ Collector leases a job, receives ciphertext, decrypts locally, uses the credenti
 
 ## Frontend security prerequisite
 
-Do not ship the Investor Password form yet; backend/collector phases are still incomplete.
+The Investor Password form is implemented but remains fail-closed until the backend reports a real registered primary collector.
 
 Frontend script hardening completed before credential-entry work:
 - Supabase JS is pinned to 2.117.1 at an exact CDN path;
