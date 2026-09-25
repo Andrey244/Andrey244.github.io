@@ -54,6 +54,17 @@ ok(html.includes('toggleRecoveryPasswordBtn') && html.includes('toggleRecoveryPa
 ok(html.includes("Пароль успешно изменён. Войди с новым паролем."),'index.html: recovery completion flow missing');
 ok(html.includes("Этот пароль уже установлен на аккаунте."),'index.html: same-password recovery message missing');
 ok(html.includes('One idea. One logical trade.') && html.includes('PRIVATE ACCESS'),'index.html: auth typography/microcopy regression');
+ok(html.includes(':focus-visible'),'index.html: global focus-visible system missing');
+ok(html.includes('prefers-reduced-motion:reduce'),'index.html: reduced-motion handling missing');
+ok(html.includes('touch-action:manipulation'),'index.html: touch interaction baseline missing');
+ok(html.includes('@media (hover:hover) and (pointer:fine)'),'index.html: hover capability gate missing');
+ok(html.includes('role="dialog"') && html.includes('aria-modal="true"'),'index.html: dialog semantics missing');
+ok(html.includes('setupModalAccessibility'),'index.html: modal focus management missing');
+ok(html.includes('<button type="button" class="tab on"'),'index.html: desktop navigation is not semantic buttons');
+ok(html.includes('<button type="button" class="day clickable '),'index.html: calendar keyboard semantics missing');
+ok(html.includes('tradeOpenBtn') && html.includes('data-open-trade'),'index.html: trade row keyboard open control missing');
+ok(html.includes('for="fSetup"') && html.includes('for="dWorked"'),'index.html: review form labels missing');
+ok(html.includes("chart.onkeydown=e=>"),'index.html: Equity keyboard inspection missing');
 
 const mt5Section=html.slice(html.indexOf('function groupMT5'),html.indexOf('function summarizeMT4'));
 const mt4Section=html.slice(html.indexOf('function groupMT4'),html.indexOf('function stabilizeTradeIds'));
