@@ -6,7 +6,8 @@ const GROUPING_VERSION='2.3';
 const GROUPING_RULE='Server-isolated MT4 overlap · MT5 exposure · duplicate guard';
 const LATEST_MT4_CONNECTOR='1.17';
 let model={trades:[],daily:[],symbols:[],weekday:[],summary:{}},monthDate=null,activeTrade=null,liveToken='';
-let membership=null,allTrades=[],scopedTrades=[],scopedRawEvents=[],tradeNotes=[],dailyReviewRows=[],accountSettings=[],connectorStatuses=[],detectedAccounts=[],memberRows=[],selectedAccountKey='all',declineTarget=null,rawEvents=[],dailyReviewMap={},activeReviewDate=null;
+let membership=null,allTrades=[],scopedTrades=[],scopedRawEvents=[],tradeNotes=[],dailyReviewRows=[],accountSettings=[],connectorStatuses=[],brokerConnections=[],detectedAccounts=[],memberRows=[],selectedAccountKey='all',declineTarget=null,rawEvents=[],dailyReviewMap={},activeReviewDate=null;
+let directCollectorKey=null,directCollectorCheckPromise=null;
 let bulkSelectMode=false,selectedTradeIds=new Set(),tradeReviewSnapshot='';
 let dateRange={mode:'all',start:null,end:null,label:'All time'};
 let rangeDraft={mode:'custom',start:null,end:null,label:'Свой период'},rangeViewMonth=null;
@@ -277,6 +278,7 @@ function switchView(view){
   document.querySelectorAll('[data-mobile-view]').forEach(x=>{const on=x.dataset.mobileView===view;x.classList.toggle('on',on);if(on)x.setAttribute('aria-current','page');else x.removeAttribute('aria-current')});
   el('mobileMoreSheet').classList.add('hide');
   if(view==='access'&&canManageAccess())loadMembers();
+  if(view==='connection')ensureDirectCollectorReady();
 }
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>switchView(t.dataset.view));
 document.querySelectorAll('[data-mobile-view]').forEach(t=>t.onclick=()=>switchView(t.dataset.mobileView));
@@ -297,7 +299,8 @@ async function fetchAll(table){
     trade_notes:[['trade_id',true]],
     account_settings:[['source',true],['account',true],['server',true]],
     daily_reviews:[['review_date',true]],
-    connector_status:[['source',true],['account',true],['server',true]]
+    connector_status:[['source',true],['account',true],['server',true]],
+    broker_connections:[['platform',true],['login',true],['server',true]]
   };
   let out=[],from=0;
   for(;;){
@@ -489,12 +492,13 @@ async function loadData(){
   setDataLoading(true);
   try{
     el('sync').textContent='Syncing…';
-    const [events,notes,settings,dailyReviews,statuses]=await Promise.all([fetchAll('raw_events'),fetchAll('trade_notes'),fetchAll('account_settings'),fetchAll('daily_reviews'),fetchAll('connector_status')]);
+    const [events,notes,settings,dailyReviews,statuses,directConnections]=await Promise.all([fetchAll('raw_events'),fetchAll('trade_notes'),fetchAll('account_settings'),fetchAll('daily_reviews'),fetchAll('connector_status'),fetchAll('broker_connections')]);
     rawEvents=events||[];
     tradeNotes=notes||[];
     dailyReviewRows=dailyReviews||[];
     accountSettings=settings||[];
     connectorStatuses=statuses||[];
+    brokerConnections=directConnections||[];
     dailyReviewMap={};dailyReviewRows.forEach(r=>dailyReviewMap[r.review_date]=r);
     const noteMap={};tradeNotes.forEach(n=>noteMap[n.trade_id]=n);
     const groupingEvents=dedupeEvents(events);
@@ -505,6 +509,7 @@ async function loadData(){
     applyFilters();
     renderAccounts();
     renderConnectorStatus();
+    renderDirectConnections();
     el('sync').textContent='Synced · '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
   }catch(e){
     el('sync').textContent='Sync error';
@@ -911,6 +916,174 @@ function renderHealth(){
   ].map(x=>'<div class="healthCell"><div class="metricLabel">'+esc(x[0])+'</div><b>'+esc(x[1])+'</b></div>').join('');
   el('groupingVersion').textContent='Grouping v'+GROUPING_VERSION+' · '+GROUPING_RULE;
 }
+
+function setDirectFormEnabled(enabled){
+  ['directPlatform','directLogin','directServer','directInvestorPassword','directConnectBtn'].forEach(id=>{
+    const node=el(id);if(node)node.disabled=!enabled;
+  });
+  if(!enabled&&el('directInvestorPassword'))el('directInvestorPassword').value='';
+}
+function setDirectCollectorUi(state,message){
+  const badge=el('directCollectorState');
+  if(!badge)return;
+  badge.className='directReady'+(state?' '+state:'');
+  badge.textContent=state==='ready'?'Ready':state==='wait'?'Not provisioned':state==='error'?'Unavailable':'Checking…';
+  el('directCollectorMsg').textContent=message||'';
+}
+async function edgePost(name,body){
+  const {data}=await sb.auth.getSession();
+  const session=data?.session;
+  if(!session)throw Object.assign(new Error('Session expired.'),{code:'unauthorized',status:401});
+  const response=await fetch(SUPABASE_URL+'/functions/v1/'+name,{
+    method:'POST',
+    cache:'no-store',
+    headers:{
+      apikey:SUPABASE_KEY,
+      Authorization:'Bearer '+session.access_token,
+      'Content-Type':'application/json'
+    },
+    body:JSON.stringify(body||{})
+  });
+  let payload={};
+  try{payload=await response.json()}catch(_e){}
+  if(!response.ok){
+    const error=Object.assign(new Error(String(payload?.error||('HTTP '+response.status))),{
+      code:String(payload?.error||'edge_error'),
+      status:response.status
+    });
+    throw error;
+  }
+  return payload;
+}
+async function ensureDirectCollectorReady(force=false){
+  if(directCollectorKey&&!force){setDirectFormEnabled(true);setDirectCollectorUi('ready','Direct collector готов. Используй только Investor Password.');return directCollectorKey}
+  if(directCollectorCheckPromise&&!force)return directCollectorCheckPromise;
+  directCollectorKey=null;
+  setDirectFormEnabled(false);
+  setDirectCollectorUi('','Проверяю доступность direct collector…');
+  directCollectorCheckPromise=(async()=>{
+    try{
+      const data=await edgePost('broker-key',{});
+      if(data?.algorithm!=='RSA-OAEP-SHA256'||!data?.key_id||!String(data?.public_key_pem||'').includes('BEGIN PUBLIC KEY'))throw Object.assign(new Error('Invalid collector key response.'),{code:'invalid_collector_key'});
+      directCollectorKey={key_id:String(data.key_id),algorithm:String(data.algorithm),public_key_pem:String(data.public_key_pem)};
+      setDirectFormEnabled(true);
+      setDirectCollectorUi('ready','Direct collector готов. Пароль шифруется до отправки.');
+      return directCollectorKey;
+    }catch(error){
+      directCollectorKey=null;
+      setDirectFormEnabled(false);
+      if(error?.status===503||error?.code==='collector_not_ready'){
+        setDirectCollectorUi('wait','Direct collector ещё не provisioned. Пока используй Manual Connector ниже.');
+      }else{
+        setDirectCollectorUi('error','Direct collector временно недоступен. Manual Connector ниже продолжает работать.');
+      }
+      return null;
+    }finally{
+      directCollectorCheckPromise=null;
+    }
+  })();
+  return directCollectorCheckPromise;
+}
+function directStateLabel(state){
+  const value=String(state||'').toUpperCase();
+  return ({PENDING_VALIDATION:'Pending validation',VALIDATING:'Validating',CONNECTED:'Connected',DEGRADED:'Degraded',ERROR:'Error',DISCONNECTED:'Disconnected'})[value]||value||'Unknown';
+}
+function renderDirectConnections(){
+  const host=el('directConnectionList');if(!host)return;
+  const rows=(brokerConnections||[]).filter(row=>row.enabled!==false&&String(row.state||'').toUpperCase()!=='DISCONNECTED');
+  if(!rows.length){host.innerHTML='<div class="hint directFallbackNote">Direct connections появятся здесь после успешного подключения.</div>';return}
+  host.innerHTML=rows.map(row=>{
+    const state=String(row.state||'').toLowerCase();
+    const seen=row.last_sync_at?('Last sync · '+new Date(row.last_sync_at).toLocaleString()):(row.last_error_at?('Last error · '+new Date(row.last_error_at).toLocaleString()):'Waiting for collector');
+    const err=row.last_error_code?(' · '+String(row.last_error_code)):'';
+    return '<div class="directConnectionRow"><div class="directConnectionMeta"><b>'+esc(String(row.platform||'')+' · '+String(row.login||'')+' · '+String(row.server||''))+'</b><span>'+esc(seen+err)+'</span></div><div class="directConnectionState '+esc(state)+'">'+esc(directStateLabel(row.state))+'</div><button class="btn" type="button" data-direct-disconnect="'+esc(row.id)+'">Disconnect</button></div>';
+  }).join('');
+  host.querySelectorAll('[data-direct-disconnect]').forEach(btn=>btn.onclick=()=>disconnectDirectConnection(btn.dataset.directDisconnect,btn));
+}
+async function refreshDirectConnections(){
+  brokerConnections=await fetchAll('broker_connections');
+  renderDirectConnections();
+}
+function pemToSpkiBytes(pem){
+  const body=String(pem||'').replace(/-----BEGIN PUBLIC KEY-----|-----END PUBLIC KEY-----|\s+/g,'');
+  const binary=atob(body),bytes=new Uint8Array(binary.length);
+  for(let i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);
+  return bytes;
+}
+function bytesToBase64(buffer){
+  const bytes=new Uint8Array(buffer);let binary='';
+  for(let i=0;i<bytes.length;i++)binary+=String.fromCharCode(bytes[i]);
+  return btoa(binary);
+}
+async function encryptInvestorPassword(secret,pem){
+  const plaintext=new TextEncoder().encode(secret);
+  try{
+    if(!plaintext.length)throw new Error('Investor Password is required.');
+    if(plaintext.length>256)throw new Error('Investor Password is too long.');
+    const publicKey=await crypto.subtle.importKey('spki',pemToSpkiBytes(pem),{name:'RSA-OAEP',hash:'SHA-256'},false,['encrypt']);
+    const ciphertext=await crypto.subtle.encrypt({name:'RSA-OAEP'},publicKey,plaintext);
+    if(ciphertext.byteLength!==384)throw new Error('Unexpected collector ciphertext length.');
+    return bytesToBase64(ciphertext);
+  }finally{
+    plaintext.fill(0);
+  }
+}
+async function disconnectDirectConnection(connectionId,button){
+  if(!connectionId)return;
+  if(!confirm('Disconnect this broker account? The encrypted Investor Password will be deleted.'))return;
+  await withBusyButton(button,'Disconnecting…',async()=>{
+    try{
+      await edgePost('broker-disconnect',{connection_id:connectionId});
+      await refreshDirectConnections();
+      el('directConnectMsg').textContent='Direct connection отключён. Encrypted credential удалён.';
+    }catch(error){
+      el('directConnectMsg').textContent='Disconnect failed: '+String(error?.code||error?.message||'unknown_error');
+    }
+  });
+}
+el('directConnectForm').onsubmit=async event=>{
+  event.preventDefault();
+  const button=el('directConnectBtn');
+  await withBusyButton(button,'Connecting…',async()=>{
+    const platform=el('directPlatform').value;
+    const login=el('directLogin').value.trim();
+    const server=el('directServer').value.trim();
+    const passwordInput=el('directInvestorPassword');
+    let secret=passwordInput.value;
+    passwordInput.value='';
+    el('directConnectMsg').textContent='';
+    try{
+      if(!/^[0-9]+$/.test(login)){el('directLogin').focus();throw new Error('Login должен содержать только цифры.')}
+      if(!server||/[\r\n]/.test(server)){el('directServer').focus();throw new Error('Укажи точное имя broker server.')}
+      const key=directCollectorKey||await ensureDirectCollectorReady(true);
+      if(!key)throw new Error('Direct collector ещё не готов. Используй Manual Connector.');
+      const ciphertext=await encryptInvestorPassword(secret,key.public_key_pem);
+      const result=await edgePost('broker-connect',{
+        platform,
+        login,
+        server,
+        key_id:key.key_id,
+        ciphertext_base64:ciphertext
+      });
+      el('directLogin').value='';
+      el('directServer').value='';
+      el('directConnectMsg').textContent='Connection queued · '+String(result.state||'PENDING_VALIDATION')+'. Collector проверит Investor Password.';
+      await refreshDirectConnections();
+    }catch(error){
+      if(error?.code==='collector_key_stale'){
+        directCollectorKey=null;
+        await ensureDirectCollectorReady(true);
+        el('directConnectMsg').textContent='Collector key обновился. Введи Investor Password ещё раз.';
+      }else{
+        el('directConnectMsg').textContent=String(error?.message||'Direct connection failed.');
+      }
+    }finally{
+      secret='';
+      passwordInput.value='';
+    }
+  });
+};
+
 function renderConnectorStatus(){
   const rows=detectedAccounts.filter(a=>a.source==='MT4');
   if(!rows.length){el('connectorStatusList').innerHTML='';return}

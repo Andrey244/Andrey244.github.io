@@ -498,8 +498,11 @@ Still pending:
 - Windows GitHub Actions now performs a real current-user DPAPI round-trip and installs/imports pinned MetaTrader5 5.0.6180;
 - still pending specifically for MT4: compile the MQ4 to EX4 with the target/broker MetaEditor and validate real terminal login/history behavior on owned Windows;
 - MT4 Windows launcher/compile/runtime validation;
-- frontend direct-connect form;
-- production Windows integration tests.
+- direct-connect frontend implemented but fail-closed: MT4/MT5/Login/Server/Investor Password form remains disabled until `broker-key` confirms a real primary collector;
+- browser uses Web Crypto RSA-OAEP/SHA-256 and clears the password field before calling `broker-connect`;
+- current manual MT4 Connector remains visible as fallback;
+- direct connection list shows state/last sync/error and Disconnect deletes encrypted credential;
+- production Windows integration tests with a real collector/terminal are still pending.
 ---
 
 When a new chat begins, **do not ask the user to re-explain these rules**. Read this file first and continue from current repo state.

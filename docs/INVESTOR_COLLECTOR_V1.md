@@ -387,8 +387,13 @@ Phase 4 — MT4 end-to-end (repository launcher foundation complete):
 - Linux CI tests the orchestration with a fake terminal process;
 - still pending: real MetaEditor EX4 compilation and live Windows/broker terminal validation, including how much Account History the broker terminal exposes automatically.
 
-Phase 5 — frontend direct-connect UX:
-Only after both adapters are operational and frontend credential-entry prerequisites are satisfied.
+Phase 5 — frontend direct-connect UX (fail-closed UI implemented):
+- Connection page now exposes the shared MT4/MT5/Login/Server/Investor Password flow;
+- secret-entry controls ship disabled and are enabled only after authenticated broker-key returns a valid primary collector RSA key;
+- when no collector is provisioned, the UI explicitly falls back to the existing Manual Connector and does not accept an Investor Password;
+- Web Crypto imports SPKI and encrypts the password with RSA-OAEP/SHA-256; the input is cleared before broker-connect and the encoded byte buffer is overwritten;
+- broker_connections are read through existing owner-only RLS, with state/last sync/error display and credential-deleting Disconnect;
+- existing manual connector remains supported.
 
 Phase 6 — multi-account hardening:
 - fairness;

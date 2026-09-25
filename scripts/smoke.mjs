@@ -32,6 +32,18 @@ ok(html.includes('Content-Security-Policy'),'index.html: CSP meta missing');
 ok(html.includes("script-src 'self' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.1/dist/umd/supabase.js"),'index.html: CSP script-src is not pinned');
 ok(html.includes("script-src-attr 'none'"),'index.html: inline script attributes must be blocked');
 ok(html.includes('<script src="/app.js"></script>'),'index.html: external app.js missing');
+ok(html.includes('id="directConnectForm"'),'Direct broker connection form missing');
+ok(html.includes('id="directInvestorPassword"') && html.includes('id="directInvestorPassword" class="input" type="password"'),'Direct Investor Password field missing');
+ok(html.includes('id="directInvestorPassword"') && html.includes('placeholder="Read-only password" disabled'),'Direct secret field must ship disabled until collector readiness');
+ok(clientSource.includes("edgePost('broker-key'"),'Direct collector readiness check missing');
+ok(clientSource.includes("edgePost('broker-connect'"),'Direct broker connect Edge Function integration missing');
+ok(clientSource.includes("edgePost('broker-disconnect'"),'Direct broker disconnect Edge Function integration missing');
+ok(clientSource.includes("crypto.subtle.importKey('spki'"),'WebCrypto SPKI import missing');
+ok(clientSource.includes("name:'RSA-OAEP',hash:'SHA-256'"),'RSA-OAEP/SHA-256 browser encryption missing');
+ok(clientSource.includes('plaintext.fill(0)'),'Direct secret encoded buffer zeroization missing');
+ok(clientSource.includes("passwordInput.value=''"),'Direct password input must be cleared before network submission');
+ok(!/localStorage\.setItem\([^\n;]*(investor|direct.*password|broker.*password)/i.test(appJs),'Broker secret must never be persisted to localStorage');
+
 ok(clientSource.includes('create_or_rotate_ingest_token'),'index.html: token RPC missing');
 ok(clientSource.includes('raw_events'),'index.html: raw_events integration missing');
 ok(clientSource.includes('trade_notes'),'index.html: trade_notes integration missing');
