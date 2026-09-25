@@ -15,11 +15,14 @@ Current repository foundation:
 - MT4 startup config renderer;
 - one-shot read-only MT4 history exporter source;
 - Python unit tests;
-- static regression rules forbidding trade APIs.
+- static regression rules forbidding trade APIs;
+- production Supabase control-plane schema and service-only RPCs;
+- broker/collector Edge Functions with explicit auth gates.
 
 Not implemented yet:
 - Windows service installer / ACL provisioning;
-- Supabase collector control plane / Edge Functions;
+- registration of a real collector node on the owned Windows/VPS host;
+- Python HTTP worker loop;
 - MT5 history normalization;
 - production MT4 launcher and cleanup;
 - direct-connect frontend.

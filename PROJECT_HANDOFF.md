@@ -462,10 +462,19 @@ Collector identity foundation completed in repository:
 - collector auth token is persisted protected locally and only SHA-256 hash is intended for database registration;
 - `cryptography==50.0.1` is pinned and CI tests RSA round-trip, key stability, token rotation and protected-at-rest test behavior.
 
+Service API / Edge Function control plane completed:
+- migration `20260925195214 investor_collector_service_rpc_v1`;
+- service-only SECURITY DEFINER RPCs are executable by `service_role` only, not anon/authenticated;
+- `broker-key`, `broker-connect`, `broker-disconnect` validate Supabase user JWTs and approved membership inside the function;
+- `collector-next-job`, `collector-report`, `collector-ingest` use a dedicated high-entropy collector token whose SHA-256 hash is matched server-side;
+- Windows collector never receives a Supabase service/secret key;
+- collector ingest resolves user/account/platform/server server-side from the leased connection and canonicalizes event identity before writing `raw_events`;
+- production Smoke verifies service RPC denial, broker unauthenticated denial and invalid collector-token denial.
+
 Still pending:
 - real Windows service installer / directory ACL provisioning and runtime DPAPI integration test;
 - registration of a real collector node generated on the owned Windows/VPS host;
-- Edge Functions / service-only database access functions for connect/job/ingest/report lifecycle;
+- Python HTTP worker loop against the new Edge Functions;
 - MT5 history normalization/end-to-end ingest;
 - MT4 Windows launcher/compile/runtime validation;
 - frontend direct-connect form;

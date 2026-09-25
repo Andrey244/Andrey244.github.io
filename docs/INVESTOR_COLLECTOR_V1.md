@@ -359,11 +359,13 @@ Phase 1 — secure collector identity (repository foundation complete):
 - exact cryptography dependency pin and Linux CI contract tests;
 - still pending: real Windows service installer/ACL setup and Windows DPAPI runtime integration test.
 
-Phase 2 — Supabase control plane:
+Phase 2 — Supabase control plane (complete):
 - public metadata table with RLS;
-- private collector schema;
-- Edge Functions;
-- lifecycle/status.
+- private collector schema with deny-all browser/API-role grants;
+- service-only RPC layer for connect/disconnect, collector auth, job lease/report and event ingest;
+- six Edge Functions with explicit user-JWT or collector-token authentication;
+- collector ingest canonicalizes user/platform/account/server server-side;
+- production negative-auth Smoke coverage.
 
 Phase 3 — MT5 end-to-end:
 - history normalization;
