@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 
 function ok(cond,msg){ if(!cond) throw new Error(msg); }
 
-const [arch, pyproject, mt5, mt4py, mt4mql, crypto, dpapi, identity, serviceSql, cursorSql, edgeShared, brokerKey, brokerConnect, brokerDisconnect, collectorNext, collectorReport, collectorIngest, api, worker, main] = await Promise.all([
+const [arch, pyproject, mt5, mt4py, mt4mql, crypto, dpapi, identity, serviceSql, cursorSql, registerSql, edgeShared, brokerKey, brokerConnect, brokerDisconnect, collectorNext, collectorReport, collectorIngest, api, worker, main, provision] = await Promise.all([
   fs.readFile('docs/INVESTOR_COLLECTOR_V1.md','utf8'),
   fs.readFile('collector/pyproject.toml','utf8'),
   fs.readFile('collector/src/trading_journal_collector/adapters/mt5.py','utf8'),
@@ -13,6 +13,7 @@ const [arch, pyproject, mt5, mt4py, mt4mql, crypto, dpapi, identity, serviceSql,
   fs.readFile('collector/src/trading_journal_collector/identity.py','utf8'),
   fs.readFile('supabase/migrations/20260925195214_investor_collector_service_rpc_v1.sql','utf8'),
   fs.readFile('supabase/migrations/20260925200130_investor_collector_sync_cursor_v1.sql','utf8'),
+  fs.readFile('supabase/migrations/20260925201608_investor_collector_node_registration_v1.sql','utf8'),
   fs.readFile('supabase/functions/broker-key/shared.ts','utf8'),
   fs.readFile('supabase/functions/broker-key/index.ts','utf8'),
   fs.readFile('supabase/functions/broker-connect/index.ts','utf8'),
@@ -23,6 +24,7 @@ const [arch, pyproject, mt5, mt4py, mt4mql, crypto, dpapi, identity, serviceSql,
   fs.readFile('collector/src/trading_journal_collector/api.py','utf8'),
   fs.readFile('collector/src/trading_journal_collector/worker.py','utf8'),
   fs.readFile('collector/src/trading_journal_collector/main.py','utf8'),
+  fs.readFile('collector/src/trading_journal_collector/provision.py','utf8'),
 ]);
 
 ok(arch.includes('MetaTrader 4') && arch.includes('MetaTrader 5'),'architecture must cover MT4 and MT5');
@@ -68,6 +70,13 @@ ok(worker.includes('overlap_seconds'),'worker overlap cursor missing');
 ok(worker.includes('credential.clear()'),'worker credential buffer clearing missing');
 ok(main.includes('TJ_SUPABASE_PUBLISHABLE_KEY'),'worker must use publishable key');
 ok(!main.includes('SERVICE_ROLE')&&!main.includes('SECRET_KEY'),'worker must never require Supabase elevated keys');
+
+ok(registerSql.includes('collector_register_node_service'),'collector node registration RPC missing');
+ok(registerSql.includes('revoke all on function public.collector_register_node_service'),'collector registration anon/auth revoke missing');
+ok(registerSql.includes('grant execute on function public.collector_register_node_service') && registerSql.includes('to service_role'),'collector registration must remain service-only');
+ok(provision.includes('registration_payload'),'Windows provisioning bundle helper missing');
+ok(!provision.includes('identity.token_text()'),'provisioning CLI must never read/export collector token');
+ok(!provision.includes('PRIVATE_FILE'),'provisioning CLI must not export private-key storage');
 ok(mt4py.includes('class Mt4Adapter'),'MT4 disposable worker adapter missing');
 ok(mt4py.includes('shutil.copytree'),'MT4 adapter must use disposable terminal slot copy');
 ok(mt4py.includes('"/portable"'),'MT4 adapter portable terminal launch missing');

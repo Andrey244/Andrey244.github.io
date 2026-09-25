@@ -18,6 +18,8 @@ from trading_journal_collector.errors import AccountMismatchError, WriteCapableC
 from trading_journal_collector.models import CredentialLease, Platform
 from trading_journal_collector.crypto import CollectorKeyStore, encrypt_for_public_key
 from trading_journal_collector.identity import CollectorIdentityStore, hash_collector_token
+from trading_journal_collector.identity import CollectorRegistration
+from trading_journal_collector.provision import registration_payload
 
 
 class FakeMt5:
@@ -232,6 +234,23 @@ class CryptoIdentityTests(unittest.TestCase):
             token2 = identity.token_text()
             self.assertNotEqual(token2, token)
             self.assertEqual(rotated.auth_token_hash, hash_collector_token(token2))
+
+
+class ProvisioningPayloadTests(unittest.TestCase):
+    def test_registration_bundle_contains_hash_and_public_key_but_no_plain_token(self):
+        registration = CollectorRegistration(
+            key_id="rsa3072-sha256-" + "a" * 32,
+            algorithm="RSA-OAEP-SHA256",
+            public_key_pem="-----BEGIN PUBLIC KEY-----\nTEST\n-----END PUBLIC KEY-----\n",
+            auth_token_hash="b" * 64,
+        )
+        payload = registration_payload(name="collector-01", registration=registration)
+        serialized = json.dumps(payload)
+        self.assertEqual(payload["auth_token_hash"], "b" * 64)
+        self.assertIn("BEGIN PUBLIC KEY", payload["public_key_pem"])
+        self.assertNotIn("tjc_", serialized)
+        self.assertNotIn("PRIVATE KEY", serialized)
+        self.assertNotIn("token_text", serialized)
 
 
 if __name__ == "__main__":

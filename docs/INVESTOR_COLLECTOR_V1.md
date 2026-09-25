@@ -352,12 +352,14 @@ Phase 0 — repository foundation:
 - MT4 startup config + one-shot exporter baseline;
 - regression checks prohibiting trade APIs.
 
-Phase 1 — secure collector identity (repository foundation complete):
+Phase 1 — secure collector identity + provisioning (repository foundation complete):
 - RSA-3072 key generation with OAEP/MGF1 SHA-256;
 - OS-protector key store and current-user Windows DPAPI implementation;
 - protected collector auth token + SHA-256 registration hash;
 - exact cryptography dependency pin and Linux CI contract tests;
-- still pending: real Windows service installer/ACL setup and Windows DPAPI runtime integration test.
+- Windows CI validates real DPAPI runtime and pinned MT5 import;
+- service-only collector-node registration RPC and non-secret Windows provisioning bundle are implemented;
+- still pending: run provisioning on the owned Windows host, register that real node, and install the persistent Windows worker/ACL setup.
 
 Phase 2 — Supabase control plane (complete):
 - public metadata table with RLS;

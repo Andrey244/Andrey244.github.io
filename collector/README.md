@@ -63,3 +63,22 @@ GitHub Actions includes a Windows runner that:
 - performs a real Windows current-user DPAPI protect/unprotect integration test, including entropy mismatch fail-closed behavior.
 
 This validates OS crypto/package compatibility only. It does not substitute for a real broker MT4/MT5 terminal runtime on the owned collector host.
+
+
+## Provision a real collector node
+
+Run this only on the owned Windows machine under the same dedicated Windows account that will run the collector:
+
+```powershell
+$env:TJ_IDENTITY_DIR = "D:\TradingJournal\identity"
+$env:TJ_COLLECTOR_NAME = "collector-01"
+trading-journal-collector-provision --output collector-registration.json
+```
+
+The output file contains only:
+- collector name;
+- RSA public key and key id;
+- SHA-256 hash of the collector auth token;
+- primary-node intent.
+
+It does **not** contain the collector token or private key. The registration bundle is then enrolled through the service-role-only operator path; the plaintext collector token never leaves DPAPI-protected storage on the collector host.

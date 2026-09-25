@@ -22,3 +22,4 @@ where = ["src"]
 
 [project.scripts]
 trading-journal-collector = "trading_journal_collector.main:main"
+trading-journal-collector-provision = "trading_journal_collector.provision:main"

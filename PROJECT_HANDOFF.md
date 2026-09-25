@@ -484,9 +484,14 @@ Python worker + MT5 history foundation completed in repository:
 - MT5 `history_deals_get` normalizer emits BUY/SELL deal events and skips non-trade balance/commission deal types for v1;
 - `DEAL_REASON_SL` is mapped to explicit `closed_by_sl`; frontend MT5 grouping now consumes explicit SL evidence and still never infers SL from negative P&L.
 
+Collector node provisioning foundation completed:
+- migration `20260925201608 investor_collector_node_registration_v1` adds a service-role-only registration/primary-rotation RPC;
+- `trading-journal-collector-provision` runs under the target Windows account and emits only node name, RSA public key, key id and SHA-256 collector-token hash;
+- it never reads/prints the plaintext collector token or private key.
+
 Still pending:
-- real Windows service installer / directory ACL provisioning and runtime DPAPI integration test;
-- registration of a real collector node generated on the owned Windows/VPS host;
+- real Windows service installer / directory ACL provisioning;
+- run the provisioning CLI on the owned Windows/VPS host and register that real node;
 - live MT5 terminal end-to-end test against the owned Windows collector;
 - MT4 disposable-slot launcher implemented in repository: cloned terminal slot, short-lived startup config, /portable launch, cursor file, account/server/read-only validation and guaranteed cleanup;
 - MT4 exporter v0.11 reads an exact since-ms cursor and reports terminal history total;
