@@ -489,9 +489,16 @@ Collector node provisioning foundation completed:
 - `trading-journal-collector-provision` runs under the target Windows account and emits only node name, RSA public key, key id and SHA-256 collector-token hash;
 - it never reads/prints the plaintext collector token or private key.
 
+Windows service/ACL foundation completed:
+- pinned `pywin32==312`;
+- service defaults to low-privilege `NT AUTHORITY\\LocalService`, delayed auto-start and bounded restart actions;
+- `collector/windows/install-service.ps1` removes inherited ProgramData ACLs and grants only SYSTEM, Administrators and LocalService;
+- config is a strict non-secret allowlist and rejects password/token/private-key-like keys;
+- first service start generates identity under the actual service DPAPI account and writes only non-secret `registration.json`;
+- Windows CI imports the service runtime and parses installer scripts.
+
 Still pending:
-- real Windows service installer / directory ACL provisioning;
-- run the provisioning CLI on the owned Windows/VPS host and register that real node;
+- run the installer on the owned Windows/VPS host and register that real `registration.json` bundle;
 - live MT5 terminal end-to-end test against the owned Windows collector;
 - MT4 disposable-slot launcher implemented in repository: cloned terminal slot, short-lived startup config, /portable launch, cursor file, account/server/read-only validation and guaranteed cleanup;
 - MT4 exporter v0.11 reads an exact since-ms cursor and reports terminal history total;

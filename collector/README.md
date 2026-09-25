@@ -82,3 +82,24 @@ The output file contains only:
 - primary-node intent.
 
 It does **not** contain the collector token or private key. The registration bundle is then enrolled through the service-role-only operator path; the plaintext collector token never leaves DPAPI-protected storage on the collector host.
+
+
+## Windows service installation
+
+Production service support:
+- pinned `pywin32==312`;
+- default service identity: `NT AUTHORITY\LocalService`;
+- config is an explicit non-secret allowlist;
+- collector token stays DPAPI-protected in the identity store;
+- first service start writes `registration.json` with public key, key id and collector-token SHA-256 hash only;
+- ProgramData ACL inheritance is removed and limited to SYSTEM, Administrators and LocalService.
+
+From elevated PowerShell:
+
+```powershell
+collector\windows\install-service.ps1 \
+  -SupabaseUrl "https://<project>.supabase.co" \
+  -PublishableKey "sb_publishable_..."
+```
+
+The installer never accepts Investor Passwords, Supabase service/secret keys or a reusable Windows account password.

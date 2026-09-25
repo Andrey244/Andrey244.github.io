@@ -15,6 +15,13 @@ dependencies = [
 mt5 = [
   "MetaTrader5==5.0.6180; platform_system == 'Windows'",
 ]
+service = [
+  "pywin32==312; platform_system == 'Windows'",
+]
+windows = [
+  "MetaTrader5==5.0.6180; platform_system == 'Windows'",
+  "pywin32==312; platform_system == 'Windows'",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -23,3 +30,4 @@ where = ["src"]
 [project.scripts]
 trading-journal-collector = "trading_journal_collector.main:main"
 trading-journal-collector-provision = "trading_journal_collector.provision:main"
+trading-journal-collector-service = "trading_journal_collector.service:command_line"

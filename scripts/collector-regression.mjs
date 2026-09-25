@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 
 function ok(cond,msg){ if(!cond) throw new Error(msg); }
 
-const [arch, pyproject, mt5, mt4py, mt4mql, crypto, dpapi, identity, serviceSql, cursorSql, registerSql, edgeShared, brokerKey, brokerConnect, brokerDisconnect, collectorNext, collectorReport, collectorIngest, api, worker, main, provision] = await Promise.all([
+const [arch, pyproject, mt5, mt4py, mt4mql, crypto, dpapi, identity, serviceSql, cursorSql, registerSql, edgeShared, brokerKey, brokerConnect, brokerDisconnect, collectorNext, collectorReport, collectorIngest, api, worker, main, provision, service, serviceConfig, installer] = await Promise.all([
   fs.readFile('docs/INVESTOR_COLLECTOR_V1.md','utf8'),
   fs.readFile('collector/pyproject.toml','utf8'),
   fs.readFile('collector/src/trading_journal_collector/adapters/mt5.py','utf8'),
@@ -25,6 +25,9 @@ const [arch, pyproject, mt5, mt4py, mt4mql, crypto, dpapi, identity, serviceSql,
   fs.readFile('collector/src/trading_journal_collector/worker.py','utf8'),
   fs.readFile('collector/src/trading_journal_collector/main.py','utf8'),
   fs.readFile('collector/src/trading_journal_collector/provision.py','utf8'),
+  fs.readFile('collector/src/trading_journal_collector/service.py','utf8'),
+  fs.readFile('collector/src/trading_journal_collector/service_config.py','utf8'),
+  fs.readFile('collector/windows/install-service.ps1','utf8'),
 ]);
 
 ok(arch.includes('MetaTrader 4') && arch.includes('MetaTrader 5'),'architecture must cover MT4 and MT5');
@@ -37,6 +40,15 @@ ok(arch.includes('RSA-OAEP-SHA256'),'credential encryption contract missing');
 
 ok(pyproject.includes('MetaTrader5==5.0.6180'),'MetaTrader5 version is not pinned');
 ok(pyproject.includes('cryptography==50.0.1'),'cryptography version is not pinned');
+ok(pyproject.includes('pywin32==312'),'pywin32 service dependency is not pinned');
+ok(service.includes('TradingJournalCollectorService'),'Windows service class missing');
+ok(service.includes('ControlPlaneError'),'service must back off while node registration is pending');
+ok(service.includes('registration.json'),'service must emit non-secret registration bundle');
+ok(serviceConfig.includes('FORBIDDEN_KEY_PARTS'),'service config secret denylist missing');
+ok(installer.includes('/inheritance:r'),'installer must remove inherited ProgramData ACLs');
+ok(installer.includes('NT AUTHORITY\\LOCAL SERVICE:(OI)(CI)M'),'installer LocalService ACL missing');
+ok(installer.includes('--username", "NT AUTHORITY\\LocalService"'),'service must install under LocalService');
+ok(!installer.toLowerCase().includes('--password'),'installer must not pass a reusable Windows account password');
 ok(crypto.includes('RSA_KEY_BITS = 3072'),'collector RSA key size changed');
 ok(crypto.includes('RSA-OAEP-SHA256'),'collector RSA algorithm marker missing');
 ok(crypto.includes('padding.MGF1(algorithm=hashes.SHA256())'),'collector OAEP MGF1 SHA-256 missing');
