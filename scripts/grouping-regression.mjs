@@ -107,18 +107,16 @@ const analyticsInput=[
 const m=buildModel(analyticsInput.filter(t=>!t.excluded_from_stats));
 ok(m.summary.trades===1&&m.summary.pnl===10&&m.summary.wins===1&&m.summary.losses===0,'Ghost trade leaked into analytics');
 
-// 9) Strategy result semantics: six averaging entries that recover are WIN; SL is synthetic step 7.
-ok(strategyOrderCount({source:'MT4',orderCount:6,pnl:25})===6,'worked 6-order basket must stay at six');
-ok(strategyOutcome({source:'MT4',orderCount:6,pnl:25})==='win','worked 6-order basket must be WIN');
-ok(strategyOrderCount({source:'MT4',orderCount:6,pnl:-50})===7,'legacy negative 6-order MT4 basket must map to synthetic seventh SL step');
-ok(strategyOutcome({source:'MT4',orderCount:6,pnl:-50})==='loss','legacy negative 6-order MT4 basket must be LOSS');
-ok(strategyOrderCount({source:'MT4',orderCount:6,pnl:10,stopLossHit:true})===7,'explicit broker SL marker must map to step 7');
-ok(strategyOutcome({orderCount:7,pnl:-1})==='loss','7-order strategy state must be LOSS');
+// 9) Strategy result semantics: actual broker order count is never fabricated.
+ok(strategyOrderCount({source:'MT4',orderCount:6,pnl:25})===6,'worked basket must keep actual six orders');
+ok(strategyOrderCount({source:'MT4',orderCount:6,pnl:-50})===6,'negative P&L must not fabricate a seventh broker order');
+ok(strategyOutcome({source:'MT4',orderCount:6,pnl:-50})==='win','negative P&L alone must not imply SL');
+ok(strategyOutcome({source:'MT4',orderCount:6,pnl:-50,stopLossHit:true})==='loss','explicit SL marker must classify LOSS');
 const wrModel=buildModel([
-  {source:'MT4',closedAt:'2026-09-24T10:00:00Z',symbol:'EURUSD',orderCount:6,pnl:10},
-  {source:'MT4',closedAt:'2026-09-24T11:00:00Z',symbol:'EURUSD',orderCount:6,pnl:-20}
+  {source:'MT4',closedAt:'2026-09-24T10:00:00Z',symbol:'EURUSD',orderCount:6,pnl:-10,stopLossHit:false},
+  {source:'MT4',closedAt:'2026-09-24T11:00:00Z',symbol:'EURUSD',orderCount:6,pnl:-20,stopLossHit:true}
 ]);
-ok(wrModel.summary.wins===1&&wrModel.summary.losses===1&&wrModel.summary.wr===50,'strategy WR must use synthetic seventh SL rule');
+ok(wrModel.summary.wins===1&&wrModel.summary.losses===1&&wrModel.summary.wr===50,'strategy WR must use explicit SL marker, not money P&L');
 
 // 10) MT4 broker-day semantics: a late broker-time close must not roll into the next Tashkent day.
 const lateMt4Trade={source:'MT4',closedAt:'2026-09-24T19:20:00.000Z'};

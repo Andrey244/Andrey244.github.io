@@ -180,7 +180,7 @@ table{width:100%;border-collapse:collapse}th,td{padding:12px 8px;border-bottom:1
       <div class="metricLabel">Supabase URL</div><div class="code">https://ylriyjxcefovzwzinpqd.supabase.co</div>
       <div style="height:12px"></div>
       <div class="metricLabel">Private ingest token</div><div id="tokenBox" class="code">Нажми «Создать / обновить token».</div>
-      <div class="actions"><button class="btn primary" id="tokenBtn">Создать / обновить token</button><button class="btn" id="copyTokenBtn">Copy token</button></div><div class="actions"><a class="btn primary" href="downloads/TradeJournalConnector_MT4_v1.16.mq4" download>Скачать MT4 Connector v1.16</a></div><div id="connectorStatusList" class="connectorStatusList"></div>
+      <div class="actions"><button class="btn primary" id="tokenBtn">Создать / обновить token</button><button class="btn" id="copyTokenBtn">Copy token</button></div><div class="actions"><a class="btn primary" href="downloads/TradeJournalConnector_MT4_v1.17.mq4" download>Скачать MT4 Connector v1.17</a></div><div id="connectorStatusList" class="connectorStatusList"></div>
       <div class="warning" style="margin-top:14px">В MetaTrader добавь <b>https://ylriyjxcefovzwzinpqd.supabase.co</b> в Tools → Options → Expert Advisors → Allow WebRequest. В Connector EA вставляется только этот ingest token.</div>
     </div>
     <div class="panel">
@@ -347,7 +347,7 @@ const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const el=id=>document.getElementById(id);
 const GROUPING_VERSION='2.3';
 const GROUPING_RULE='Server-isolated MT4 overlap · MT5 exposure · duplicate guard';
-const LATEST_MT4_CONNECTOR='1.16';
+const LATEST_MT4_CONNECTOR='1.17';
 let model={trades:[],daily:[],symbols:[],weekday:[],summary:{}},monthDate=null,activeTrade=null,liveToken='';
 let membership=null,allTrades=[],scopedTrades=[],scopedRawEvents=[],tradeNotes=[],dailyReviewRows=[],accountSettings=[],connectorStatuses=[],detectedAccounts=[],memberRows=[],selectedAccountKey='all',declineTarget=null,rawEvents=[],dailyReviewMap={},activeReviewDate=null;
 let bulkSelectMode=false,selectedTradeIds=new Set(),tradeReviewSnapshot='';
@@ -654,7 +654,7 @@ function summarizeMT4(group){
   const first=group[0],strategy=first._strategy,gid=first._gid,t=freshTrade(first,first.side,strategy,gid);
   t.openedAt=group.reduce((v,e)=>new Date(e.open_time)<new Date(v)?e.open_time:v,first.open_time);
   t.closedAt=group.reduce((v,e)=>new Date(e.close_time)>new Date(v)?e.close_time:v,first.close_time);
-  group.forEach(e=>{const q=Math.abs(Number(e.volume||0));t.entryQty+=q;t.entryVal+=q*Number(e.open_price||e.price||0);t.exitQty+=q;t.exitVal+=q*Number(e.close_price||0);t.pnl+=Number(e.profit||0)+Number(e.commission||0)+Number(e.swap||0)+Number(e.fee||0);t.entries++;t.exits++;t.orders[String(e.order_id||e.event_id)]=1;t.events.push(String(e.event_id||e.order_id));const raw=e.raw||{};if(raw.closed_by_sl===true||String(raw.closed_by_sl||'').toLowerCase()==='true')t.stopLossHit=true;});
+  group.forEach(e=>{const q=Math.abs(Number(e.volume||0));t.entryQty+=q;t.entryVal+=q*Number(e.open_price||e.price||0);t.exitQty+=q;t.exitVal+=q*Number(e.close_price||0);t.pnl+=Number(e.profit||0)+Number(e.commission||0)+Number(e.swap||0)+Number(e.fee||0);t.entries++;t.exits++;t.orders[String(e.order_id||e.event_id)]=1;t.events.push(String(e.event_id||e.order_id));const raw=e.raw||{},comment=String(e.comment||'').toLowerCase();if(raw.closed_by_sl===true||String(raw.closed_by_sl||'').toLowerCase()==='true'||comment.includes('[sl]')||comment.includes('stop loss')||comment.includes('stoploss'))t.stopLossHit=true;});
   return finalize(t);
 }
 function groupMT4(rows){
@@ -698,14 +698,8 @@ function stabilizeTradeIds(trades){
   });
   return trades;
 }
-function strategyOrderCount(t){
-  const n=Number(t.orderCount||0);
-  if(n>=7)return n;
-  if(t.stopLossHit)return 7;
-  if(String(t.source||'').toUpperCase()==='MT4'&&n===6&&Number(t.pnl)<0)return 7;
-  return n;
-}
-function strategyOutcome(t){return strategyOrderCount(t)>=7?'loss':'win'}
+function strategyOrderCount(t){return Number(t.orderCount||0)}
+function strategyOutcome(t){return t.stopLossHit?'loss':'win'}
 function isStrategyWin(t){return strategyOutcome(t)==='win'}
 function isStrategyLoss(t){return strategyOutcome(t)==='loss'}
 function buildModel(trades){
@@ -1246,7 +1240,7 @@ function exportData(kind){
   if(kind==='trades'){
     const cols=[
       {label:'Trade ID',key:'id'},{label:'Source',key:'source'},{label:'Account',key:'account'},{label:'Server',key:'server'},{label:'Symbol',key:'symbol'},{label:'Side',key:'side'},
-      {label:'Opened',key:'openedAt'},{label:'Closed',key:'closedAt'},{label:'Net P&L',key:'pnl'},{label:'Orders',get:r=>strategyOrderCount(r)},{label:'Strategy result',get:r=>strategyOutcome(r).toUpperCase()},{label:'Strategy',key:'strategy'},
+      {label:'Opened',key:'openedAt'},{label:'Closed',key:'closedAt'},{label:'Net P&L',key:'pnl'},{label:'Orders',key:'orderCount'},{label:'Strategy result',get:r=>strategyOutcome(r).toUpperCase()},{label:'Strategy',key:'strategy'},
       {label:'Setup',key:'setup'},{label:'Tier / Model',key:'tier'},{label:'Probability',key:'probability'},{label:'CR',key:'cr_value'},{label:'Plan followed',key:'plan_ok'},
       {label:'Mistake',key:'mistake'},{label:'Ghost',get:r=>r.excluded_from_stats?'YES':'NO'},{label:'Ghost reason',key:'exclusion_reason'},{label:'Notes',key:'notes'},
       {label:'Grouping version',get:()=>GROUPING_VERSION}
@@ -1589,7 +1583,7 @@ function renderTrades(){
   el('tradeRows').innerHTML=rows.length?rows.map(t=>{
     const selected=selectedTradeIds.has(t.id);
     const check=bulkSelectMode?'<td class="bulkCheck"><input type="checkbox" '+(selected?'checked':'')+' tabindex="-1" aria-label="Select trade"></td>':'';
-    return '<tr class="tradeRow '+(t.excluded_from_stats?'ghostRow ':'')+(selected?'bulkSelected':'')+'" data-id="'+esc(t.id)+'">'+check+'<td class="tradeDate">'+new Date(t.closedAt).toLocaleString()+'</td><td class="tradeSymbol">'+esc(t.symbol)+(t.excluded_from_stats?'<span class="ghostBadge">GHOST</span>':'')+'</td><td class="tradeSide"><span class="pill">'+esc(t.side)+'</span></td><td class="tradePnl '+(t.pnl>=0?'green':'red')+'">'+money(t.pnl)+'</td><td class="tradeOrders">'+strategyOrderCount(t)+(isStrategyLoss(t)?'<span class="slBadge">SL</span>':'')+'</td><td class="tradeSetup">'+esc(t.setup||t.strategy||'')+'</td></tr>';
+    return '<tr class="tradeRow '+(t.excluded_from_stats?'ghostRow ':'')+(selected?'bulkSelected':'')+'" data-id="'+esc(t.id)+'">'+check+'<td class="tradeDate">'+new Date(t.closedAt).toLocaleString()+'</td><td class="tradeSymbol">'+esc(t.symbol)+(t.excluded_from_stats?'<span class="ghostBadge">GHOST</span>':'')+'</td><td class="tradeSide"><span class="pill">'+esc(t.side)+'</span></td><td class="tradePnl '+(t.pnl>=0?'green':'red')+'">'+money(t.pnl)+'</td><td class="tradeOrders">'+t.orderCount+(isStrategyLoss(t)?'<span class="slBadge">SL</span>':'')+'</td><td class="tradeSetup">'+esc(t.setup||t.strategy||'')+'</td></tr>';
   }).join(''):'<tr><td colspan="'+emptyCols+'" class="empty">'+esc(tradeEmptyMessage({q,result,ghost,side,source}))+'</td></tr>';
 
   document.querySelectorAll('#tradeRows tr[data-id]').forEach(r=>r.onclick=e=>{
@@ -1657,7 +1651,7 @@ function closeTradeReview(force=false){
 function openTrade(id){
   const t=scopedTrades.find(x=>x.id===id)||allTrades.find(x=>x.id===id);if(!t)return;activeTrade=t;
   el('modalTitle').textContent=t.symbol+' '+t.side+' · '+money(t.pnl)+(t.excluded_from_stats?' · GHOST':'');
-  const details=[['Source',t.source],['Account',t.account+(t.server?' · '+t.server:'')],['Opened',new Date(t.openedAt).toLocaleString()],['Closed',new Date(t.closedAt).toLocaleString()],['Orders',strategyOrderCount(t)],['Entries / exits',t.entries+' / '+t.exits],['Strategy',t.strategy]];
+  const details=[['Source',t.source],['Account',t.account+(t.server?' · '+t.server:'')],['Opened',new Date(t.openedAt).toLocaleString()],['Closed',new Date(t.closedAt).toLocaleString()],['Orders',t.orderCount],['Result',isStrategyLoss(t)?'SL':'Worked'],['Entries / exits',t.entries+' / '+t.exits],['Strategy',t.strategy]];
   el('tradeDetails').innerHTML=details.map(x=>'<div class="kv"><small>'+esc(x[0])+'</small><b>'+esc(x[1])+'</b></div>').join('');
   el('fSetup').value=t.setup||'';el('fTier').value=t.tier||'';el('fProbability').value=t.probability==null?'':t.probability;el('fCr').value=t.cr_value==null?'':t.cr_value;el('fPlan').value=t.plan_ok||'';el('fMistake').value=t.mistake||'';document.querySelectorAll('[data-mistake]').forEach(b=>b.classList.toggle('on',b.dataset.mistake===(t.mistake||'')));el('fExcluded').checked=!!t.excluded_from_stats;el('fExclusionReason').value=t.exclusion_reason||'';el('fExclusionReason').disabled=!el('fExcluded').checked;el('fNotes').value=t.notes||'';
   el('tradeModal').classList.remove('hide');

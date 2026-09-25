@@ -16,8 +16,8 @@ async function retry(fn, attempts=8, delayMs=15000){
 }
 
 const html=await fs.readFile('index.html','utf8');
-const mt4Connector=await fs.readFile('downloads/TradeJournalConnector_MT4_v1.16.mq4','utf8');
-ok(mt4Connector.includes('#property version   "1.16"'),'MT4 connector: wrong version');
+const mt4Connector=await fs.readFile('downloads/TradeJournalConnector_MT4_v1.17.mq4','utf8');
+ok(mt4Connector.includes('#property version   "1.17"'),'MT4 connector: wrong version');
 ok(mt4Connector.includes('const int TJ_OP_BALANCE = 6;'),'MT4 connector: balance operation constant missing');
 ok(mt4Connector.includes('const int TJ_OP_CREDIT  = 7;'),'MT4 connector: credit operation constant missing');
 ok(!/(^|[^A-Z_])OP_BALANCE([^A-Z_]|$)/m.test(mt4Connector.replace('const int TJ_OP_BALANCE = 6;','')),'MT4 connector: bare OP_BALANCE would not compile');
@@ -30,13 +30,14 @@ ok(html.includes('raw_events'),'index.html: raw_events integration missing');
 ok(html.includes('trade_notes'),'index.html: trade_notes integration missing');
 ok(html.includes('groupMT5') && html.includes('groupMT4'),'index.html: MT grouping functions missing');
 ok(html.includes("GROUPING_VERSION='2.3'"),'index.html: grouping version is not 2.3');
-ok(html.includes("LATEST_MT4_CONNECTOR='1.16'"),'index.html: latest MT4 connector version is not 1.15');
+ok(html.includes("LATEST_MT4_CONNECTOR='1.17'"),'index.html: latest MT4 connector version is not 1.15');
 ok(html.includes('markSelectedGhost'),'index.html: bulk Ghost workflow missing');
 ok(html.includes('closeTradeReview'),'index.html: unsaved Trade Review guard missing');
 ok(html.includes('connectorStatusList'),'index.html: connector version status UI missing');
 ok(html.includes('avgWinLoss'),'index.html: avg win/loss breakdown missing');
 ok(html.includes('isCashFlowEvent'),'index.html: cash-flow recognition missing');
-ok(html.includes('strategyOrderCount'),'index.html: strategy synthetic SL step missing');
+ok(html.includes('strategyOrderCount'),'index.html: strategy order-count helper missing');
+ok(html.includes("function strategyOutcome(t){return t.stopLossHit?'loss':'win'}"),'index.html: strategy outcome must depend on explicit SL marker');
 ok(mt4Connector.includes('closed_by_sl'),'MT4 connector: explicit SL marker missing');
 ok(html.includes('stabilizeTradeIds'),'index.html: trade id collision guard missing');
 ok(html.includes('syncContextualTradeFilters'),'index.html: contextual filter logic missing');
