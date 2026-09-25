@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 
 function ok(cond,msg){ if(!cond) throw new Error(msg); }
 
-const [arch, pyproject, mt5, mt4py, mt4mql, crypto, dpapi, identity] = await Promise.all([
+const [arch, pyproject, mt5, mt4py, mt4mql, crypto, dpapi, identity, serviceSql, edgeShared, brokerKey, brokerConnect, brokerDisconnect, collectorNext, collectorReport, collectorIngest] = await Promise.all([
   fs.readFile('docs/INVESTOR_COLLECTOR_V1.md','utf8'),
   fs.readFile('collector/pyproject.toml','utf8'),
   fs.readFile('collector/src/trading_journal_collector/adapters/mt5.py','utf8'),
@@ -11,6 +11,14 @@ const [arch, pyproject, mt5, mt4py, mt4mql, crypto, dpapi, identity] = await Pro
   fs.readFile('collector/src/trading_journal_collector/crypto.py','utf8'),
   fs.readFile('collector/src/trading_journal_collector/windows_dpapi.py','utf8'),
   fs.readFile('collector/src/trading_journal_collector/identity.py','utf8'),
+  fs.readFile('supabase/migrations/20260925195214_investor_collector_service_rpc_v1.sql','utf8'),
+  fs.readFile('supabase/functions/broker-key/shared.ts','utf8'),
+  fs.readFile('supabase/functions/broker-key/index.ts','utf8'),
+  fs.readFile('supabase/functions/broker-connect/index.ts','utf8'),
+  fs.readFile('supabase/functions/broker-disconnect/index.ts','utf8'),
+  fs.readFile('supabase/functions/collector-next-job/index.ts','utf8'),
+  fs.readFile('supabase/functions/collector-report/index.ts','utf8'),
+  fs.readFile('supabase/functions/collector-ingest/index.ts','utf8'),
 ]);
 
 ok(arch.includes('MetaTrader 4') && arch.includes('MetaTrader 5'),'architecture must cover MT4 and MT5');
@@ -32,6 +40,31 @@ ok(!/^\s*CRYPTPROTECT_LOCAL_MACHINE\s*=/m.test(dpapi),'DPAPI must not define mac
 ok(!/\|\s*CRYPTPROTECT_LOCAL_MACHINE\b/.test(dpapi),'DPAPI must not enable machine-wide protection flag');
 ok(identity.includes('hash_collector_token'),'collector token hash contract missing');
 ok(!identity.includes('print('),'collector identity code must not print secret material');
+
+ok(serviceSql.includes('revoke all on function public.collector_active_public_key_service() from public,anon,authenticated'),'service RPC anon/auth revoke missing');
+ok(serviceSql.includes('grant execute on function public.collector_active_public_key_service() to service_role'),'service RPC service_role grant missing');
+ok(serviceSql.includes('collector_ingest_events_service'),'collector service ingest RPC missing');
+ok(serviceSql.includes("e := e || jsonb_build_object('source',src,'account',acct,'server',srv)"),'collector ingest canonical identity override missing');
+
+ok(edgeShared.includes('npm:@supabase/supabase-js@2.117.1'),'Edge Functions Supabase SDK must be exactly pinned');
+ok(edgeShared.includes('auth.getUser(token)'),'Edge user authentication must validate user JWT server-side');
+ok(edgeShared.includes('x-collector-token'),'collector custom token header auth missing');
+ok(edgeShared.includes('collector_authenticate_service'),'collector token hash database authentication missing');
+ok(!edgeShared.includes('console.log('),'Edge shared code must not log secrets');
+
+for(const [name,src] of [
+  ['broker-key',brokerKey],['broker-connect',brokerConnect],['broker-disconnect',brokerDisconnect]
+]){
+  ok(src.includes('requireApprovedUser(req)'),name+': approved-user auth gate missing');
+}
+ok(brokerConnect.includes('ciphertext_base64') && !brokerConnect.toLowerCase().includes('investor_password'),'broker-connect must accept ciphertext, not plaintext password');
+
+for(const [name,src] of [
+  ['collector-next-job',collectorNext],['collector-report',collectorReport],['collector-ingest',collectorIngest]
+]){
+  ok(src.includes('requireCollector(req)'),name+': collector-token auth gate missing');
+  ok(!src.includes('console.log('),name+': must not log collector secrets');
+}
 
 for(const pair of [['MT5 Python adapter',mt5],['MT4 Python adapter',mt4py]]){
   const name=pair[0], src=pair[1];

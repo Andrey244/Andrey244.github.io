@@ -116,6 +116,38 @@ const headers={
   'content-type':'application/json'
 };
 
+
+const serviceRpcProbe=await fetch(SUPABASE+'/rest/v1/rpc/collector_active_public_key_service',{
+  method:'POST',
+  headers,
+  body:'{}'
+});
+ok(!serviceRpcProbe.ok,'anonymous service-only collector RPC was unexpectedly executable');
+
+const functionPublicHeaders={apikey:LEGACY_ANON,'content-type':'application/json'};
+for(const fn of ['broker-key','broker-connect','broker-disconnect']){
+  const r=await fetch(SUPABASE+'/functions/v1/'+fn,{
+    method:'POST',
+    headers:functionPublicHeaders,
+    body:'{}'
+  });
+  ok([401,403].includes(r.status),fn+' accepted request without authenticated user session: '+r.status);
+}
+
+const invalidCollectorHeaders={
+  apikey:LEGACY_ANON,
+  'content-type':'application/json',
+  'x-collector-token':'healthcheck-invalid-collector-token-000000000000'
+};
+for(const fn of ['collector-next-job','collector-report','collector-ingest']){
+  const r=await fetch(SUPABASE+'/functions/v1/'+fn,{
+    method:'POST',
+    headers:invalidCollectorHeaders,
+    body:'{}'
+  });
+  ok(r.status===401,fn+' did not reject invalid collector token with 401: '+r.status);
+}
+
 const ingest=await fetch(SUPABASE+'/rest/v1/rpc/ingest_mt_events',{
   method:'POST',
   headers,
