@@ -7,6 +7,9 @@ Source of truth:
 
 Current repository foundation:
 - common secret-safe models;
+- RSA-3072 / OAEP-SHA256 collector key store;
+- Windows current-user DPAPI secret protector (dedicated service-account scope);
+- protected collector auth token with SHA-256 database hash;
 - adapter interface;
 - MT5 read-only probe with fake-module testability;
 - MT4 startup config renderer;
@@ -15,8 +18,7 @@ Current repository foundation:
 - static regression rules forbidding trade APIs.
 
 Not implemented yet:
-- Windows service;
-- RSA/DPAPI key management;
+- Windows service installer / ACL provisioning;
 - Supabase collector control plane / Edge Functions;
 - MT5 history normalization;
 - production MT4 launcher and cleanup;

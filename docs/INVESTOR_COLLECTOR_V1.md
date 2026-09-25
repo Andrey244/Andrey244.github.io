@@ -352,11 +352,12 @@ Phase 0 — repository foundation:
 - MT4 startup config + one-shot exporter baseline;
 - regression checks prohibiting trade APIs.
 
-Phase 1 — secure collector identity:
-- RSA key generation;
-- DPAPI private-key protection;
-- collector service identity/token;
-- Windows service skeleton.
+Phase 1 — secure collector identity (repository foundation complete):
+- RSA-3072 key generation with OAEP/MGF1 SHA-256;
+- OS-protector key store and current-user Windows DPAPI implementation;
+- protected collector auth token + SHA-256 registration hash;
+- exact cryptography dependency pin and Linux CI contract tests;
+- still pending: real Windows service installer/ACL setup and Windows DPAPI runtime integration test.
 
 Phase 2 — Supabase control plane:
 - public metadata table with RLS;

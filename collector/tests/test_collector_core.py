@@ -16,6 +16,8 @@ from trading_journal_collector.adapters.mt4 import Mt4StartupConfig, parse_expor
 from trading_journal_collector.adapters.mt5 import Mt5Adapter
 from trading_journal_collector.errors import AccountMismatchError, WriteCapableCredentialError
 from trading_journal_collector.models import CredentialLease, Platform
+from trading_journal_collector.crypto import CollectorKeyStore, encrypt_for_public_key
+from trading_journal_collector.identity import CollectorIdentityStore, hash_collector_token
 
 
 class FakeMt5:
@@ -107,6 +109,65 @@ class Mt4ContractTests(unittest.TestCase):
             }) + "\n", encoding="utf-8")
             rows = list(parse_export_jsonl(p))
             self.assertEqual(rows[0]["source"], "MT4")
+
+
+class TestProtector:
+    """Reversible test-only wrapper; production uses Windows DPAPI."""
+
+    def protect(self, plaintext: bytes) -> bytes:
+        return b"TEST" + bytes(b ^ 0xA5 for b in plaintext)
+
+    def unprotect(self, protected: bytes) -> bytes:
+        if not protected.startswith(b"TEST"):
+            raise ValueError("invalid protected test blob")
+        return bytes(b ^ 0xA5 for b in protected[4:])
+
+
+class CryptoIdentityTests(unittest.TestCase):
+    def test_rsa3072_oaep_round_trip_and_protected_private_storage(self):
+        protector = TestProtector()
+        with tempfile.TemporaryDirectory() as td:
+            store = CollectorKeyStore(Path(td), protector)
+            public = store.ensure()
+            self.assertTrue(public.key_id.startswith("rsa3072-sha256-"))
+            self.assertIn("BEGIN PUBLIC KEY", public.public_key_pem)
+
+            plaintext = b"investor-password-example"
+            ciphertext = encrypt_for_public_key(public.public_key_pem, plaintext)
+            self.assertEqual(len(ciphertext), 384)
+            recovered = store.decrypt(ciphertext)
+            try:
+                self.assertEqual(bytes(recovered), plaintext)
+            finally:
+                for i in range(len(recovered)):
+                    recovered[i] = 0
+
+            protected = store.private_path.read_bytes()
+            self.assertTrue(protected.startswith(b"TEST"))
+            self.assertNotIn(b"PRIVATE KEY", protected)
+
+            # Existing key store must be stable across restarts.
+            public2 = CollectorKeyStore(Path(td), protector).ensure()
+            self.assertEqual(public2.key_id, public.key_id)
+            self.assertEqual(public2.public_key_pem, public.public_key_pem)
+
+    def test_collector_token_is_stored_protected_and_db_value_is_hash_only(self):
+        protector = TestProtector()
+        with tempfile.TemporaryDirectory() as td:
+            identity = CollectorIdentityStore(Path(td), protector)
+            registration = identity.ensure()
+            token = identity.token_text()
+            self.assertTrue(token.startswith("tjc_"))
+            self.assertEqual(registration.auth_token_hash, hash_collector_token(token))
+            self.assertNotEqual(registration.auth_token_hash, token)
+            disk = identity.token_path.read_bytes()
+            self.assertTrue(disk.startswith(b"TEST"))
+            self.assertNotIn(token.encode("utf-8"), disk)
+
+            rotated = identity.rotate_token()
+            token2 = identity.token_text()
+            self.assertNotEqual(token2, token)
+            self.assertEqual(rotated.auth_token_hash, hash_collector_token(token2))
 
 
 if __name__ == "__main__":

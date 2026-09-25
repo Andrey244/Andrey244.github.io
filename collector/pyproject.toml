@@ -7,7 +7,9 @@ name = "trading-journal-collector"
 version = "0.1.0"
 description = "Read-only MT4/MT5 collector foundation for Trading Journal"
 requires-python = ">=3.12,<3.13"
-dependencies = []
+dependencies = [
+  "cryptography==50.0.1",
+]
 
 [project.optional-dependencies]
 mt5 = [

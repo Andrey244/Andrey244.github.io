@@ -455,8 +455,16 @@ Production control-plane DB foundation completed:
 - private schema USAGE is revoked from browser/backend API roles;
 - browser Smoke checks reject anonymous broker metadata access and private-schema Data API exposure.
 
+Collector identity foundation completed in repository:
+- RSA-3072 key generation and OAEP/MGF1 SHA-256 decrypt contract;
+- private key persisted only through an OS-protector abstraction;
+- Windows implementation uses current-user DPAPI (not machine-wide DPAPI), intended for a dedicated collector service account;
+- collector auth token is persisted protected locally and only SHA-256 hash is intended for database registration;
+- `cryptography==50.0.1` is pinned and CI tests RSA round-trip, key stability, token rotation and protected-at-rest test behavior.
+
 Still pending:
-- collector RSA key + Windows DPAPI protection;
+- real Windows service installer / directory ACL provisioning and runtime DPAPI integration test;
+- registration of a real collector node generated on the owned Windows/VPS host;
 - Edge Functions / service-only database access functions for connect/job/ingest/report lifecycle;
 - MT5 history normalization/end-to-end ingest;
 - MT4 Windows launcher/compile/runtime validation;
