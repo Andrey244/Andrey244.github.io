@@ -3,15 +3,15 @@ import vm from 'node:vm';
 
 function ok(cond,msg){ if(!cond) throw new Error('grouping regression: '+msg); }
 
-const html=await fs.readFile('index.html','utf8');
+const appJs=await fs.readFile('app.js','utf8');
 
 function extractFunction(name){
-  const start=html.indexOf('function '+name+'(');
+  const start=appJs.indexOf('function '+name+'(');
   if(start<0) throw new Error('missing function '+name);
-  const brace=html.indexOf('{',start);
+  const brace=appJs.indexOf('{',start);
   let depth=0,quote=null,escape=false;
-  for(let i=brace;i<html.length;i++){
-    const ch=html[i];
+  for(let i=brace;i<appJs.length;i++){
+    const ch=appJs[i];
     if(quote){
       if(escape){escape=false;continue}
       if(ch==='\\'){escape=true;continue}
@@ -22,7 +22,7 @@ function extractFunction(name){
     if(ch==='{')depth++;
     else if(ch==='}'){
       depth--;
-      if(depth===0)return html.slice(start,i+1);
+      if(depth===0)return appJs.slice(start,i+1);
     }
   }
   throw new Error('unterminated function '+name);
