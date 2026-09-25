@@ -46,6 +46,8 @@ ok(service.includes('ControlPlaneError'),'service must back off while node regis
 ok(service.includes('registration.json'),'service must emit non-secret registration bundle');
 ok(serviceConfig.includes('FORBIDDEN_KEY_PARTS'),'service config secret denylist missing');
 ok(installer.includes('/inheritance:r'),'installer must remove inherited ProgramData ACLs');
+ok(installer.includes('$Root = Join-Path $env:ProgramData "TradingJournalCollector"'),'installer runtime root must match service default config path');
+ok(!installer.includes('[string]$Root ='),'installer must not advertise a root override the service cannot discover');
 ok(installer.includes('NT AUTHORITY\\LOCAL SERVICE:(OI)(CI)M'),'installer LocalService ACL missing');
 ok(installer.includes('--username", "NT AUTHORITY\\LocalService"'),'service must install under LocalService');
 ok(!installer.toLowerCase().includes('--password'),'installer must not pass a reusable Windows account password');

@@ -6,7 +6,6 @@ param(
     [string]$PublishableKey,
     [string]$CollectorName = $env:COMPUTERNAME,
     [string]$CollectorSource = (Resolve-Path (Join-Path $PSScriptRoot "..")),
-    [string]$Root = (Join-Path $env:ProgramData "TradingJournalCollector"),
     [string]$Mt5TerminalPath = "",
     [string]$Mt4GoldenDir = "",
     [string]$Mt4BootstrapSymbol = "EURUSD",
@@ -33,6 +32,8 @@ function Invoke-Checked {
 }
 
 Assert-Administrator
+$Root = Join-Path $env:ProgramData "TradingJournalCollector"
+
 if ($SupabaseUrl -notmatch '^https://') { throw "SupabaseUrl must use https." }
 if ($PublishableKey.Length -lt 20) { throw "PublishableKey is invalid." }
 if ([string]::IsNullOrWhiteSpace($CollectorName) -or $CollectorName.Length -gt 120) {
