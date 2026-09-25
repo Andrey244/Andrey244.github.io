@@ -164,13 +164,21 @@ Remaining credential-entry rules:
 
 Client-side encryption protects transport/storage, not an already-compromised same-origin script.
 
-## Proposed database model
+## Database model — production foundation created
+
+Production migrations:
+- `20260925191441 investor_collector_control_plane_v1`
+- `20260925191514 investor_collector_job_fk_indexes_v1`
+
+The tables below now exist. Direct browser writes are intentionally not enabled: authenticated users have SELECT-only access to their own `public.broker_connections` rows; private collector tables have deny-all RLS and no API-role grants.
+
+
 
 ### public.broker_connections
 
-No broker password.
+No broker password or ciphertext.
 
-Suggested columns:
+Implemented columns:
 - id uuid primary key
 - user_id uuid not null
 - platform MT4/MT5

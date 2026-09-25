@@ -447,9 +447,17 @@ Frontend credential-entry prerequisite completed:
 - CI enforces these constraints.
 The direct Investor Password form is still not enabled until collector/control-plane phases are ready.
 
+Production control-plane DB foundation completed:
+- migration `20260925191441 investor_collector_control_plane_v1`;
+- migration `20260925191514 investor_collector_job_fk_indexes_v1`;
+- `public.broker_connections` stores metadata only; authenticated users receive SELECT-only access to their own approved-user rows;
+- `collector_private.broker_credentials`, `collector_nodes`, and `collector_jobs` are RLS-enabled deny-all tables with no anon/authenticated/service_role table grants;
+- private schema USAGE is revoked from browser/backend API roles;
+- browser Smoke checks reject anonymous broker metadata access and private-schema Data API exposure.
+
 Still pending:
 - collector RSA key + Windows DPAPI protection;
-- Supabase private control-plane schema and Edge Functions;
+- Edge Functions / service-only database access functions for connect/job/ingest/report lifecycle;
 - MT5 history normalization/end-to-end ingest;
 - MT4 Windows launcher/compile/runtime validation;
 - frontend direct-connect form;

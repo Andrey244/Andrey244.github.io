@@ -141,6 +141,14 @@ if(anonRead.ok){
   ok([401,403].includes(anonRead.status),'anonymous raw_events read failed unexpectedly: '+anonRead.status);
 }
 
+const anonBrokerConnections=await fetch(SUPABASE+'/rest/v1/broker_connections?select=id&limit=1',{headers});
+ok(!anonBrokerConnections.ok,'anonymous broker_connections read was unexpectedly allowed');
+
+const privateProfile=await fetch(SUPABASE+'/rest/v1/broker_credentials?select=connection_id&limit=1',{
+  headers:{...headers,'Accept-Profile':'collector_private'}
+});
+ok(!privateProfile.ok,'collector_private schema was unexpectedly exposed through Data API');
+
 const anonWrite=await fetch(SUPABASE+'/rest/v1/raw_events',{
   method:'POST',
   headers:{...headers,Prefer:'return=minimal'},

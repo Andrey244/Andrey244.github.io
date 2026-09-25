@@ -1,0 +1,5 @@
+create index collector_jobs_connection_id_idx
+on collector_private.collector_jobs(connection_id);
+
+create index collector_jobs_leased_by_idx
+on collector_private.collector_jobs(leased_by);
