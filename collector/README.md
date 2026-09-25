@@ -53,3 +53,13 @@ To enable MT4 on the Windows collector, configure:
 - optional `TJ_MT4_BOOTSTRAP_SYMBOL` (default EURUSD), which must exist at that broker.
 
 The collector never compiles an MQ4 silently. A missing EX4 fails closed. Real compilation/login/history coverage must be verified on the owned Windows host before MT4 direct-connect is released.
+
+
+## Windows CI boundary
+
+GitHub Actions includes a Windows runner that:
+- installs the collector with the pinned MT5 extra;
+- verifies MetaTrader5 package version 5.0.6180 imports on Python 3.12;
+- performs a real Windows current-user DPAPI protect/unprotect integration test, including entropy mismatch fail-closed behavior.
+
+This validates OS crypto/package compatibility only. It does not substitute for a real broker MT4/MT5 terminal runtime on the owned collector host.

@@ -490,6 +490,7 @@ Still pending:
 - live MT5 terminal end-to-end test against the owned Windows collector;
 - MT4 disposable-slot launcher implemented in repository: cloned terminal slot, short-lived startup config, /portable launch, cursor file, account/server/read-only validation and guaranteed cleanup;
 - MT4 exporter v0.11 reads an exact since-ms cursor and reports terminal history total;
+- Windows GitHub Actions now performs a real current-user DPAPI round-trip and installs/imports pinned MetaTrader5 5.0.6180;
 - still pending specifically for MT4: compile the MQ4 to EX4 with the target/broker MetaEditor and validate real terminal login/history behavior on owned Windows;
 - MT4 Windows launcher/compile/runtime validation;
 - frontend direct-connect form;
