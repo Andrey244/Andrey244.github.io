@@ -440,8 +440,12 @@ Repository foundation:
 - regression checks that forbid trade APIs;
 - Python unit tests in GitHub Actions.
 
-Security prerequisite before direct credential entry:
-- pin/self-host the frontend Supabase JS dependency and add CSP/third-party script controls, because any script already executing in the page could read Investor Password before client-side encryption.
+Frontend credential-entry prerequisite completed:
+- Supabase JS pinned to exact 2.117.1 UMD path;
+- main application JavaScript externalized to /app.js;
+- CSP blocks inline script/inline script attributes and pins the allowed SDK source;
+- CI enforces these constraints.
+The direct Investor Password form is still not enabled until collector/control-plane phases are ready.
 
 Still pending:
 - collector RSA key + Windows DPAPI protection;

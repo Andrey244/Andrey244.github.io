@@ -147,20 +147,22 @@ Collector leases a job, receives ciphertext, decrypts locally, uses the credenti
 
 ## Frontend security prerequisite
 
-Do not ship the Investor Password form yet.
+Do not ship the Investor Password form yet; backend/collector phases are still incomplete.
 
-The current page loads an unpinned major-version CDN dependency:
+Frontend script hardening completed before credential-entry work:
+- Supabase JS is pinned to 2.117.1 at an exact CDN path;
+- the application JavaScript was moved from an inline script to /app.js;
+- CSP script-src permits only self plus that exact Supabase SDK path;
+- script-src-attr is none;
+- CI rejects a return to floating @2 or inline JavaScript.
 
-https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2
+Remaining credential-entry rules:
+1. do not add analytics/session-replay code to the secret-entry surface;
+2. keep the password out of browser storage and logs;
+3. encrypt with Web Crypto before backend submission;
+4. clear the password field immediately after encryption.
 
-Any JavaScript already executing on the page can read the password before Web Crypto encrypts it. Before enabling the form:
-1. pin the exact Supabase JS version or self-host a reviewed bundle;
-2. add an appropriate Content Security Policy;
-3. remove or strictly control unnecessary third-party scripts;
-4. ensure no analytics/session-replay code can capture secret inputs;
-5. add regression checks for these requirements.
-
-Client-side encryption protects transport/storage, not an already-compromised page.
+Client-side encryption protects transport/storage, not an already-compromised same-origin script.
 
 ## Proposed database model
 

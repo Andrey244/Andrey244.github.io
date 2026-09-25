@@ -1,5 +1,5 @@
-const CACHE='tj-shell-v3';
-const SHELL=['/','/index.html','/manifest.webmanifest','/app-icon.svg'];
+const CACHE='tj-shell-v4';
+const SHELL=['/','/index.html','/app.js','/manifest.webmanifest','/app-icon.svg'];
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting()));
 });
