@@ -28,7 +28,8 @@ ok(crypto.includes('RSA-OAEP-SHA256'),'collector RSA algorithm marker missing');
 ok(crypto.includes('padding.MGF1(algorithm=hashes.SHA256())'),'collector OAEP MGF1 SHA-256 missing');
 ok(crypto.includes('algorithm=hashes.SHA256()'),'collector OAEP SHA-256 missing');
 ok(dpapi.includes('CryptProtectData') && dpapi.includes('CryptUnprotectData'),'Windows DPAPI protection missing');
-ok(!dpapi.includes('CRYPTPROTECT_LOCAL_MACHINE'),'DPAPI must remain bound to the dedicated Windows service account');
+ok(!/^\s*CRYPTPROTECT_LOCAL_MACHINE\s*=/m.test(dpapi),'DPAPI must not define machine-wide protection flag');
+ok(!/\|\s*CRYPTPROTECT_LOCAL_MACHINE\b/.test(dpapi),'DPAPI must not enable machine-wide protection flag');
 ok(identity.includes('hash_collector_token'),'collector token hash contract missing');
 ok(!identity.includes('print('),'collector identity code must not print secret material');
 
