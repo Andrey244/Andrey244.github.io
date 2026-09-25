@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 
 function ok(cond,msg){ if(!cond) throw new Error(msg); }
 
-const [arch, pyproject, mt5, mt4py, mt4mql, crypto, dpapi, identity, serviceSql, edgeShared, brokerKey, brokerConnect, brokerDisconnect, collectorNext, collectorReport, collectorIngest] = await Promise.all([
+const [arch, pyproject, mt5, mt4py, mt4mql, crypto, dpapi, identity, serviceSql, cursorSql, edgeShared, brokerKey, brokerConnect, brokerDisconnect, collectorNext, collectorReport, collectorIngest, api, worker, main] = await Promise.all([
   fs.readFile('docs/INVESTOR_COLLECTOR_V1.md','utf8'),
   fs.readFile('collector/pyproject.toml','utf8'),
   fs.readFile('collector/src/trading_journal_collector/adapters/mt5.py','utf8'),
@@ -12,6 +12,7 @@ const [arch, pyproject, mt5, mt4py, mt4mql, crypto, dpapi, identity, serviceSql,
   fs.readFile('collector/src/trading_journal_collector/windows_dpapi.py','utf8'),
   fs.readFile('collector/src/trading_journal_collector/identity.py','utf8'),
   fs.readFile('supabase/migrations/20260925195214_investor_collector_service_rpc_v1.sql','utf8'),
+  fs.readFile('supabase/migrations/20260925200130_investor_collector_sync_cursor_v1.sql','utf8'),
   fs.readFile('supabase/functions/broker-key/shared.ts','utf8'),
   fs.readFile('supabase/functions/broker-key/index.ts','utf8'),
   fs.readFile('supabase/functions/broker-connect/index.ts','utf8'),
@@ -19,6 +20,9 @@ const [arch, pyproject, mt5, mt4py, mt4mql, crypto, dpapi, identity, serviceSql,
   fs.readFile('supabase/functions/collector-next-job/index.ts','utf8'),
   fs.readFile('supabase/functions/collector-report/index.ts','utf8'),
   fs.readFile('supabase/functions/collector-ingest/index.ts','utf8'),
+  fs.readFile('collector/src/trading_journal_collector/api.py','utf8'),
+  fs.readFile('collector/src/trading_journal_collector/worker.py','utf8'),
+  fs.readFile('collector/src/trading_journal_collector/main.py','utf8'),
 ]);
 
 ok(arch.includes('MetaTrader 4') && arch.includes('MetaTrader 5'),'architecture must cover MT4 and MT5');
@@ -51,6 +55,19 @@ ok(edgeShared.includes('auth.getUser(token)'),'Edge user authentication must val
 ok(edgeShared.includes('x-collector-token'),'collector custom token header auth missing');
 ok(edgeShared.includes('collector_authenticate_service'),'collector token hash database authentication missing');
 ok(!edgeShared.includes('console.log('),'Edge shared code must not log secrets');
+
+ok(cursorSql.includes('last_sync_at timestamptz'),'collector lease must return sync cursor');
+ok(cursorSql.includes("last_sync_at=case when v_job_type='SYNC' then now() else last_sync_at end"),'VALIDATE must not advance history sync cursor');
+ok(mt5.includes('history_deals_get'),'MT5 adapter history-deal reader missing');
+ok(mt5.includes('DEAL_REASON_SL'),'MT5 adapter explicit SL reason mapping missing');
+ok(mt5.includes('"closed_by_sl": bool(closed_by_sl)'),'MT5 adapter explicit SL payload missing');
+ok(!/\border_send\b|\border_check\b/.test(mt5),'MT5 adapter must never contain trade APIs');
+ok(api.includes('x-collector-token'),'collector HTTP client token header missing');
+ok(!api.toLowerCase().includes('service_role'),'collector HTTP client must not contain service-role credentials');
+ok(worker.includes('overlap_seconds'),'worker overlap cursor missing');
+ok(worker.includes('credential.clear()'),'worker credential buffer clearing missing');
+ok(main.includes('TJ_SUPABASE_PUBLISHABLE_KEY'),'worker must use publishable key');
+ok(!main.includes('SERVICE_ROLE')&&!main.includes('SECRET_KEY'),'worker must never require Supabase elevated keys');
 
 for(const [name,src] of [
   ['broker-key',brokerKey],['broker-connect',brokerConnect],['broker-disconnect',brokerDisconnect]

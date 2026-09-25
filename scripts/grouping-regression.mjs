@@ -99,6 +99,18 @@ const mt5=[
 trades=groupMT5(mt5);
 ok(trades.length===1&&trades[0].pnl===12,'MT5 exposure round-trip regression');
 
+const mt5ExplicitSl=[
+  {source:'MT5',account:'201',server:'S',event_id:'sl-a',order_id:'sl-a',symbol:'EURUSD',side:'BUY',magic:'1',volume:1,price:1.1,profit:0,commission:0,swap:0,fee:0,event_time:'2026-09-22T10:00:00Z',event_time_ms:10,raw:{closed_by_sl:false}},
+  {source:'MT5',account:'201',server:'S',event_id:'sl-b',order_id:'sl-b',symbol:'EURUSD',side:'SELL',magic:'1',volume:1,price:1.09,profit:-100,commission:0,swap:0,fee:0,event_time:'2026-09-22T10:05:00Z',event_time_ms:11,raw:{closed_by_sl:true}}
+];
+const mt5WorkedNegative=[
+  {source:'MT5',account:'202',server:'S',event_id:'w-a',order_id:'w-a',symbol:'EURUSD',side:'BUY',magic:'1',volume:1,price:1.1,profit:0,commission:0,swap:0,fee:0,event_time:'2026-09-22T10:00:00Z',event_time_ms:12},
+  {source:'MT5',account:'202',server:'S',event_id:'w-b',order_id:'w-b',symbol:'EURUSD',side:'SELL',magic:'1',volume:1,price:1.09,profit:-100,commission:0,swap:0,fee:0,event_time:'2026-09-22T10:05:00Z',event_time_ms:13}
+];
+const slTrade=groupMT5(mt5ExplicitSl)[0],workedNegative=groupMT5(mt5WorkedNegative)[0];
+ok(strategyOutcome(slTrade)==='loss','MT5 explicit closed_by_sl must classify LOSS');
+ok(strategyOutcome(workedNegative)==='win','MT5 negative P&L without explicit SL must remain Worked/WIN');
+
 // 8) Ghost trade exclusion must remove it from analytics.
 const analyticsInput=[
   {pnl:10,closedAt:'2026-09-22T10:00:00Z',symbol:'EURUSD',excluded_from_stats:false},

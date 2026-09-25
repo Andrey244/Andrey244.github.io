@@ -471,11 +471,24 @@ Service API / Edge Function control plane completed:
 - collector ingest resolves user/account/platform/server server-side from the leased connection and canonicalizes event identity before writing `raw_events`;
 - production Smoke verifies service RPC denial, broker unauthenticated denial and invalid collector-token denial.
 
+Sync cursor hardening completed:
+- migration `20260925200130 investor_collector_sync_cursor_v1`;
+- VALIDATE no longer advances `last_sync_at`;
+- lease responses include `last_sync_at`;
+- first SYNC can import the initial history window; later SYNC jobs use an overlap cursor.
+
+Python worker + MT5 history foundation completed in repository:
+- collector HTTP client uses only publishable API key + dedicated collector token, never Supabase secret/service-role;
+- worker decrypts RSA ciphertext locally, clears mutable credential buffers, dispatches jobs and batches ingest;
+- default initial history window is 730 days, configurable; incremental overlap defaults to 120 seconds;
+- MT5 `history_deals_get` normalizer emits BUY/SELL deal events and skips non-trade balance/commission deal types for v1;
+- `DEAL_REASON_SL` is mapped to explicit `closed_by_sl`; frontend MT5 grouping now consumes explicit SL evidence and still never infers SL from negative P&L.
+
 Still pending:
 - real Windows service installer / directory ACL provisioning and runtime DPAPI integration test;
 - registration of a real collector node generated on the owned Windows/VPS host;
-- Python HTTP worker loop against the new Edge Functions;
-- MT5 history normalization/end-to-end ingest;
+- live MT5 terminal end-to-end test against the owned Windows collector;
+- MT4 Windows launcher/compile/runtime validation;
 - MT4 Windows launcher/compile/runtime validation;
 - frontend direct-connect form;
 - production Windows integration tests.

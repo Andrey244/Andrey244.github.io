@@ -18,3 +18,7 @@ mt5 = [
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+
+[project.scripts]
+trading-journal-collector = "trading_journal_collector.main:main"

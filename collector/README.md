@@ -17,13 +17,14 @@ Current repository foundation:
 - Python unit tests;
 - static regression rules forbidding trade APIs;
 - production Supabase control-plane schema and service-only RPCs;
-- broker/collector Edge Functions with explicit auth gates.
+- broker/collector Edge Functions with explicit auth gates;
+- Python collector HTTP worker loop;
+- MT5 deal-history normalization with explicit Stop Loss reason propagation.
 
 Not implemented yet:
 - Windows service installer / ACL provisioning;
 - registration of a real collector node on the owned Windows/VPS host;
-- Python HTTP worker loop;
-- MT5 history normalization;
+- live Windows MT5 terminal end-to-end validation;
 - production MT4 launcher and cleanup;
 - direct-connect frontend.
 

@@ -20,3 +20,12 @@ class WriteCapableCredentialError(ConnectionProbeError):
 
 class ExportValidationError(CollectorError):
     """MT4 exporter output is invalid or unsafe."""
+
+
+class ControlPlaneError(CollectorError):
+    """Collector control-plane HTTP/API request failed."""
+
+    def __init__(self, code: str, status: int = 0) -> None:
+        super().__init__(code)
+        self.code = code
+        self.status = status

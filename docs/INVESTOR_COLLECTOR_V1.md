@@ -367,10 +367,14 @@ Phase 2 — Supabase control plane (complete):
 - collector ingest canonicalizes user/platform/account/server server-side;
 - production negative-auth Smoke coverage.
 
-Phase 3 — MT5 end-to-end:
-- history normalization;
-- ingest;
-- retry/reconnect.
+Phase 3 — MT5 end-to-end (repository worker foundation complete):
+- Python worker polls authenticated collector jobs and uses only publishable Supabase key + collector token;
+- RSA ciphertext decrypts only on the collector and credential buffers are cleared after each job;
+- first sync defaults to a configurable 730-day history window; later syncs use a 120-second overlap;
+- MT5 history_deals_get normalization is implemented for BUY/SELL trade deals;
+- DEAL_REASON_SL becomes explicit closed_by_sl broker evidence;
+- ingest/retry lifecycle is wired through the production Edge Functions;
+- still pending: live Windows MT5 terminal + real collector-node end-to-end validation.
 
 Phase 4 — MT4 end-to-end:
 - isolated terminal launcher;

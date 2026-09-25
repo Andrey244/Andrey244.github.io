@@ -2,7 +2,7 @@
 
 from .crypto import ALGORITHM, CollectorKeyStore, CollectorPublicKey
 from .identity import CollectorIdentityStore, CollectorRegistration
-from .models import ConnectionMetadata, CredentialLease, NormalizedEvent, Platform, ProbeResult
+from .models import CollectorJob, ConnectionMetadata, CredentialLease, NormalizedEvent, Platform, ProbeResult
 
 __all__ = [
     "ALGORITHM",
@@ -10,6 +10,7 @@ __all__ = [
     "CollectorPublicKey",
     "CollectorIdentityStore",
     "CollectorRegistration",
+    "CollectorJob",
     "ConnectionMetadata",
     "CredentialLease",
     "NormalizedEvent",

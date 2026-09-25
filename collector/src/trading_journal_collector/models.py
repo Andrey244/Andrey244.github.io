@@ -41,6 +41,20 @@ class CredentialLease:
 
     @classmethod
     def from_plaintext(cls, *, login: str, server: str, password: str) -> "CredentialLease":
+        return cls.from_bytes(
+            login=login,
+            server=server,
+            password=password.encode("utf-8"),
+        )
+
+    @classmethod
+    def from_bytes(
+        cls,
+        *,
+        login: str,
+        server: str,
+        password: bytes | bytearray,
+    ) -> "CredentialLease":
         if not login.strip():
             raise ValueError("login is required")
         if not server.strip():
@@ -50,7 +64,7 @@ class CredentialLease:
         return cls(
             login=login.strip(),
             server=server.strip(),
-            password_bytes=bytearray(password.encode("utf-8")),
+            password_bytes=bytearray(password),
         )
 
     def password_text(self) -> str:
@@ -102,3 +116,53 @@ class NormalizedEvent:
         out["server"] = self.server
         out["event_id"] = self.event_id
         return out
+
+
+@dataclass(frozen=True)
+class CollectorJob:
+    job_id: str
+    connection_id: str
+    job_type: str
+    platform: Platform
+    login: str
+    server: str
+    key_id: str
+    ciphertext_base64: str
+    attempt: int
+    lease_until: str | None
+    last_sync_at: str | None
+
+    @classmethod
+    def from_payload(cls, value: dict[str, Any]) -> "CollectorJob":
+        job_type = str(value.get("job_type", "")).upper()
+        if job_type not in {"VALIDATE", "SYNC"}:
+            raise ValueError("invalid job_type")
+        try:
+            platform = Platform(str(value.get("platform", "")).upper())
+        except ValueError as exc:
+            raise ValueError("invalid platform") from exc
+
+        required = {
+            "job_id": str(value.get("job_id", "")).strip(),
+            "connection_id": str(value.get("connection_id", "")).strip(),
+            "login": str(value.get("login", "")).strip(),
+            "server": str(value.get("server", "")).strip(),
+            "key_id": str(value.get("key_id", "")).strip(),
+            "ciphertext_base64": str(value.get("ciphertext_base64", "")).strip(),
+        }
+        if any(not item for item in required.values()):
+            raise ValueError("collector job is missing required fields")
+
+        return cls(
+            job_id=required["job_id"],
+            connection_id=required["connection_id"],
+            job_type=job_type,
+            platform=platform,
+            login=required["login"],
+            server=required["server"],
+            key_id=required["key_id"],
+            ciphertext_base64=required["ciphertext_base64"],
+            attempt=int(value.get("attempt", 0)),
+            lease_until=str(value["lease_until"]) if value.get("lease_until") else None,
+            last_sync_at=str(value["last_sync_at"]) if value.get("last_sync_at") else None,
+        )

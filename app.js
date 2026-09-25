@@ -328,6 +328,8 @@ function addMT5(t,e,before){
   const v=Math.abs(Number(e.volume||0)),signed=(e.side==='BUY'?1:-1)*v,dir=t.side==='BUY'?1:-1;
   t.pnl+=Number(e.profit||0)+Number(e.commission||0)+Number(e.swap||0)+Number(e.fee||0);
   t.events.push(String(e.event_id));if(e.order_id)t.orders[String(e.order_id)]=1;
+  const raw=e.raw||{},comment=String(e.comment||'').toLowerCase();
+  if(raw.closed_by_sl===true||String(raw.closed_by_sl||'').toLowerCase()==='true'||comment.includes('[sl]')||comment.includes('stop loss')||comment.includes('stoploss'))t.stopLossHit=true;
   if(Math.sign(signed)===dir){t.entryQty+=v;t.entryVal+=v*Number(e.price||0);t.entries++}
   else{const q=Math.min(v,Math.abs(before));if(q>0){t.exitQty+=q;t.exitVal+=q*Number(e.price||0);t.exits++}}
 }

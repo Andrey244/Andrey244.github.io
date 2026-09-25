@@ -27,6 +27,18 @@ class FakeMt5:
         self.login = login
         self.server = server
         self.shutdown_called = False
+        self.deals = []
+        self.history_args = None
+
+        self.DEAL_TYPE_BUY = 0
+        self.DEAL_TYPE_SELL = 1
+        self.DEAL_ENTRY_IN = 0
+        self.DEAL_ENTRY_OUT = 1
+        self.DEAL_ENTRY_INOUT = 2
+        self.DEAL_ENTRY_OUT_BY = 3
+        self.DEAL_REASON_CLIENT = 0
+        self.DEAL_REASON_SL = 4
+        self.DEAL_REASON_TP = 5
 
     def initialize(self, *args, **kwargs):
         return True
@@ -39,6 +51,10 @@ class FakeMt5:
 
     def last_error(self):
         return (0, "OK")
+
+    def history_deals_get(self, start, end):
+        self.history_args = (start, end)
+        return tuple(self.deals)
 
     def shutdown(self):
         self.shutdown_called = True
@@ -76,6 +92,52 @@ class Mt5ProbeTests(unittest.TestCase):
         lease = CredentialLease.from_plaintext(login="123456", server="Broker-Demo", password="investor")
         with self.assertRaises(AccountMismatchError):
             Mt5Adapter(mt5_module=fake).probe_read_only(lease)
+
+
+    def test_history_normalization_preserves_explicit_sl_reason(self):
+        fake = FakeMt5(trade_allowed=False)
+        fake.deals = [
+            SimpleNamespace(
+                ticket=101, order=201, time=1_700_000_000, time_msc=1_700_000_000_123,
+                type=fake.DEAL_TYPE_BUY, entry=fake.DEAL_ENTRY_IN, magic=7,
+                position_id=301, reason=fake.DEAL_REASON_CLIENT, volume=0.1,
+                price=1.1000, commission=-0.2, swap=0.0, profit=0.0, fee=0.0,
+                symbol="EURUSD", comment="entry", external_id=""
+            ),
+            SimpleNamespace(
+                ticket=102, order=202, time=1_700_000_100, time_msc=1_700_000_100_456,
+                type=fake.DEAL_TYPE_SELL, entry=fake.DEAL_ENTRY_OUT, magic=7,
+                position_id=301, reason=fake.DEAL_REASON_SL, volume=0.1,
+                price=1.0950, commission=-0.2, swap=-0.1, profit=-50.0, fee=0.0,
+                symbol="EURUSD", comment="exit", external_id=""
+            ),
+            SimpleNamespace(
+                ticket=103, order=0, time=1_700_000_101, time_msc=1_700_000_101_000,
+                type=2, entry=fake.DEAL_ENTRY_IN, magic=0, position_id=0,
+                reason=fake.DEAL_REASON_CLIENT, volume=0.0, price=0.0,
+                commission=0.0, swap=0.0, profit=100.0, fee=0.0,
+                symbol="", comment="balance", external_id=""
+            ),
+        ]
+        lease = CredentialLease.from_plaintext(
+            login="123456", server="Broker-Demo", password="investor"
+        )
+        events = Mt5Adapter(mt5_module=fake).collect_history(
+            lease,
+            since_ms=1_699_999_000_000,
+            until_ms=1_700_001_000_000,
+        )
+        self.assertEqual(len(events), 2)
+        first = events[0].to_ingest_payload()
+        second = events[1].to_ingest_payload()
+        self.assertEqual(first["side"], "BUY")
+        self.assertFalse(first["closed_by_sl"])
+        self.assertEqual(second["side"], "SELL")
+        self.assertTrue(second["closed_by_sl"])
+        self.assertEqual(second["position_id"], "301")
+        self.assertEqual(second["entry_type"], "OUT")
+        self.assertEqual(second["event_time_ms"], 1_700_000_100_456)
+        self.assertTrue(fake.shutdown_called)
 
 
 class Mt4ContractTests(unittest.TestCase):
