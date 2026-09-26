@@ -15,15 +15,23 @@ Deno.serve(async (req) => {
   if (payload instanceof Response) return payload;
   const body = payload as Record<string, unknown>;
   const jobId = body.job_id;
+  const attempt = Number(body.attempt);
   const events = body.events;
 
-  if (!isUuid(jobId) || !Array.isArray(events) || events.length > 200) {
+  if (
+    !isUuid(jobId) ||
+    !Number.isSafeInteger(attempt) ||
+    attempt < 1 ||
+    !Array.isArray(events) ||
+    events.length > 200
+  ) {
     return jsonResponse(req, { error: "invalid_ingest" }, 400);
   }
 
   const { data, error } = await adminClient().rpc("collector_ingest_events_service", {
     p_node_id: collector.nodeId,
     p_job_id: jobId,
+    p_attempt: attempt,
     p_events: events,
   });
   if (error) {
