@@ -73,7 +73,7 @@ ok(edgeShared.includes('collector_authenticate_service'),'collector token hash d
 ok(!edgeShared.includes('console.log('),'Edge shared code must not log secrets');
 
 ok(cursorSql.includes('last_sync_at timestamptz'),'collector lease must return sync cursor');
-ok(cursorSql.includes("last_sync_at=case when v_job_type='SYNC' then now() else last_sync_at end"),'VALIDATE must not advance history sync cursor');
+ok(cursorSql.includes("last_sync_at=case when v_job_type='SYNC' then now() else last_sync_at end"),'legacy cursor migration record missing');
 ok(mt5.includes('history_deals_get'),'MT5 adapter history-deal reader missing');
 ok(mt5.includes('DEAL_REASON_SL'),'MT5 adapter explicit SL reason mapping missing');
 ok(mt5.includes('"closed_by_sl": bool(closed_by_sl)'),'MT5 adapter explicit SL payload missing');
@@ -81,6 +81,11 @@ ok(!/\border_send\b|\border_check\b/.test(mt5),'MT5 adapter must never contain t
 ok(api.includes('x-collector-token'),'collector HTTP client token header missing');
 ok(!api.toLowerCase().includes('service_role'),'collector HTTP client must not contain service-role credentials');
 ok(worker.includes('overlap_seconds'),'worker overlap cursor missing');
+ok(worker.includes('sync_until_ms=sync_until_ms'),'worker must report exact sync upper bound');
+ok(api.includes('"attempt": int(attempt)'),'collector API must fence ingest/report with job attempt');
+ok(collectorReport.includes('p_sync_until_ms: syncUntilMs'),'collector report must persist exact sync upper bound');
+ok(collectorReport.includes('p_attempt: attempt'),'collector report attempt fence missing');
+ok(collectorIngest.includes('p_attempt: attempt'),'collector ingest attempt fence missing');
 ok(worker.includes('credential.clear()'),'worker credential buffer clearing missing');
 ok(main.includes('TJ_SUPABASE_PUBLISHABLE_KEY'),'worker must use publishable key');
 ok(!main.includes('SERVICE_ROLE')&&!main.includes('SECRET_KEY'),'worker must never require Supabase elevated keys');
