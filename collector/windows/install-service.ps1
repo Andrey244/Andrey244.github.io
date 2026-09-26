@@ -9,6 +9,7 @@ param(
     [string]$Mt5TerminalPath = "",
     [string]$Mt4GoldenDir = "",
     [string]$Mt4BootstrapSymbol = "EURUSD",
+    [switch]$Mt4AllHistoryConfirmed,
     [switch]$NoStart
 )
 
@@ -75,6 +76,7 @@ $config = [ordered]@{
     mt4_golden_dir = $Mt4GoldenDir
     mt4_work_root = $Mt4WorkRoot
     mt4_bootstrap_symbol = $Mt4BootstrapSymbol
+    mt4_history_all_confirmed = [bool]$Mt4AllHistoryConfirmed
     initial_sync_days = 730
     sync_overlap_seconds = 120
     ingest_batch_size = 100
