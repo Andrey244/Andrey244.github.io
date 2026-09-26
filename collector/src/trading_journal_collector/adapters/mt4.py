@@ -257,6 +257,12 @@ class Mt4Adapter:
             config_text = Mt4StartupConfig(
                 bootstrap_symbol=self.bootstrap_symbol
             ).render(credential)
+            # MT4's official startup contract requires the Investor Password
+            # in a short-lived config file. This accepted v1 limitation is
+            # protected by BitLocker, per-service ACLs, a disposable slot,
+            # immediate overwrite/unlink after exporter status, and full slot
+            # destruction in finally.
+            # codeql[py/clear-text-storage-sensitive-data]
             config_path.write_text(config_text, encoding="utf-8", newline="")
 
             terminal = slot / self.terminal_exe_name

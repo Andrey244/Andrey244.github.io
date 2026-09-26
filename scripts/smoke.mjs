@@ -29,7 +29,12 @@ ok(!/(^|[^A-Z_])OP_CREDIT([^A-Z_]|$)/m.test(mt4Connector.replace('const int TJ_O
 ok(/^<!doctype html>/i.test(html),'index.html: missing doctype');
 ok(html.includes('<title>Trading Journal</title>'),'index.html: wrong/missing title');
 ok(html.includes('<script src="/vendor/supabase-2.117.1.js"></script>'),'index.html: vendored Supabase SDK missing');
-ok(!html.includes('cdn.jsdelivr.net'),'index.html: runtime CDN script dependency returned');
+const scriptSrcs=[...html.matchAll(/<script\b[^>]*\bsrc=["']([^"']+)["'][^>]*>/gi)].map(m=>m[1]);
+ok(scriptSrcs.length===2,'index.html: unexpected external script count');
+for(const src of scriptSrcs){
+  const url=new URL(src,SITE);
+  ok(url.origin===new URL(SITE).origin,'index.html: cross-origin runtime script returned: '+url.href);
+}
 ok(crypto.createHash('sha256').update(supabaseVendor).digest('hex')==='dff1e545f4f35bd42895cd6f46431e56137dd13031e46a9759c446447c11a567','vendored Supabase SDK hash mismatch');
 ok(html.includes('Content-Security-Policy'),'index.html: CSP meta missing');
 ok(html.includes("script-src 'self';"),'index.html: CSP script-src must be self-only');
@@ -107,7 +112,7 @@ const refs=[...appJs.matchAll(/\bel\('([^']+)'\)/g)].map(m=>m[1]);
 const missing=[...new Set(refs.filter(x=>!ids.includes(x)))];
 ok(missing.length===0,'index.html: JS references missing DOM ids: '+missing.join(', '));
 
-const inline=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]).filter(x=>x.trim());
+const inline=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script\s*>/gi)].map(m=>m[1]).filter(x=>x.trim());
 ok(inline.length===0,'index.html: inline JavaScript returned; CSP would block it');
 new vm.Script(appJs);
 
@@ -120,11 +125,11 @@ await retry(async()=>{
 });
 
 await retry(async()=>{
-  const r=await fetch('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.1/dist/umd/supabase.js',{redirect:'follow',cache:'no-store'});
-  ok(r.ok,'pinned Supabase SDK HTTP '+r.status);
-  ok((r.headers.get('content-type')||'').includes('javascript'),'pinned Supabase SDK is not JavaScript');
-  const body=await r.text();
-  ok(body.includes('createClient'),'pinned Supabase SDK body mismatch');
+  const r=await fetch(new URL('/vendor/supabase-2.117.1.js',SITE),{redirect:'follow',cache:'no-store'});
+  ok(r.ok,'vendored Supabase SDK HTTP '+r.status);
+  ok((r.headers.get('content-type')||'').includes('javascript'),'vendored Supabase SDK is not JavaScript');
+  const body=Buffer.from(await r.arrayBuffer());
+  ok(crypto.createHash('sha256').update(body).digest('hex')==='dff1e545f4f35bd42895cd6f46431e56137dd13031e46a9759c446447c11a567','deployed vendored Supabase SDK hash mismatch');
 });
 
 const headers={

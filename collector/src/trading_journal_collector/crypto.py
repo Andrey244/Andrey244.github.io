@@ -90,7 +90,7 @@ def decrypt_with_private_der(private_der: bytes, ciphertext: bytes) -> bytearray
     return bytearray(plaintext)
 
 
-def _atomic_write(path: Path, data: bytes, mode: int) -> None:
+def _atomic_write(path: Path, data: bytes) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_name(path.name + ".tmp")
     with tmp.open("wb") as handle:
@@ -98,7 +98,9 @@ def _atomic_write(path: Path, data: bytes, mode: int) -> None:
         handle.flush()
         os.fsync(handle.fileno())
     try:
-        os.chmod(tmp, mode)
+        # Collector identity files are local service state. Even the public
+        # key/id do not need world-readable permissions on POSIX test hosts.
+        os.chmod(tmp, 0o600)
     except OSError:
         pass
     os.replace(tmp, path)
@@ -149,9 +151,9 @@ class CollectorKeyStore:
         mutable = bytearray(private_der)
         try:
             protected = self.protector.protect(bytes(mutable))
-            _atomic_write(self.private_path, protected, 0o600)
-            _atomic_write(self.public_path, public.public_key_pem.encode("ascii"), 0o644)
-            _atomic_write(self.key_id_path, (public.key_id + "\n").encode("ascii"), 0o644)
+            _atomic_write(self.private_path, protected)
+            _atomic_write(self.public_path, public.public_key_pem.encode("ascii"))
+            _atomic_write(self.key_id_path, (public.key_id + "\n").encode("ascii"))
         finally:
             for i in range(len(mutable)):
                 mutable[i] = 0
