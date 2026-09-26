@@ -76,6 +76,7 @@ class CollectorWorker:
 
         credential: CredentialLease | None = None
         plaintext: bytearray | None = None
+        sync_until_ms: int | None = None
         try:
             registration = self.identity.ensure()
             if job.key_id != registration.key_id:
@@ -111,6 +112,7 @@ class CollectorWorker:
                 if not callable(collect):
                     raise AdapterUnavailableError("adapter does not support history sync")
                 until_ms = self._now_ms()
+                sync_until_ms = until_ms
                 since_ms = self._history_start_ms(job, until_ms)
                 events = collect(
                     credential,
@@ -124,16 +126,23 @@ class CollectorWorker:
                 for start in range(0, len(payloads), self.batch_size):
                     self.api.ingest_events(
                         job.job_id,
+                        job.attempt,
                         payloads[start : start + self.batch_size],
                     )
             else:
                 raise ValueError("unsupported job type")
 
-            self.api.report_job(job.job_id, success=True)
+            self.api.report_job(
+                job.job_id,
+                job.attempt,
+                success=True,
+                sync_until_ms=sync_until_ms,
+            )
         except Exception as exc:
             try:
                 self.api.report_job(
                     job.job_id,
+                    job.attempt,
                     success=False,
                     error_code=safe_error_code(exc),
                 )
