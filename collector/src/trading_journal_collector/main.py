@@ -20,6 +20,13 @@ def required_env(name: str) -> str:
     return value
 
 
+def env_bool(name: str, default: bool = False) -> bool:
+    raw = os.environ.get(name)
+    if raw is None:
+        return default
+    return raw.strip().casefold() in {"1", "true", "yes", "on"}
+
+
 def build_worker() -> CollectorWorker:
     if sys.platform != "win32":
         raise RuntimeError("production collector must run on the owned Windows host")
@@ -54,6 +61,7 @@ def build_worker() -> CollectorWorker:
             bootstrap_symbol=os.environ.get("TJ_MT4_BOOTSTRAP_SYMBOL", "EURUSD").strip(),
             terminal_exe_name=os.environ.get("TJ_MT4_TERMINAL_EXE", "terminal.exe").strip(),
             timeout_seconds=float(os.environ.get("TJ_MT4_TIMEOUT_SECONDS", "90")),
+            history_all_confirmed=env_bool("TJ_MT4_HISTORY_ALL_CONFIRMED"),
         )
     return CollectorWorker(
         api=api,
