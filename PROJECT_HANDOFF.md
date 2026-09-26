@@ -427,6 +427,7 @@ Completed and verified:
 - collector private tables remain deny-all to browser/API roles;
 - collector service RPCs remain service-role-only;
 - collector jobs now use exact sync cursors, attempt fencing and strict non-expired lease enforcement;
+- manual Connector ingest and direct Collector ingest now share one private canonical event-validation/dedupe helper (`20260926125551 unify_manual_and_collector_ingest_v1`);
 - primary collector readiness requires a fresh heartbeat (<2 minutes);
 - the legacy public `journal` Edge Function was retired to an explicit HTTP 410 tombstone;
 - frontend Supabase JS 2.117.1 is vendored locally after SHA-256 verification and CSP `script-src` is self-only;
