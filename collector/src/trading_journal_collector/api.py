@@ -97,20 +97,27 @@ class CollectorApi:
         except (TypeError, ValueError) as exc:
             raise ControlPlaneError("INVALID_JOB_RESPONSE") from exc
 
-    def ingest_events(self, job_id: str, events: list[dict]) -> int:
-        data = self._post("collector-ingest", {"job_id": job_id, "events": events})
+    def ingest_events(self, job_id: str, attempt: int, events: list[dict]) -> int:
+        data = self._post(
+            "collector-ingest",
+            {"job_id": job_id, "attempt": int(attempt), "events": events},
+        )
         return int(data.get("inserted", 0))
 
     def report_job(
         self,
         job_id: str,
+        attempt: int,
         *,
         success: bool,
         error_code: str | None = None,
+        sync_until_ms: int | None = None,
     ) -> None:
         payload = {
             "job_id": job_id,
+            "attempt": int(attempt),
             "success": bool(success),
             "error_code": error_code[:128] if error_code else None,
+            "sync_until_ms": int(sync_until_ms) if sync_until_ms is not None else None,
         }
         self._post("collector-report", payload)
