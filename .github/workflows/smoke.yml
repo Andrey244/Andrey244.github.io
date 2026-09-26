@@ -61,6 +61,9 @@ jobs:
           $tokens=$null; $errors=$null
           [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path 'collector/windows/uninstall-service.ps1'),[ref]$tokens,[ref]$errors) | Out-Null
           if($errors.Count){ throw ($errors | Out-String) }
+          $tokens=$null; $errors=$null
+          [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path 'collector/windows/preflight.ps1'),[ref]$tokens,[ref]$errors) | Out-Null
+          if($errors.Count){ throw ($errors | Out-String) }
       - name: Run Windows DPAPI integration test
         env:
           PYTHONPATH: collector/src

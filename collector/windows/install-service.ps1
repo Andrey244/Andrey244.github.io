@@ -79,6 +79,23 @@ function Set-DirectoryAcl {
 }
 
 Assert-Administrator
+
+$preflightArgs = @(
+    "-NoProfile",
+    "-ExecutionPolicy", "Bypass",
+    "-File", (Join-Path $PSScriptRoot "preflight.ps1"),
+    "-SupabaseUrl", $SupabaseUrl,
+    "-PublishableKey", $PublishableKey
+)
+if ($Mt5TerminalPath) { $preflightArgs += @("-Mt5TerminalPath", $Mt5TerminalPath) }
+if ($Mt4GoldenDir) { $preflightArgs += @("-Mt4GoldenDir", $Mt4GoldenDir) }
+if ($Mt4AllHistoryConfirmed) { $preflightArgs += "-Mt4AllHistoryConfirmed" }
+
+& powershell.exe @preflightArgs
+if ($LASTEXITCODE -ne 0) {
+    throw "Collector preflight failed. Installation aborted before runtime state was created."
+}
+
 $Root = Join-Path $env:ProgramData "TradingJournalCollector"
 $IdentityDir = Join-Path $Root "identity"
 $Mt4WorkRoot = Join-Path $Root "mt4-work"

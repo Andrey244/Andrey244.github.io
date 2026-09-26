@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 
 function ok(cond,msg){ if(!cond) throw new Error(msg); }
 
-const [arch, pyproject, mt5, mt4py, mt4mql, crypto, dpapi, identity, serviceSql, cursorSql, registerSql, strictLeaseSql, unifiedIngestSql, edgeShared, brokerKey, brokerConnect, brokerDisconnect, collectorNext, collectorReport, collectorIngest, api, worker, main, provision, service, serviceConfig, installer, manualMt4] = await Promise.all([
+const [arch, pyproject, mt5, mt4py, mt4mql, crypto, dpapi, identity, serviceSql, cursorSql, registerSql, strictLeaseSql, unifiedIngestSql, edgeShared, brokerKey, brokerConnect, brokerDisconnect, collectorNext, collectorReport, collectorIngest, api, worker, main, provision, service, serviceConfig, installer, preflight, manualMt4] = await Promise.all([
   fs.readFile('docs/INVESTOR_COLLECTOR_V1.md','utf8'),
   fs.readFile('collector/pyproject.toml','utf8'),
   fs.readFile('collector/src/trading_journal_collector/adapters/mt5.py','utf8'),
@@ -30,6 +30,7 @@ const [arch, pyproject, mt5, mt4py, mt4mql, crypto, dpapi, identity, serviceSql,
   fs.readFile('collector/src/trading_journal_collector/service.py','utf8'),
   fs.readFile('collector/src/trading_journal_collector/service_config.py','utf8'),
   fs.readFile('collector/windows/install-service.ps1','utf8'),
+  fs.readFile('collector/windows/preflight.ps1','utf8'),
   fs.readFile('downloads/TradeJournalConnector_MT4_v1.18.mq4','utf8'),
 ]);
 
@@ -56,6 +57,12 @@ ok(installer.includes('$ServiceAccount = "NT SERVICE\\$ServiceName"'),'installer
 ok(installer.includes('"sc.exe" @("config", $ServiceName, "obj=", $ServiceAccount)'),'installer virtual-account configuration missing');
 ok(!installer.includes('NT AUTHORITY\\LocalService'),'shared LocalService identity must not return');
 ok(installer.includes('Get-BitLockerVolume'),'MT4 encrypted-volume verification missing');
+ok(installer.includes('preflight.ps1'),'Windows installer must invoke fail-closed preflight');
+ok(preflight.includes('python_3_12'),'Windows preflight must check Python 3.12');
+ok(preflight.includes('supabase_network'),'Windows preflight must check Supabase connectivity');
+ok(preflight.includes('mt4_exporter_ex4'),'Windows preflight must check compiled MT4 exporter');
+ok(preflight.includes('mt4_all_history_attestation'),'Windows preflight must require MT4 All History attestation');
+ok(preflight.includes('mt4_bitlocker'),'Windows preflight must verify MT4 BitLocker protection');
 ok(installer.includes('ProtectionStatus') && installer.includes('FullyEncrypted') && installer.includes('EncryptionPercentage'),'MT4 BitLocker fail-closed criteria missing');
 ok(installer.includes('Set-DirectoryAcl -Path $Root -ServiceRights "RX"'),'collector root must be read/execute for service');
 ok(installer.includes('Set-DirectoryAcl -Path $IdentityDir -ServiceRights "M"'),'collector identity directory write ACL missing');

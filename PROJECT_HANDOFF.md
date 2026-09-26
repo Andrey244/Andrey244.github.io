@@ -465,8 +465,10 @@ Implemented:
 - legacy `journal` Edge Function is a 410 tombstone;
 - current manual MT4 Connector download/status is v1.18.
 
+Windows/VPS preflight is implemented at `collector/windows/preflight.ps1` and is mandatory from the installer. It fails closed on Windows/admin/Python/network/terminal/MT4 EX4/All-History/BitLocker prerequisites before runtime state is created.
+
 Still pending before real Investor Password production use:
-- install/provision the collector on the owned Windows/VPS host;
+- run the preflight and install/provision the collector on the owned Windows/VPS host;
 - register the real `registration.json` node;
 - install/validate real MT5 terminal under the Windows service identity;
 - compile `TradeJournalExport_MT4.mq4` to EX4 in the target broker MetaEditor;

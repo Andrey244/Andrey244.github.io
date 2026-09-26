@@ -68,6 +68,31 @@ It never contains the plaintext collector token or private key.
 
 Register that bundle through the service-role-only operator path. Do not create a fake node to unlock the frontend.
 
+## Windows/VPS preflight
+
+Run this first from elevated PowerShell:
+
+```powershell
+collector\windows\preflight.ps1 `
+  -SupabaseUrl "https://<project>.supabase.co" `
+  -PublishableKey "sb_publishable_..." `
+  -Mt5TerminalPath "C:\path\to\terminal64.exe"
+```
+
+For MT4, also pass `-Mt4GoldenDir` and only add `-Mt4AllHistoryConfirmed` after manually verifying Account History = All History.
+
+Preflight fails closed on:
+- non-admin / non-x64 Windows;
+- missing Python 3.12;
+- invalid Supabase HTTPS configuration or failed REST connectivity;
+- an already-installed collector service;
+- missing requested MT5 terminal;
+- missing MT4 golden terminal or compiled exporter EX4;
+- missing MT4 All-History attestation;
+- MT4 work volume without fully enabled BitLocker.
+
+The service installer runs the same preflight automatically before it creates runtime state.
+
 ## Windows service installation
 
 From elevated PowerShell, use PowerShell's backtick for multiline continuation, or run the command on one line:
