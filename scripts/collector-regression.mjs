@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 
 function ok(cond,msg){ if(!cond) throw new Error(msg); }
 
-const [arch, pyproject, mt5, mt4py, mt4mql, crypto, dpapi, identity, serviceSql, cursorSql, registerSql, edgeShared, brokerKey, brokerConnect, brokerDisconnect, collectorNext, collectorReport, collectorIngest, api, worker, main, provision, service, serviceConfig, installer] = await Promise.all([
+const [arch, pyproject, mt5, mt4py, mt4mql, crypto, dpapi, identity, serviceSql, cursorSql, registerSql, edgeShared, brokerKey, brokerConnect, brokerDisconnect, collectorNext, collectorReport, collectorIngest, api, worker, main, provision, service, serviceConfig, installer, manualMt4] = await Promise.all([
   fs.readFile('docs/INVESTOR_COLLECTOR_V1.md','utf8'),
   fs.readFile('collector/pyproject.toml','utf8'),
   fs.readFile('collector/src/trading_journal_collector/adapters/mt5.py','utf8'),
@@ -28,6 +28,7 @@ const [arch, pyproject, mt5, mt4py, mt4mql, crypto, dpapi, identity, serviceSql,
   fs.readFile('collector/src/trading_journal_collector/service.py','utf8'),
   fs.readFile('collector/src/trading_journal_collector/service_config.py','utf8'),
   fs.readFile('collector/windows/install-service.ps1','utf8'),
+  fs.readFile('downloads/TradeJournalConnector_MT4_v1.18.mq4','utf8'),
 ]);
 
 ok(arch.includes('MetaTrader 4') && arch.includes('MetaTrader 5'),'architecture must cover MT4 and MT5');
@@ -48,8 +49,16 @@ ok(serviceConfig.includes('FORBIDDEN_KEY_PARTS'),'service config secret denylist
 ok(installer.includes('/inheritance:r'),'installer must remove inherited ProgramData ACLs');
 ok(installer.includes('$Root = Join-Path $env:ProgramData "TradingJournalCollector"'),'installer runtime root must match service default config path');
 ok(!installer.includes('[string]$Root ='),'installer must not advertise a root override the service cannot discover');
-ok(installer.includes('NT AUTHORITY\\LOCAL SERVICE:(OI)(CI)M'),'installer LocalService ACL missing');
-ok(installer.includes('--username", "NT AUTHORITY\\LocalService"'),'service must install under LocalService');
+ok(installer.includes('$ServiceAccount = "NT SERVICE\\$ServiceName"'),'installer must use a per-service virtual account');
+ok(installer.includes('"sc.exe" @("config", $ServiceName, "obj=", $ServiceAccount)'),'installer virtual-account configuration missing');
+ok(!installer.includes('NT AUTHORITY\\LocalService'),'shared LocalService identity must not return');
+ok(installer.includes('Get-BitLockerVolume'),'MT4 encrypted-volume verification missing');
+ok(installer.includes('ProtectionStatus') && installer.includes('FullyEncrypted') && installer.includes('EncryptionPercentage'),'MT4 BitLocker fail-closed criteria missing');
+ok(installer.includes('Set-DirectoryAcl -Path $Root -ServiceRights "RX"'),'collector root must be read/execute for service');
+ok(installer.includes('Set-DirectoryAcl -Path $IdentityDir -ServiceRights "M"'),'collector identity directory write ACL missing');
+ok(installer.includes('Set-DirectoryAcl -Path $Mt4WorkRoot -ServiceRights "M"'),'collector MT4 work directory write ACL missing');
+ok(installer.includes('Set-DirectoryAcl -Path $StateDir -ServiceRights "M"'),'collector state directory write ACL missing');
+ok(service.includes('default_config_path().parent / "state"'),'registration bundle must live in dedicated writable state directory');
 ok(!installer.toLowerCase().includes('--password'),'installer must not pass a reusable Windows account password');
 ok(crypto.includes('RSA_KEY_BITS = 3072'),'collector RSA key size changed');
 ok(crypto.includes('RSA-OAEP-SHA256'),'collector RSA algorithm marker missing');
@@ -105,6 +114,11 @@ ok(mt4py.includes('"/portable"'),'MT4 adapter portable terminal launch missing')
 ok(mt4py.includes('ExpertsTrades=false'),'MT4 startup must explicitly disable trading');
 ok(mt4py.includes('TradeJournalExport_MT4.ex4'),'MT4 adapter must require compiled exporter');
 ok(mt4py.includes('_overwrite_and_unlink'),'MT4 secret startup config cleanup missing');
+ok(mt4py.includes('history_all_confirmed'),'MT4 history coverage attestation gate missing');
+ok(mt4py.includes('MT4_ACCOUNT_HISTORY_ALL_NOT_CONFIRMED'),'MT4 history coverage fail-closed error missing');
+ok(main.includes('TJ_MT4_HISTORY_ALL_CONFIRMED'),'MT4 history attestation environment wiring missing');
+ok(serviceConfig.includes('"mt4_history_all_confirmed": "TJ_MT4_HISTORY_ALL_CONFIRMED"'),'MT4 history attestation service config missing');
+ok(installer.includes('[switch]$Mt4AllHistoryConfirmed'),'MT4 installer history attestation switch missing');
 ok(mt4mql.includes('CursorFile = "tj_since_ms.txt"'),'MT4 exporter sync cursor missing');
 ok(mt4mql.includes('ReadSinceMs()'),'MT4 exporter cursor reader missing');
 ok(main.includes('TJ_MT4_GOLDEN_DIR') && main.includes('TJ_MT4_WORK_ROOT'),'MT4 worker environment wiring missing');
@@ -135,7 +149,15 @@ ok(mt4py.includes('ExpertsDllImport=false'),'MT4 startup: DLL import must be dis
 
 ok(mt4mql.includes('ACCOUNT_TRADE_ALLOWED'),'MT4 exporter: account trade permission gate missing');
 ok(mt4mql.includes('TERMINAL_CONNECTED'),'MT4 exporter: terminal connection gate missing');
+ok(mt4mql.includes('#property version   "0.12"'),'MT4 exporter version must reflect SL evidence hardening');
 ok(mt4mql.includes('closed_by_sl'),'MT4 exporter: SL evidence missing');
+ok(mt4mql.includes('sl_proximity'),'MT4 exporter: SL proximity diagnostic missing');
+ok(!mt4mql.includes('close_px <= sl + tol) closed_by_sl'),'MT4 exporter must not infer LOSS from BUY close-price proximity');
+ok(!mt4mql.includes('close_px >= sl - tol) closed_by_sl'),'MT4 exporter must not infer LOSS from SELL close-price proximity');
+ok(manualMt4.includes('#property version   "1.18"'),'manual MT4 connector v1.18 missing');
+ok(manualMt4.includes('sl_proximity'),'manual MT4 connector proximity diagnostic missing');
+ok(!manualMt4.includes('close_px <= sl + tol) closed_by_sl'),'manual MT4 connector must not infer LOSS from BUY close-price proximity');
+ok(!manualMt4.includes('close_px >= sl - tol) closed_by_sl'),'manual MT4 connector must not infer LOSS from SELL close-price proximity');
 ok(!/\bOrderSend\s*\(|\bOrderModify\s*\(|\bOrderClose\s*\(|\bOrderDelete\s*\(/.test(mt4mql),'MT4 exporter contains a trading operation');
 
 console.log('Collector contract regression passed.');
