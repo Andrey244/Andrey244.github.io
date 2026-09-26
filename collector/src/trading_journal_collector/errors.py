@@ -22,6 +22,10 @@ class ExportValidationError(CollectorError):
     """MT4 exporter output is invalid or unsafe."""
 
 
+class HistoryCoverageError(ExportValidationError):
+    """Terminal history coverage cannot be proven safe for synchronization."""
+
+
 class ControlPlaneError(CollectorError):
     """Collector control-plane HTTP/API request failed."""
 
