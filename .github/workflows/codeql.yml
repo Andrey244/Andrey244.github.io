@@ -58,7 +58,7 @@ jobs:
               | ($r.locations[0].physicalLocation.artifactLocation.uri // "") as $path
               | select(
                   ([ $allow[0].accepted[]
-                     | select(.ruleId == ($r.ruleId // "") and .path == $path)
+                     | select(.ruleId == ($r.ruleId // "") and .path == $path and .line == ($r.locations[0].physicalLocation.region.startLine // 0))
                    ] | length) == 0
                 )
             ]' all-codeql-results.json > unexpected-codeql-results.json
@@ -74,8 +74,8 @@ jobs:
               .[] as $r
               | ($r.locations[0].physicalLocation.artifactLocation.uri // "") as $path
               | $allow[0].accepted[]
-              | select(.ruleId == ($r.ruleId // "") and .path == $path)
-              | [.ruleId, .path, .rationale] | @tsv
+              | select(.ruleId == ($r.ruleId // "") and .path == $path and .line == ($r.locations[0].physicalLocation.region.startLine // 0))
+              | [.ruleId, .path, (.line|tostring), .rationale] | @tsv
             ' all-codeql-results.json
           fi
 
