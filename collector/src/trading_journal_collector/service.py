@@ -29,7 +29,9 @@ def _write_registration_bundle(config: dict, worker):
         registration=registration,
         make_primary=True,
     )
-    output = default_config_path().parent / "registration.json"
+    state_dir = default_config_path().parent / "state"
+    state_dir.mkdir(parents=True, exist_ok=True)
+    output = state_dir / "registration.json"
     tmp = output.with_suffix(".json.tmp")
     tmp.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     os.replace(tmp, output)
