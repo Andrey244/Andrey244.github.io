@@ -12,6 +12,7 @@ if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 from trading_journal_collector.adapters.mt4 import Mt4Adapter
+from trading_journal_collector.errors import HistoryCoverageError
 from trading_journal_collector.models import CredentialLease
 
 
@@ -39,6 +40,21 @@ class FakeProcess:
 
 
 class Mt4LauncherTests(unittest.TestCase):
+    def test_history_sync_fails_closed_without_all_history_attestation(self):
+        adapter = Mt4Adapter(
+            golden_terminal_dir=Path("missing"),
+            work_root=Path("missing-work"),
+        )
+        lease = CredentialLease.from_plaintext(
+            login="123456", server="Broker-Demo", password="investor"
+        )
+        with self.assertRaises(HistoryCoverageError):
+            adapter.collect_history(
+                lease,
+                since_ms=1_699_999_000_000,
+                until_ms=1_700_001_000_000,
+            )
+
     def test_disposable_slot_exports_and_cleans_secret_config(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
@@ -88,6 +104,7 @@ class Mt4LauncherTests(unittest.TestCase):
                 launcher=launcher,
                 timeout_seconds=5,
                 poll_seconds=0.01,
+                history_all_confirmed=True,
             )
             lease = CredentialLease.from_plaintext(
                 login="123456", server="Broker-Demo", password="investor-secret"
