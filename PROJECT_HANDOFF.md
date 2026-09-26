@@ -440,6 +440,8 @@ Supabase Advisor still reports intentional warnings for:
 
 Codex Security is installed/enabled in ChatGPT, but its scanner actions are not exported as callable tools in this chat session. Do not claim a Codex Security scan was run unless an actual scanner result exists.
 
+Independent CodeQL security-extended scanning is enabled for Python and JavaScript/TypeScript and fails CI on unexpected findings. One exact reviewed exception is allowed: `py/clear-text-storage-sensitive-data` in the MT4 adapter, because the official MT4 startup mechanism requires the Investor Password in a short-lived config file. The exception is scoped by rule+path and retains BitLocker, service-account ACL, disposable-slot, overwrite/unlink and full-slot cleanup mitigations.
+
 ### D. Direct Investor Password collector — HARDENED FOUNDATION IMPLEMENTED / REAL WINDOWS TERMINAL ACCEPTANCE PENDING
 Source of truth: `docs/INVESTOR_COLLECTOR_V1.md`.
 

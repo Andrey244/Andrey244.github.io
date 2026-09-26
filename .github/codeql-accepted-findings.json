@@ -1,0 +1,9 @@
+{
+  "accepted": [
+    {
+      "ruleId": "py/clear-text-storage-sensitive-data",
+      "path": "collector/src/trading_journal_collector/adapters/mt4.py",
+      "rationale": "Official MT4 startup configuration requires the Investor Password in a short-lived config file. The collector fails closed unless the MT4 work volume is BitLocker-protected and mitigates exposure with a dedicated service identity, ACL-restricted disposable slot, overwrite/unlink after exporter status, and full slot destruction."
+    }
+  ]
+}

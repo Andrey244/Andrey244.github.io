@@ -112,7 +112,25 @@ const refs=[...appJs.matchAll(/\bel\('([^']+)'\)/g)].map(m=>m[1]);
 const missing=[...new Set(refs.filter(x=>!ids.includes(x)))];
 ok(missing.length===0,'index.html: JS references missing DOM ids: '+missing.join(', '));
 
-const inline=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script\s*>/gi)].map(m=>m[1]).filter(x=>x.trim());
+function scriptBodies(source){
+  const lower=source.toLowerCase();
+  const bodies=[];
+  let offset=0;
+  while(true){
+    const open=lower.indexOf('<script',offset);
+    if(open<0) break;
+    const openEnd=source.indexOf('>',open);
+    ok(openEnd>=0,'index.html: malformed script start tag');
+    const close=lower.indexOf('</script',openEnd+1);
+    ok(close>=0,'index.html: script end tag missing');
+    const closeEnd=source.indexOf('>',close);
+    ok(closeEnd>=0,'index.html: malformed script end tag');
+    bodies.push(source.slice(openEnd+1,close));
+    offset=closeEnd+1;
+  }
+  return bodies;
+}
+const inline=scriptBodies(html).filter(x=>x.trim());
 ok(inline.length===0,'index.html: inline JavaScript returned; CSP would block it');
 new vm.Script(appJs);
 

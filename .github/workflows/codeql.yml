@@ -38,7 +38,7 @@ jobs:
           category: "/language:${{ matrix.language }}"
           output: codeql-results
           upload: always
-      - name: Fail closed on CodeQL findings
+      - name: Fail closed on unexpected CodeQL findings
         shell: bash
         run: |
           set -euo pipefail
@@ -48,9 +48,38 @@ jobs:
             echo "No CodeQL SARIF output was produced."
             exit 1
           fi
-          count="$(jq -s '[.[].runs[]?.results[]?] | length' "${files[@]}")"
-          echo "CodeQL security findings: $count"
-          if [ "$count" -gt 0 ]; then
-            jq -r '.runs[]?.results[]? | [(.ruleId // "unknown"), (.message.text // ""), ((.locations[0].physicalLocation.artifactLocation.uri // "?") + ":" + ((.locations[0].physicalLocation.region.startLine // 0)|tostring))] | @tsv' "${files[@]}"
+
+          jq -s '[.[].runs[]?.results[]?]' "${files[@]}" > all-codeql-results.json
+          total="$(jq 'length' all-codeql-results.json)"
+          echo "CodeQL raw findings: $total"
+
+          jq --slurpfile allow .github/codeql-accepted-findings.json '
+            [ .[] as $r
+              | ($r.locations[0].physicalLocation.artifactLocation.uri // "") as $path
+              | select(
+                  ([ $allow[0].accepted[]
+                     | select(.ruleId == ($r.ruleId // "") and .path == $path)
+                   ] | length) == 0
+                )
+            ]' all-codeql-results.json > unexpected-codeql-results.json
+
+          accepted="$(( total - $(jq 'length' unexpected-codeql-results.json) ))"
+          unexpected="$(jq 'length' unexpected-codeql-results.json)"
+          echo "CodeQL reviewed accepted findings: $accepted"
+          echo "CodeQL unexpected findings: $unexpected"
+
+          if [ "$accepted" -gt 0 ]; then
+            echo "Reviewed accepted findings:"
+            jq -r --slurpfile allow .github/codeql-accepted-findings.json '
+              .[] as $r
+              | ($r.locations[0].physicalLocation.artifactLocation.uri // "") as $path
+              | $allow[0].accepted[]
+              | select(.ruleId == ($r.ruleId // "") and .path == $path)
+              | [.ruleId, .path, .rationale] | @tsv
+            ' all-codeql-results.json
+          fi
+
+          if [ "$unexpected" -gt 0 ]; then
+            jq -r '.[] | [(.ruleId // "unknown"), (.message.text // ""), ((.locations[0].physicalLocation.artifactLocation.uri // "?") + ":" + ((.locations[0].physicalLocation.region.startLine // 0)|tostring))] | @tsv' unexpected-codeql-results.json
             exit 1
           fi
