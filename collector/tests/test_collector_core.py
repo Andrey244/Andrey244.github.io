@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 import tempfile
 import unittest
@@ -286,6 +287,9 @@ class CryptoIdentityTests(unittest.TestCase):
             protected = store.private_path.read_bytes()
             self.assertTrue(protected.startswith(b"TEST"))
             self.assertNotIn(b"PRIVATE KEY", protected)
+            if os.name != "nt":
+                for path in (store.private_path, store.public_path, store.key_id_path):
+                    self.assertEqual(path.stat().st_mode & 0o777, 0o600)
 
             # Existing key store must be stable across restarts.
             public2 = CollectorKeyStore(Path(td), protector).ensure()
