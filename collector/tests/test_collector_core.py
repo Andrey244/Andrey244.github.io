@@ -14,7 +14,11 @@ if str(SRC) not in sys.path:
 
 from trading_journal_collector.adapters.mt4 import Mt4StartupConfig, parse_export_jsonl, validate_export_status
 from trading_journal_collector.adapters.mt5 import Mt5Adapter
-from trading_journal_collector.errors import AccountMismatchError, WriteCapableCredentialError
+from trading_journal_collector.errors import (
+    AccountMismatchError,
+    ConnectionProbeError,
+    WriteCapableCredentialError,
+)
 from trading_journal_collector.models import CredentialLease, Platform
 from trading_journal_collector.crypto import CollectorKeyStore, encrypt_for_public_key
 from trading_journal_collector.identity import CollectorIdentityStore, hash_collector_token
@@ -30,7 +34,10 @@ class FakeMt5:
         self.server = server
         self.shutdown_called = False
         self.deals = []
+        self.position_deals = {}
         self.history_args = None
+        self.position_history_requests = []
+        self.initialize_kwargs = None
 
         self.DEAL_TYPE_BUY = 0
         self.DEAL_TYPE_SELL = 1
@@ -43,6 +50,7 @@ class FakeMt5:
         self.DEAL_REASON_TP = 5
 
     def initialize(self, *args, **kwargs):
+        self.initialize_kwargs = dict(kwargs)
         return True
 
     def terminal_info(self):
@@ -54,8 +62,14 @@ class FakeMt5:
     def last_error(self):
         return (0, "OK")
 
-    def history_deals_get(self, start, end):
-        self.history_args = (start, end)
+    def history_deals_get(self, *args, **kwargs):
+        if "position" in kwargs:
+            position = int(kwargs["position"])
+            self.position_history_requests.append(position)
+            return tuple(self.position_deals.get(position, ()))
+        if len(args) != 2:
+            raise TypeError("expected time interval or position")
+        self.history_args = (args[0], args[1])
         return tuple(self.deals)
 
     def shutdown(self):
@@ -94,6 +108,67 @@ class Mt5ProbeTests(unittest.TestCase):
         lease = CredentialLease.from_plaintext(login="123456", server="Broker-Demo", password="investor")
         with self.assertRaises(AccountMismatchError):
             Mt5Adapter(mt5_module=fake).probe_read_only(lease)
+
+
+    def test_mt5_uses_non_portable_mode_by_default(self):
+        fake = FakeMt5(trade_allowed=False)
+        lease = CredentialLease.from_plaintext(
+            login="123456", server="Broker-Demo", password="investor"
+        )
+        Mt5Adapter(mt5_module=fake).probe_read_only(lease)
+        self.assertIsNotNone(fake.initialize_kwargs)
+        self.assertFalse(fake.initialize_kwargs["portable"])
+
+    def test_boundary_exit_backfills_position_entry(self):
+        fake = FakeMt5(trade_allowed=False)
+        entry = SimpleNamespace(
+            ticket=201, order=301, time=1_699_000_000, time_msc=1_699_000_000_000,
+            type=fake.DEAL_TYPE_BUY, entry=fake.DEAL_ENTRY_IN, magic=7,
+            position_id=401, reason=fake.DEAL_REASON_CLIENT, volume=0.1,
+            price=1.1000, commission=-0.2, swap=0.0, profit=0.0, fee=0.0,
+            symbol="EURUSD", comment="entry", external_id=""
+        )
+        exit_deal = SimpleNamespace(
+            ticket=202, order=302, time=1_700_000_100, time_msc=1_700_000_100_000,
+            type=fake.DEAL_TYPE_SELL, entry=fake.DEAL_ENTRY_OUT, magic=7,
+            position_id=401, reason=fake.DEAL_REASON_CLIENT, volume=0.1,
+            price=1.1100, commission=-0.2, swap=0.0, profit=100.0, fee=0.0,
+            symbol="EURUSD", comment="exit", external_id=""
+        )
+        fake.deals = [exit_deal]
+        fake.position_deals[401] = [entry, exit_deal]
+        lease = CredentialLease.from_plaintext(
+            login="123456", server="Broker-Demo", password="investor"
+        )
+        events = Mt5Adapter(mt5_module=fake).collect_history(
+            lease,
+            since_ms=1_700_000_000_000,
+            until_ms=1_700_001_000_000,
+        )
+        self.assertEqual(fake.position_history_requests, [401])
+        self.assertEqual([e.event_id for e in events], ["201", "202"])
+        self.assertLess(events[0].payload["event_time_ms"], 1_700_000_000_000)
+
+    def test_boundary_exit_fails_closed_without_prior_entry(self):
+        fake = FakeMt5(trade_allowed=False)
+        exit_deal = SimpleNamespace(
+            ticket=202, order=302, time=1_700_000_100, time_msc=1_700_000_100_000,
+            type=fake.DEAL_TYPE_SELL, entry=fake.DEAL_ENTRY_OUT, magic=7,
+            position_id=401, reason=fake.DEAL_REASON_CLIENT, volume=0.1,
+            price=1.1100, commission=-0.2, swap=0.0, profit=100.0, fee=0.0,
+            symbol="EURUSD", comment="exit", external_id=""
+        )
+        fake.deals = [exit_deal]
+        fake.position_deals[401] = [exit_deal]
+        lease = CredentialLease.from_plaintext(
+            login="123456", server="Broker-Demo", password="investor"
+        )
+        with self.assertRaises(ConnectionProbeError):
+            Mt5Adapter(mt5_module=fake).collect_history(
+                lease,
+                since_ms=1_700_000_000_000,
+                until_ms=1_700_001_000_000,
+            )
 
 
     def test_history_normalization_preserves_explicit_sl_reason(self):
