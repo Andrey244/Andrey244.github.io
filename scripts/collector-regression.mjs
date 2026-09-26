@@ -35,8 +35,9 @@ const [arch, pyproject, mt5, mt4py, mt4mql, crypto, dpapi, identity, serviceSql,
 ok(arch.includes('MetaTrader 4') && arch.includes('MetaTrader 5'),'architecture must cover MT4 and MT5');
 ok(arch.includes('v1 is not complete until both MT4 and MT5'),'dual-platform completion gate missing');
 ok(arch.includes('The Investor Password form is implemented but remains fail-closed until the backend reports a real registered primary collector.'),'credential-entry fail-closed release gate missing');
-ok(arch.includes('Supabase JS is pinned to 2.117.1'),'frontend SDK pinning record missing');
-ok(arch.includes('CSP script-src permits only self plus that exact Supabase SDK path'),'frontend CSP record missing');
+ok(arch.includes('Supabase JS 2.117.1 is vendored at /vendor/supabase-2.117.1.js'),'frontend vendored SDK record missing');
+ok(arch.includes('SHA-256 verified against jsDelivr package metadata'),'frontend SDK verification record missing');
+ok(arch.includes('CSP script-src is self-only'),'frontend self-only CSP record missing');
 ok(arch.includes('collector_private.broker_credentials'),'private credential storage design missing');
 ok(arch.includes('RSA-OAEP-SHA256'),'credential encryption contract missing');
 
