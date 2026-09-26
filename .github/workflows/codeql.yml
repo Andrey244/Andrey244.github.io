@@ -32,6 +32,25 @@ jobs:
           queries: security-extended
           config-file: ./.github/codeql-config.yml
       - name: Analyze
+        id: analyze
         uses: github/codeql-action/analyze@1190a975f95ce23525efb6a3fc21ea29567c1b52
         with:
           category: "/language:${{ matrix.language }}"
+          output: codeql-results
+          upload: always
+      - name: Fail closed on CodeQL findings
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          files=(codeql-results/*.sarif)
+          if [ "${#files[@]}" -eq 0 ]; then
+            echo "No CodeQL SARIF output was produced."
+            exit 1
+          fi
+          count="$(jq -s '[.[].runs[]?.results[]?] | length' "${files[@]}")"
+          echo "CodeQL security findings: $count"
+          if [ "$count" -gt 0 ]; then
+            jq -r '.runs[]?.results[]? | [(.ruleId // "unknown"), (.message.text // ""), ((.locations[0].physicalLocation.artifactLocation.uri // "?") + ":" + ((.locations[0].physicalLocation.region.startLine // 0)|tostring))] | @tsv' "${files[@]}"
+            exit 1
+          fi
