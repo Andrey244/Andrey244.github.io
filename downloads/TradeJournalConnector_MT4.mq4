@@ -1,5 +1,5 @@
 #property strict
-#property version   "1.17"
+#property version   "1.18"
 #property description "Read-only MT4 -> Supabase connector for the zero-cost trading journal."
 #property description "It never opens, modifies or closes trades."
 
@@ -15,14 +15,14 @@ input int    BatchSize        = 50;
 input bool   PrintDebug       = true;
 
 string STATE_NAME;
-string CONNECTOR_VERSION = "1.17";
+string CONNECTOR_VERSION = "1.18";
 datetime LAST_STATUS_REPORT = 0;
 
 int OnInit()
 {
-   STATE_NAME = "TJ4_LAST_SL17_" + IntegerToString(AccountNumber()) + "_" + IntegerToString(ServerHash(AccountServer()));
+   STATE_NAME = "TJ4_LAST_SL18_" + IntegerToString(AccountNumber()) + "_" + IntegerToString(ServerHash(AccountServer()));
    EventSetTimer((int)MathMax(10, SyncEverySeconds));
-   Print("TradeJournal MT4 connector v1.17 started. READ-ONLY.");
+   Print("TradeJournal MT4 connector v1.18 started. READ-ONLY.");
    if(!TestConnection())
       Print("Journal connection test failed. Fix the log error before expecting sync.");
    else
@@ -160,17 +160,25 @@ string OrderToJson()
    if(point <= 0) point = 0.00001;
    double tol = point * 30.0;
    bool closed_by_sl = false;
+   bool sl_proximity = false;
    string order_comment = OrderComment();
    StringToLower(order_comment);
-   if(StringFind(order_comment,"[sl]") >= 0 || StringFind(order_comment,"stop loss") >= 0 || StringFind(order_comment,"stoploss") >= 0)
+
+   // Strategy LOSS requires explicit close evidence. Price proximity is only
+   // diagnostic because a manual/other close can happen near the stored SL.
+   if(StringFind(order_comment,"[sl]") >= 0 ||
+      StringFind(order_comment,"stop loss") >= 0 ||
+      StringFind(order_comment,"stoploss") >= 0)
       closed_by_sl = true;
-   if(!closed_by_sl && sl > 0)
+
+   if(sl > 0)
    {
-      if(type == OP_BUY && close_px <= sl + tol) closed_by_sl = true;
-      if(type == OP_SELL && close_px >= sl - tol) closed_by_sl = true;
+      if(type == OP_BUY && close_px <= sl + tol) sl_proximity = true;
+      if(type == OP_SELL && close_px >= sl - tol) sl_proximity = true;
    }
 
    string closed_by_sl_json = closed_by_sl ? "true" : "false";
+   string sl_proximity_json = sl_proximity ? "true" : "false";
 
    j += "\"open_time_ms\":" + DoubleToString((double)open_ms,0) + ",";
    j += "\"close_time_ms\":" + DoubleToString((double)close_ms,0) + ",";
@@ -184,6 +192,7 @@ string OrderToJson()
    j += "\"stop_loss\":" + D(sl,10) + ",";
    j += "\"take_profit\":" + D(tp,10) + ",";
    j += "\"closed_by_sl\":" + closed_by_sl_json + ",";
+   j += "\"sl_proximity\":" + sl_proximity_json + ",";
    j += "\"profit\":" + D(OrderProfit(),2) + ",";
    j += "\"commission\":" + D(OrderCommission(),2) + ",";
    j += "\"swap\":" + D(OrderSwap(),2) + ",";
