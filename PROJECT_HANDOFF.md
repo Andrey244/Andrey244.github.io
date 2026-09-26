@@ -121,7 +121,7 @@ Member:
 - Backend canonicalizes dedupe keys and does not trust client-provided dedupe keys.
 - Batch ingest validates events and skips malformed events instead of poisoning the whole batch.
 - Least-privilege grants were applied.
-- Leaked-password protection is unavailable on current Supabase Free plan; this is known and accepted for now.
+- Leaked-password protection is currently disabled in Supabase Auth; do not change it automatically because the user explicitly does not want password-policy/MFA changes now.
 - User explicitly said not to add MFA/password-policy changes for now.
 
 ## 5. MT4 / MT5 connection architecture
@@ -131,20 +131,20 @@ Current working path:
 `MT4/MT5 terminal → Connector/Reader → Supabase → Journal`
 
 MT4 current connector:
-- `downloads/TradeJournalConnector_MT4_v1.17.mq4`
+- `downloads/TradeJournalConnector_MT4_v1.18.mq4`
 - generic mirror: `downloads/TradeJournalConnector_MT4.mq4`
 - read-only;
 - no AutoTrading permission required for journal sync;
 - uses Supabase WebRequest;
 - sends connector status.
 
-### v1.17 SL metadata
-v1.17 sends extra data for reliable stop detection:
+### v1.18 SL metadata
+v1.18 preserves:
 - stop loss;
 - take profit;
-- `closed_by_sl`;
-- broker comment checks such as `[sl]` / stop-loss text.
-It also uses a versioned state key to trigger a one-time recent-history rescan so old events can be enriched without creating duplicates.
+- explicit `closed_by_sl` from broker close/comment evidence;
+- `sl_proximity` as diagnostic only.
+Price proximity must never be promoted back into Strategy Outcome LOSS evidence.
 
 ### Direct Investor Password connection
 Target UX:
