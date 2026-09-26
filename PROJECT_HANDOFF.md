@@ -11,11 +11,11 @@ If the user opens a new chat, use this exact starting instruction:
 ## 1. Current repository state
 
 - Repo: `Andrey244/Andrey244.github.io`
-- Current main commit at time of this handoff: `ab318988223ead597a3f4950f5ab98e518b7630b`
+- Current main must always be fetched before work; do not trust a pinned HEAD in this document.
 - Static frontend: single-page `index.html` on GitHub Pages.
 - Supabase project: `ylriyjxcefovzwzinpqd`
 - Current grouping version: `2.3`
-- Current MT4 connector: `v1.17`
+- Current MT4 connector: `v1.18`
 - PWA files exist: `manifest.webmanifest`, `service-worker.js`, `app-icon.svg`.
 - Smoke workflow: `.github/workflows/smoke.yml`
 - Regression script: `scripts/grouping-regression.mjs`
@@ -67,16 +67,22 @@ See `AGENTS.md`. For future UI work:
 2. UI/UX Pro Max: `nextlevelbuilder/ui-ux-pro-max-skill`, especially its main `SKILL.md` and `references/quick-reference.md`.
 3. Use Playwright when browser automation is available.
 
-Important known UI audit observations already identified:
-- No global `:focus-visible` system exists yet.
-- `prefers-reduced-motion` handling is missing.
-- Many text styles are below 12px; compact data labels may be intentional, but body/help text should not drift into tiny sizes.
-- There are many raw hex values and some inline styles instead of fully semantic design tokens.
-- Desktop tabs are clickable `div` elements rather than semantic buttons/links, so keyboard accessibility is weak.
-- Trade rows are clickable `tr` elements without built-in keyboard semantics.
-- Calendar day cards rely on click handlers attached to div-like cards; keyboard path should be audited.
-- Buttons currently have hover feedback but no consistent `:active` press feedback.
-These are audit findings, not automatic permission to redesign the app. Fix incrementally and preserve the current look.
+Current UI audit status:
+- global `:focus-visible` exists;
+- `prefers-reduced-motion` handling exists;
+- desktop navigation uses semantic buttons and managed `aria-current`;
+- modal Escape/focus-trap/focus-restore behavior is implemented;
+- calendar days and trade opening have keyboard paths;
+- buttons have disabled/active states and hover is gated to fine pointers;
+- coarse-pointer input/target sizing and safe-area/mobile handling are implemented;
+- TinyFish live-browser regression on the deployed unauthenticated auth surface passed on 2026-09-26 after the self-hosted SDK/CSP hardening.
+
+Remaining P2 UI debt, not release blockers:
+- many raw hex values;
+- some inline styles;
+- some sub-12px labels/help text that should be reviewed gradually;
+- optional URL/deep-link SPA cleanup.
+Preserve the current visual direction; do not re-run the first accessibility pass as if it were missing.
 
 ## 4. Authentication / roles / access
 
@@ -403,117 +409,70 @@ Remaining P2 cleanup is intentionally not urgent:
 - inline-style cleanup;
 - optional URL/deep-link SPA navigation.
 
-### B. Browser QA — PENDING RUNTIME
-Playwright was requested. Full real browser regression audit remains pending until a suitable Playwright/browser runtime is actually available. Do not claim browser-verified QA from static inspection or Smoke alone.
+### B. Browser QA — LIVE UNAUDITED-AUTH PASS COMPLETED
+TinyFish live-browser regression was run against the deployed GitHub Pages site on 2026-09-26 after CSP/self-hosted SDK hardening:
+- page loaded without visible JS/CSP/resource failures;
+- login/signup controls remained responsive;
+- no duplicate/overlapping UI was observed;
+- the run discovered a stale MT4 v1.17 download link, which was fixed to v1.18 and guarded by Smoke.
 
-### C. Security — PARTIALLY COMPLETED / STRIX PENDING
-A native Supabase security/RLS audit was run after the UI work.
+This is not a substitute for the future authenticated direct-collector acceptance test with a real collector/terminal. Playwright-specific coverage is still optional if that runtime becomes available.
 
-Fixed production schema issue:
-- legacy `app_members_role_check` allowed only `owner/member` and silently conflicted with the newer `owner/admin/member` constraint;
-- migration `remove_legacy_app_members_role_check` removed only the stale constraint;
-- the remaining role constraint correctly permits `owner/admin/member`.
+### C. Security — NATIVE AUDIT + HARDENING COMPLETED / CODEX SECURITY TOOL RUNTIME NOT EXPORTED
+Completed and verified:
+- all public trading tables remain RLS-isolated by user;
+- admin/member role boundaries remain intact;
+- stale `app_members_role_check` was removed;
+- 19 RLS init-plan warnings were eliminated;
+- collector private tables remain deny-all to browser/API roles;
+- collector service RPCs remain service-role-only;
+- collector jobs now use exact sync cursors, attempt fencing and strict non-expired lease enforcement;
+- primary collector readiness requires a fresh heartbeat (<2 minutes);
+- the legacy public `journal` Edge Function was retired to an explicit HTTP 410 tombstone;
+- frontend Supabase JS 2.117.1 is vendored locally after SHA-256 verification and CSP `script-src` is self-only;
+- all 23 production migrations are synchronized into the repository for disaster recovery.
 
-Performance/RLS hardening:
-- migration `optimize_rls_initplans_and_access_blocks_fk`;
-- all 19 Supabase `auth_rls_initplan` warnings were removed by preserving policy semantics while using init-plan-safe `(select auth.uid())` / helper calls;
-- added `access_blocks_created_by_idx` for the FK.
+Supabase Advisor still reports intentional warnings for:
+- token-authenticated anonymous connector RPCs `ingest_mt_events` / `report_connector_status`;
+- pre-login `signup_wait_seconds`;
+- authenticated SECURITY DEFINER helper/admin RPCs with internal authorization;
+- leaked-password protection disabled (do not change automatically; user explicitly does not want auth-policy changes now).
 
-Current Supabase security-advisor warnings that are intentionally not auto-"fixed":
-- `ingest_mt_events` and `report_connector_status` are anonymous SECURITY DEFINER RPCs by design because MT connectors authenticate with the private ingest token; their function bodies validate/hash the token and constrain payloads;
-- `signup_wait_seconds` must be callable before login and reads only the temporary signup block;
-- authenticated admin/member SECURITY DEFINER RPCs have explicit role grants and internal authorization checks;
-- leaked-password protection is currently disabled in Supabase Auth and should be enabled in project Auth settings when available/desired.
+Codex Security is installed/enabled in ChatGPT, but its scanner actions are not exported as callable tools in this chat session. Do not claim a Codex Security scan was run unless an actual scanner result exists.
 
-A full Strix adversarial scan is still pending until its runtime/CLI is actually available.
+### D. Direct Investor Password collector — HARDENED FOUNDATION IMPLEMENTED / REAL WINDOWS TERMINAL ACCEPTANCE PENDING
+Source of truth: `docs/INVESTOR_COLLECTOR_V1.md`.
 
-### D. Direct Investor Password collector — FOUNDATION IMPLEMENTED / END-TO-END PENDING
-Source of truth: docs/INVESTOR_COLLECTOR_V1.md.
+Implemented:
+- dual-platform MT4 + MT5 product contract;
+- fail-closed direct-connect UI with RSA-OAEP/SHA-256 browser encryption;
+- self-hosted verified Supabase JS 2.117.1, self-only script CSP and PWA cache coverage;
+- production Supabase control plane, private encrypted credential storage, collector-node/job tables, six collector/broker Edge Functions and service-only RPCs;
+- full production migration history mirrored in `supabase/migrations/`;
+- RSA-3072 collector identity, current-user DPAPI protection and non-secret registration bundle;
+- Windows service installer using per-service virtual account `NT SERVICE\\TradingJournalCollector`, not shared LocalService;
+- ProgramData root is read/execute for the service; mutable identity/state/MT4 work directories have separate write ACLs;
+- MT4 install path requires verifiable BitLocker protection for the disposable work volume;
+- MT4 sync fails closed unless All History was explicitly operator-confirmed;
+- MT4 exporter v0.12 and manual connector v1.18 separate explicit `closed_by_sl` evidence from price-proximity diagnostics;
+- MT5 defaults to non-portable mode and repairs initial-window exit boundaries using `history_deals_get(position=...)`; it fails closed if prior entry history cannot be recovered;
+- SYNC cursor advances to the exact collected `sync_until_ms`, never report time;
+- ingest/report require the current job `attempt` and an unexpired lease; ingest holds a job row lock while canonical ingest runs;
+- collector public key is exposed only when the primary node has a fresh heartbeat;
+- legacy `journal` Edge Function is a 410 tombstone;
+- current manual MT4 Connector download/status is v1.18.
 
-Product contract:
-- v1 supports both MT4 and MT5;
-- one UX: Platform + Login + Investor Password + Server;
-- v1 is not complete until both adapters pass acceptance tests;
-- current Reader/Connector remains a fallback.
+Still pending before real Investor Password production use:
+- install/provision the collector on the owned Windows/VPS host;
+- register the real `registration.json` node;
+- install/validate real MT5 terminal under the Windows service identity;
+- compile `TradeJournalExport_MT4.mq4` to EX4 in the target broker MetaEditor;
+- explicitly set/validate MT4 Account History = All History and only then install with `-Mt4AllHistoryConfirmed`;
+- run the complete MT4 and MT5 acceptance matrix: correct/wrong password, wrong server, master-password rejection, account/server mismatch, historical import coverage, retry/idempotency, reconnect, disconnect credential deletion and multi-account isolation.
 
-Repository foundation:
-- common collector models and redacted in-memory credential lease;
-- MT5 read-only connection probe;
-- MT4 disposable-worker startup config with ExpertsTrades=false;
-- one-shot read-only MT4 history exporter source;
-- regression checks that forbid trade APIs;
-- Python unit tests in GitHub Actions.
+Do not provision a fake node just to enable the UI. The current fail-closed state is intentional until a real primary collector is online.
 
-Frontend credential-entry prerequisite completed:
-- Supabase JS pinned to exact 2.117.1 UMD path;
-- main application JavaScript externalized to /app.js;
-- CSP blocks inline script/inline script attributes and pins the allowed SDK source;
-- CI enforces these constraints.
-The direct Investor Password form is still not enabled until collector/control-plane phases are ready.
 
-Production control-plane DB foundation completed:
-- migration `20260925191441 investor_collector_control_plane_v1`;
-- migration `20260925191514 investor_collector_job_fk_indexes_v1`;
-- `public.broker_connections` stores metadata only; authenticated users receive SELECT-only access to their own approved-user rows;
-- `collector_private.broker_credentials`, `collector_nodes`, and `collector_jobs` are RLS-enabled deny-all tables with no anon/authenticated/service_role table grants;
-- private schema USAGE is revoked from browser/backend API roles;
-- browser Smoke checks reject anonymous broker metadata access and private-schema Data API exposure.
-
-Collector identity foundation completed in repository:
-- RSA-3072 key generation and OAEP/MGF1 SHA-256 decrypt contract;
-- private key persisted only through an OS-protector abstraction;
-- Windows implementation uses current-user DPAPI (not machine-wide DPAPI), intended for a dedicated collector service account;
-- collector auth token is persisted protected locally and only SHA-256 hash is intended for database registration;
-- `cryptography==50.0.1` is pinned and CI tests RSA round-trip, key stability, token rotation and protected-at-rest test behavior.
-
-Service API / Edge Function control plane completed:
-- migration `20260925195214 investor_collector_service_rpc_v1`;
-- service-only SECURITY DEFINER RPCs are executable by `service_role` only, not anon/authenticated;
-- `broker-key`, `broker-connect`, `broker-disconnect` validate Supabase user JWTs and approved membership inside the function;
-- `collector-next-job`, `collector-report`, `collector-ingest` use a dedicated high-entropy collector token whose SHA-256 hash is matched server-side;
-- Windows collector never receives a Supabase service/secret key;
-- collector ingest resolves user/account/platform/server server-side from the leased connection and canonicalizes event identity before writing `raw_events`;
-- production Smoke verifies service RPC denial, broker unauthenticated denial and invalid collector-token denial.
-
-Sync cursor hardening completed:
-- migration `20260925200130 investor_collector_sync_cursor_v1`;
-- VALIDATE no longer advances `last_sync_at`;
-- lease responses include `last_sync_at`;
-- first SYNC can import the initial history window; later SYNC jobs use an overlap cursor.
-
-Python worker + MT5 history foundation completed in repository:
-- collector HTTP client uses only publishable API key + dedicated collector token, never Supabase secret/service-role;
-- worker decrypts RSA ciphertext locally, clears mutable credential buffers, dispatches jobs and batches ingest;
-- default initial history window is 730 days, configurable; incremental overlap defaults to 120 seconds;
-- MT5 `history_deals_get` normalizer emits BUY/SELL deal events and skips non-trade balance/commission deal types for v1;
-- `DEAL_REASON_SL` is mapped to explicit `closed_by_sl`; frontend MT5 grouping now consumes explicit SL evidence and still never infers SL from negative P&L.
-
-Collector node provisioning foundation completed:
-- migration `20260925201608 investor_collector_node_registration_v1` adds a service-role-only registration/primary-rotation RPC;
-- `trading-journal-collector-provision` runs under the target Windows account and emits only node name, RSA public key, key id and SHA-256 collector-token hash;
-- it never reads/prints the plaintext collector token or private key.
-
-Windows service/ACL foundation completed:
-- pinned `pywin32==312`;
-- service defaults to low-privilege `NT AUTHORITY\\LocalService`, delayed auto-start and bounded restart actions;
-- `collector/windows/install-service.ps1` removes inherited ProgramData ACLs and grants only SYSTEM, Administrators and LocalService;
-- config is a strict non-secret allowlist and rejects password/token/private-key-like keys;
-- first service start generates identity under the actual service DPAPI account and writes only non-secret `registration.json`;
-- Windows CI imports the service runtime and parses installer scripts.
-
-Still pending:
-- run the installer on the owned Windows/VPS host and register that real `registration.json` bundle;
-- live MT5 terminal end-to-end test against the owned Windows collector;
-- MT4 disposable-slot launcher implemented in repository: cloned terminal slot, short-lived startup config, /portable launch, cursor file, account/server/read-only validation and guaranteed cleanup;
-- MT4 exporter v0.11 reads an exact since-ms cursor and reports terminal history total;
-- Windows GitHub Actions now performs a real current-user DPAPI round-trip and installs/imports pinned MetaTrader5 5.0.6180;
-- still pending specifically for MT4: compile the MQ4 to EX4 with the target/broker MetaEditor and validate real terminal login/history behavior on owned Windows;
-- MT4 Windows launcher/compile/runtime validation;
-- direct-connect frontend implemented but fail-closed: MT4/MT5/Login/Server/Investor Password form remains disabled until `broker-key` confirms a real primary collector;
-- browser uses Web Crypto RSA-OAEP/SHA-256 and clears the password field before calling `broker-connect`;
-- current manual MT4 Connector remains visible as fallback;
-- direct connection list shows state/last sync/error and Disconnect deletes encrypted credential;
-- production Windows integration tests with a real collector/terminal are still pending.
 ---
 
 When a new chat begins, **do not ask the user to re-explain these rules**. Read this file first and continue from current repo state.

@@ -1,105 +1,98 @@
 # Trading Journal Collector
 
-Foundation for the owned Windows collector used by direct Investor Password connections.
+Owned Windows collector for direct read-only Investor Password connections. Both MT4 and MT5 are v1 requirements.
 
 Source of truth:
-- docs/INVESTOR_COLLECTOR_V1.md
+- `docs/INVESTOR_COLLECTOR_V1.md`
 
-Current repository foundation:
-- common secret-safe models;
-- RSA-3072 / OAEP-SHA256 collector key store;
-- Windows current-user DPAPI secret protector (dedicated service-account scope);
-- protected collector auth token with SHA-256 database hash;
-- adapter interface;
-- MT5 read-only probe with fake-module testability;
-- MT4 startup config renderer;
-- one-shot read-only MT4 history exporter source;
-- Python unit tests;
-- static regression rules forbidding trade APIs;
-- production Supabase control-plane schema and service-only RPCs;
-- broker/collector Edge Functions with explicit auth gates;
-- Python collector HTTP worker loop;
-- MT5 deal-history normalization with explicit Stop Loss reason propagation.
+## Implemented foundation
 
-Not implemented yet:
-- Windows service installer / ACL provisioning;
-- registration of a real collector node on the owned Windows/VPS host;
-- live Windows MT5 terminal end-to-end validation;
-- real MetaEditor compilation + live Windows validation of the implemented MT4 disposable-slot launcher;
-- direct-connect frontend.
+- RSA-3072 / OAEP-SHA256 collector key store.
+- Current-user Windows DPAPI protection.
+- Dedicated high-entropy collector token; only its SHA-256 hash is registered server-side.
+- Per-service virtual Windows identity: `NT SERVICE\\TradingJournalCollector`.
+- Split ProgramData ACLs: runtime/config read-only to the service; identity/state/MT4 work directories writable.
+- Strict non-secret service config allowlist.
+- Production Supabase control plane and authenticated Edge Functions.
+- Exact SYNC cursor, attempt fencing and strict lease-expiry fencing.
+- Fresh-heartbeat requirement before the frontend accepts Investor Password entry.
+- MT5 read-only probe/history sync, non-portable default, explicit `DEAL_REASON_SL`, and initial-boundary position-history repair.
+- MT4 disposable `/portable` worker slot, short-lived startup config, All-History fail-closed gate and exporter v0.12.
+- Manual MT4 Connector v1.18 with explicit SL evidence separated from price-proximity diagnostics.
+- Windows CI validates pinned MetaTrader5/pywin32 imports, PowerShell parsing and real DPAPI round-trip.
+- Direct-connect frontend is implemented but stays fail-closed until a real primary collector heartbeat is fresh.
 
 Never put real broker credentials in tests, fixtures, examples, GitHub Actions or repository files.
 
-Windows baseline:
-- Python 3.12 x64;
-- MetaTrader5 dependency pinned in pyproject.toml;
-- MT5 terminal;
-- broker-compatible MT4 terminal directories.
+## Windows baseline
+
+- Windows x64
+- Python 3.12 x64
+- MetaTrader5==5.0.6180
+- pywin32==312
+- installed MT5 terminal
+- broker-compatible MT4 golden terminal directory when MT4 is enabled
+- BitLocker-protected volume for MT4 disposable worker state
 
 Tests from repository root:
 
+```
 PYTHONPATH=collector/src python -m unittest discover -s collector/tests -v
 node scripts/collector-regression.mjs
-
-Linux CI validates platform-independent contracts and fake MT5 behavior. Actual terminal integration must later run on an owned Windows runner/VPS.
-
-
-## MT4 disposable worker requirements
-
-To enable MT4 on the Windows collector, configure:
-- `TJ_MT4_GOLDEN_DIR`: writable-copy source containing broker-compatible `terminal.exe`;
-- compiled `MQL4/Scripts/TradeJournalExport_MT4.ex4` inside that golden directory;
-- `TJ_MT4_WORK_ROOT`: ACL-restricted, encrypted-volume directory for disposable slots;
-- optional `TJ_MT4_BOOTSTRAP_SYMBOL` (default EURUSD), which must exist at that broker.
-
-The collector never compiles an MQ4 silently. A missing EX4 fails closed. Real compilation/login/history coverage must be verified on the owned Windows host before MT4 direct-connect is released.
-
-
-## Windows CI boundary
-
-GitHub Actions includes a Windows runner that:
-- installs the collector with the pinned MT5 extra;
-- verifies MetaTrader5 package version 5.0.6180 imports on Python 3.12;
-- performs a real Windows current-user DPAPI protect/unprotect integration test, including entropy mismatch fail-closed behavior.
-
-This validates OS crypto/package compatibility only. It does not substitute for a real broker MT4/MT5 terminal runtime on the owned collector host.
-
-
-## Provision a real collector node
-
-Run this only on the owned Windows machine under the same dedicated Windows account that will run the collector:
-
-```powershell
-$env:TJ_IDENTITY_DIR = "D:\TradingJournal\identity"
-$env:TJ_COLLECTOR_NAME = "collector-01"
-trading-journal-collector-provision --output collector-registration.json
 ```
 
-The output file contains only:
+## MT4 requirements
+
+The golden terminal must contain:
+- broker-compatible `terminal.exe`;
+- compiled `MQL4/Scripts/TradeJournalExport_MT4.ex4`;
+- Account History explicitly set to **All History** and validated.
+
+The collector cannot programmatically force MT4 Account History to All History. Therefore history sync is fail-closed unless `mt4_history_all_confirmed` / installer `-Mt4AllHistoryConfirmed` is explicitly set after operator validation.
+
+MT4 direct sync also requires the disposable work volume to be fully BitLocker protected. The installer fails closed when this cannot be verified.
+
+## Provisioning a real collector node
+
+Install the service first under its final service identity. First service startup creates the DPAPI-bound identity and writes only the non-secret bundle:
+
+`%ProgramData%\\TradingJournalCollector\\state\\registration.json`
+
+The bundle contains:
 - collector name;
 - RSA public key and key id;
-- SHA-256 hash of the collector auth token;
+- SHA-256 collector-token hash;
 - primary-node intent.
 
-It does **not** contain the collector token or private key. The registration bundle is then enrolled through the service-role-only operator path; the plaintext collector token never leaves DPAPI-protected storage on the collector host.
+It never contains the plaintext collector token or private key.
 
+Register that bundle through the service-role-only operator path. Do not create a fake node to unlock the frontend.
 
 ## Windows service installation
 
-Production service support:
-- pinned `pywin32==312`;
-- default service identity: `NT AUTHORITY\LocalService`;
-- config is an explicit non-secret allowlist;
-- collector token stays DPAPI-protected in the identity store;
-- first service start writes `registration.json` with public key, key id and collector-token SHA-256 hash only;
-- ProgramData ACL inheritance is removed and limited to SYSTEM, Administrators and LocalService.
-
-From elevated PowerShell:
+From elevated PowerShell, use PowerShell's backtick for multiline continuation, or run the command on one line:
 
 ```powershell
-collector\windows\install-service.ps1 \
-  -SupabaseUrl "https://<project>.supabase.co" \
+collector\windows\install-service.ps1 `
+  -SupabaseUrl "https://<project>.supabase.co" `
   -PublishableKey "sb_publishable_..."
 ```
 
-The installer never accepts Investor Passwords, Supabase service/secret keys or a reusable Windows account password.
+For MT4, also provide `-Mt4GoldenDir` and only add `-Mt4AllHistoryConfirmed` after Account History = All History has been manually verified.
+
+The installer:
+- uses `NT SERVICE\\TradingJournalCollector`;
+- never accepts Investor Passwords, Supabase service/secret keys or a reusable Windows account password;
+- keeps config read-only to the service;
+- keeps mutable identity/state/work data in dedicated ACL-restricted directories.
+
+## Still pending — real terminal acceptance
+
+- provision the owned Windows/VPS host;
+- register the real collector node;
+- validate MT5 terminal startup/login/history under the service identity;
+- compile the MT4 exporter in the target broker MetaEditor;
+- validate MT4 login and All-History behavior;
+- run correct/wrong Investor Password, wrong server, master-password rejection, historical coverage, retry/idempotency, reconnect and disconnect tests for both platforms.
+
+No code-only CI result substitutes for this live broker-terminal acceptance.

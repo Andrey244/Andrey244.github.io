@@ -149,12 +149,13 @@ Collector leases a job, receives ciphertext, decrypts locally, uses the credenti
 
 The Investor Password form is implemented but remains fail-closed until the backend reports a real registered primary collector.
 
-Frontend script hardening completed before credential-entry work:
-- Supabase JS is pinned to 2.117.1 at an exact CDN path;
-- the application JavaScript was moved from an inline script to /app.js;
-- CSP script-src permits only self plus that exact Supabase SDK path;
+Frontend script hardening:
+- Supabase JS 2.117.1 is vendored at /vendor/supabase-2.117.1.js;
+- the bundle was produced from the exact npm package and SHA-256 verified against jsDelivr package metadata;
+- the application JavaScript lives in /app.js;
+- CSP script-src is self-only;
 - script-src-attr is none;
-- CI rejects a return to floating @2 or inline JavaScript.
+- Smoke verifies the vendored bundle SHA-256 and rejects a return to runtime CDN scripts or inline JavaScript.
 
 Remaining credential-entry rules:
 1. do not add analytics/session-replay code to the secret-entry surface;
@@ -231,7 +232,7 @@ Not exposed to browser roles:
 
 The collector_private schema must not be added to exposed Data API schemas.
 
-## Proposed Edge Functions
+## Edge Functions — implemented
 
 broker-key:
 - user-authenticated;
@@ -352,14 +353,15 @@ Phase 0 — repository foundation:
 - MT4 startup config + one-shot exporter baseline;
 - regression checks prohibiting trade APIs.
 
-Phase 1 — secure collector identity + provisioning (repository foundation complete):
+Phase 1 — secure collector identity + Windows service foundation complete:
 - RSA-3072 key generation with OAEP/MGF1 SHA-256;
 - OS-protector key store and current-user Windows DPAPI implementation;
 - protected collector auth token + SHA-256 registration hash;
 - exact cryptography dependency pin and Linux CI contract tests;
 - Windows CI validates real DPAPI runtime and pinned MT5 import;
 - service-only collector-node registration RPC and non-secret Windows provisioning bundle are implemented;
-- still pending: run provisioning on the owned Windows host, register that real node, and install the persistent Windows worker/ACL setup.
+- per-service virtual identity, split ACLs and BitLocker gate are implemented;
+- still pending: run provisioning on the owned Windows host and register that real node.
 
 Phase 2 — Supabase control plane (complete):
 - public metadata table with RLS;
@@ -373,7 +375,11 @@ Phase 3 — MT5 end-to-end (repository worker foundation complete):
 - Python worker polls authenticated collector jobs and uses only publishable Supabase key + collector token;
 - RSA ciphertext decrypts only on the collector and credential buffers are cleared after each job;
 - first sync defaults to a configurable 730-day history window; later syncs use a 120-second overlap;
+- the successful SYNC cursor is the exact collected upper bound, not report completion time;
+- ingest/report are fenced by lease attempt and non-expired lease;
 - MT5 history_deals_get normalization is implemented for BUY/SELL trade deals;
+- MT5 defaults to normal (non-portable) initialization;
+- if the first in-window deal is an exit, position-scoped history is fetched to recover the prior entry; incomplete boundary history fails closed;
 - DEAL_REASON_SL becomes explicit closed_by_sl broker evidence;
 - ingest/retry lifecycle is wired through the production Edge Functions;
 - still pending: live Windows MT5 terminal + real collector-node end-to-end validation.
@@ -382,10 +388,13 @@ Phase 4 — MT4 end-to-end (repository launcher foundation complete):
 - disposable isolated terminal slot is cloned from a broker-compatible golden template;
 - startup config contains login/Investor Password/server, forces ExpertsTrades=false, opens a configurable bootstrap symbol and runs the one-shot exporter;
 - terminal launches with /portable from a writable non-system worker directory;
-- exporter v0.11 consumes an exact since-ms cursor and emits JSONL/status inside MQL4/Files;
+- exporter v0.12 consumes an exact since-ms cursor and emits JSONL/status inside MQL4/Files;
+- history sync fails closed unless Account History = All History has been explicitly operator-confirmed;
+- explicit SL evidence controls closed_by_sl; 30-point price proximity is diagnostic only;
 - launcher validates connected account/server/read-only state, overwrites/unlinks the credential config after exporter status, terminates the terminal and destroys the slot;
 - Linux CI tests the orchestration with a fake terminal process;
-- still pending: real MetaEditor EX4 compilation and live Windows/broker terminal validation, including how much Account History the broker terminal exposes automatically.
+- Windows installer requires BitLocker protection on the MT4 work volume;
+- still pending: real MetaEditor EX4 compilation and live Windows/broker terminal validation.
 
 Phase 5 — frontend direct-connect UX (fail-closed UI implemented):
 - Connection page now exposes the shared MT4/MT5/Login/Server/Investor Password flow;
@@ -402,7 +411,7 @@ Phase 6 — multi-account hardening:
 - secret deletion;
 - operational diagnostics.
 
-The architecture is dual-platform from day one even though implementation work is staged.
+The architecture is dual-platform from day one even though real broker-terminal acceptance is still staged. Production readiness is fail-closed until a real primary collector heartbeat is fresh.
 
 ## v1 acceptance tests
 
@@ -434,3 +443,13 @@ Both MT4 and MT5 must pass:
 - plaintext broker-password storage in Supabase;
 - one permanent terminal per user;
 - weakening current RLS/ingest controls.
+
+
+## Post-audit hardening — 2026-09-26
+
+Additional production hardening applied after the first collector foundation:
+- `20260926113626 collector_exact_cursor_and_attempt_fencing_v1`;
+- `20260926115037 collector_readiness_requires_fresh_heartbeat_v1`;
+- `20260926121712 collector_strict_lease_expiry_v1`.
+All production migrations are mirrored in the repository.
+The legacy `journal` Edge Function is retired with HTTP 410.
