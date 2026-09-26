@@ -12,6 +12,7 @@ from trading_journal_collector.errors import (
     AdapterUnavailableError,
     ConnectionProbeError,
     ControlPlaneError,
+    HistoryCoverageError,
     WriteCapableCredentialError,
 )
 from trading_journal_collector.identity import CollectorIdentityStore
@@ -34,6 +35,8 @@ def safe_error_code(exc: Exception) -> str:
         return "ACCOUNT_MISMATCH"
     if isinstance(exc, AdapterUnavailableError):
         return "ADAPTER_UNAVAILABLE"
+    if isinstance(exc, HistoryCoverageError):
+        return "HISTORY_COVERAGE_UNVERIFIED"
     if isinstance(exc, ConnectionProbeError):
         return "BROKER_CONNECTION_FAILED"
     if isinstance(exc, ControlPlaneError):
