@@ -53,6 +53,8 @@ ok(clientSource.includes('trade_notes'),'index.html: trade_notes integration mis
 ok(clientSource.includes('groupMT5') && clientSource.includes('groupMT4'),'index.html: MT grouping functions missing');
 ok(clientSource.includes("GROUPING_VERSION='2.3'"),'index.html: grouping version is not 2.3');
 ok(clientSource.includes("LATEST_MT4_CONNECTOR='1.18'"),'index.html: latest MT4 connector version is not 1.18');
+ok(html.includes('downloads/TradeJournalConnector_MT4_v1.18.mq4') && html.includes('Скачать MT4 Connector v1.18'),'index.html: MT4 download link/version is stale');
+ok(!html.includes('TradeJournalConnector_MT4_v1.17.mq4'),'index.html: stale MT4 v1.17 download link returned');
 ok(clientSource.includes('markSelectedGhost'),'index.html: bulk Ghost workflow missing');
 ok(clientSource.includes('closeTradeReview'),'index.html: unsaved Trade Review guard missing');
 ok(clientSource.includes('connectorStatusList'),'index.html: connector version status UI missing');
