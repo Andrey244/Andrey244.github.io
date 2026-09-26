@@ -14,6 +14,7 @@ from trading_journal_collector.errors import (
     AccountMismatchError,
     AdapterUnavailableError,
     ExportValidationError,
+    HistoryCoverageError,
     WriteCapableCredentialError,
 )
 from trading_journal_collector.models import (
@@ -161,6 +162,7 @@ class Mt4Adapter:
         terminal_exe_name: str = "terminal.exe",
         timeout_seconds: float = 90.0,
         poll_seconds: float = 0.2,
+        history_all_confirmed: bool = False,
         launcher: ProcessLauncher | None = None,
     ) -> None:
         self.golden_terminal_dir = Path(golden_terminal_dir)
@@ -169,6 +171,7 @@ class Mt4Adapter:
         self.terminal_exe_name = terminal_exe_name
         self.timeout_seconds = timeout_seconds
         self.poll_seconds = poll_seconds
+        self.history_all_confirmed = bool(history_all_confirmed)
         self.launcher = launcher or _default_launcher
         if not self.bootstrap_symbol:
             raise ValueError("bootstrap_symbol is required")
@@ -194,6 +197,10 @@ class Mt4Adapter:
     ) -> list[NormalizedEvent]:
         if since_ms < 0 or until_ms <= since_ms:
             raise ValueError("invalid MT4 history interval")
+        if not self.history_all_confirmed:
+            raise HistoryCoverageError(
+                "MT4_ACCOUNT_HISTORY_ALL_NOT_CONFIRMED"
+            )
         _, events = self._run_export(
             credential,
             since_ms=since_ms,
