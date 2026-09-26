@@ -1,5 +1,5 @@
 #property strict
-#property version   "0.11"
+#property version   "0.12"
 #property description "One-shot read-only MT4 history exporter for Trading Journal Collector."
 #property description "It never opens, modifies or closes trades."
 
@@ -130,7 +130,7 @@ string OrderToJson()
    j += "\"event_id\":\"" + IntegerToString(OrderTicket()) + "\",";
    j += "\"order_id\":\"" + IntegerToString(OrderTicket()) + "\",";
    j += "\"event_time_ms\":" + DoubleToString((double)event_ms,0) + ",";
-   j += "\"collector_version\":\"0.11\",";
+   j += "\"collector_version\":\"0.12\",";
 
    if(is_cash)
    {
@@ -157,18 +157,21 @@ string OrderToJson()
    if(point <= 0) point = 0.00001;
    double tol = point * 30.0;
    bool closed_by_sl = false;
+   bool sl_proximity = false;
    string order_comment = OrderComment();
    StringToLower(order_comment);
 
+   // LOSS must be based on explicit close evidence. Price proximity remains
+   // diagnostic only because other close paths can occur near the stored SL.
    if(StringFind(order_comment,"[sl]") >= 0 ||
       StringFind(order_comment,"stop loss") >= 0 ||
       StringFind(order_comment,"stoploss") >= 0)
       closed_by_sl = true;
 
-   if(!closed_by_sl && sl > 0)
+   if(sl > 0)
    {
-      if(type == OP_BUY && close_px <= sl + tol) closed_by_sl = true;
-      if(type == OP_SELL && close_px >= sl - tol) closed_by_sl = true;
+      if(type == OP_BUY && close_px <= sl + tol) sl_proximity = true;
+      if(type == OP_SELL && close_px >= sl - tol) sl_proximity = true;
    }
 
    j += "\"open_time_ms\":" + DoubleToString((double)open_ms,0) + ",";
@@ -183,6 +186,7 @@ string OrderToJson()
    j += "\"stop_loss\":" + D(sl,10) + ",";
    j += "\"take_profit\":" + D(tp,10) + ",";
    j += "\"closed_by_sl\":" + BoolJson(closed_by_sl) + ",";
+   j += "\"sl_proximity\":" + BoolJson(sl_proximity) + ",";
    j += "\"profit\":" + D(OrderProfit(),2) + ",";
    j += "\"commission\":" + D(OrderCommission(),2) + ",";
    j += "\"swap\":" + D(OrderSwap(),2) + ",";
