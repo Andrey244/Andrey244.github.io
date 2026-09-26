@@ -31,10 +31,12 @@ class Mt5Adapter(BrokerAdapter):
         *,
         terminal_path: str | None = None,
         timeout_ms: int = 60_000,
+        portable: bool = False,
         mt5_module: Any | None = None,
     ) -> None:
         self.terminal_path = terminal_path
         self.timeout_ms = timeout_ms
+        self.portable = bool(portable)
         self._mt5 = mt5_module
 
     def _module(self) -> Any:
@@ -58,7 +60,7 @@ class Mt5Adapter(BrokerAdapter):
                 "password": password,
                 "server": credential.server,
                 "timeout": self.timeout_ms,
-                "portable": True,
+                "portable": self.portable,
             }
             if self.terminal_path:
                 initialized = bool(mt5.initialize(self.terminal_path, **kwargs))
@@ -131,11 +133,64 @@ class Mt5Adapter(BrokerAdapter):
             if deals is None:
                 raise ConnectionProbeError(f"MT5 history_deals_get failed: {mt5.last_error()}")
 
-            out: list[NormalizedEvent] = []
-            for deal in deals:
+            window_deals = list(deals)
+            candidate_deals = list(window_deals)
+            first_by_position: dict[int, Any] = {}
+            for deal in sorted(
+                window_deals,
+                key=lambda d: int(
+                    getattr(d, "time_msc", 0)
+                    or (int(getattr(d, "time", 0) or 0) * 1000)
+                ),
+            ):
+                position = int(getattr(deal, "position_id", 0) or 0)
+                if position > 0 and position not in first_by_position:
+                    first_by_position[position] = deal
+
+            entry_in = getattr(mt5, "DEAL_ENTRY_IN", object())
+            for position, first in first_by_position.items():
+                if getattr(first, "entry", None) == entry_in:
+                    continue
+
+                position_deals = mt5.history_deals_get(position=position)
+                if position_deals is None:
+                    raise ConnectionProbeError(
+                        f"MT5 position history lookup failed: {mt5.last_error()}"
+                    )
+
+                first_time_ms = int(
+                    getattr(first, "time_msc", 0)
+                    or (int(getattr(first, "time", 0) or 0) * 1000)
+                )
+                has_prior_entry = False
+                for prior in position_deals:
+                    prior_time_ms = int(
+                        getattr(prior, "time_msc", 0)
+                        or (int(getattr(prior, "time", 0) or 0) * 1000)
+                    )
+                    if prior_time_ms <= 0 or prior_time_ms > until_ms:
+                        continue
+                    if (
+                        prior_time_ms < first_time_ms
+                        and getattr(prior, "entry", None) == entry_in
+                    ):
+                        has_prior_entry = True
+                    candidate_deals.append(prior)
+
+                if not has_prior_entry:
+                    raise ConnectionProbeError(
+                        "MT5 position history is incomplete at the sync boundary"
+                    )
+
+            by_ticket: dict[str, NormalizedEvent] = {}
+            for deal in candidate_deals:
                 event = self._normalize_deal(mt5, credential, deal)
                 if event is not None:
-                    out.append(event)
+                    event_time_ms = int(event.payload.get("event_time_ms", 0))
+                    if event_time_ms <= until_ms:
+                        by_ticket[event.event_id] = event
+
+            out = list(by_ticket.values())
             out.sort(key=lambda e: int(e.payload.get("event_time_ms", 0)))
             return out
 
