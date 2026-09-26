@@ -1,5 +1,6 @@
 import fs from 'node:fs/promises';
 import vm from 'node:vm';
+import crypto from 'node:crypto';
 
 const SITE='https://andrey244.github.io/';
 const SUPABASE='https://ylriyjxcefovzwzinpqd.supabase.co';
@@ -18,18 +19,20 @@ async function retry(fn, attempts=8, delayMs=15000){
 const html=await fs.readFile('index.html','utf8');
 const appJs=await fs.readFile('app.js','utf8');
 const clientSource=html+'\n'+appJs;
-const mt4Connector=await fs.readFile('downloads/TradeJournalConnector_MT4_v1.17.mq4','utf8');
-ok(mt4Connector.includes('#property version   "1.17"'),'MT4 connector: wrong version');
+const supabaseVendor=await fs.readFile('vendor/supabase-2.117.1.js');
+const mt4Connector=await fs.readFile('downloads/TradeJournalConnector_MT4_v1.18.mq4','utf8');
+ok(mt4Connector.includes('#property version   "1.18"'),'MT4 connector: wrong version');
 ok(mt4Connector.includes('const int TJ_OP_BALANCE = 6;'),'MT4 connector: balance operation constant missing');
 ok(mt4Connector.includes('const int TJ_OP_CREDIT  = 7;'),'MT4 connector: credit operation constant missing');
 ok(!/(^|[^A-Z_])OP_BALANCE([^A-Z_]|$)/m.test(mt4Connector.replace('const int TJ_OP_BALANCE = 6;','')),'MT4 connector: bare OP_BALANCE would not compile');
 ok(!/(^|[^A-Z_])OP_CREDIT([^A-Z_]|$)/m.test(mt4Connector.replace('const int TJ_OP_CREDIT  = 7;','')),'MT4 connector: bare OP_CREDIT would not compile');
 ok(/^<!doctype html>/i.test(html),'index.html: missing doctype');
 ok(html.includes('<title>Trading Journal</title>'),'index.html: wrong/missing title');
-ok(html.includes('@supabase/supabase-js@2.117.1/dist/umd/supabase.js'),'index.html: Supabase SDK must be exactly pinned');
-ok(!html.includes('@supabase/supabase-js@2"'),'index.html: floating Supabase major-version CDN dependency returned');
+ok(html.includes('<script src="/vendor/supabase-2.117.1.js"></script>'),'index.html: vendored Supabase SDK missing');
+ok(!html.includes('cdn.jsdelivr.net'),'index.html: runtime CDN script dependency returned');
+ok(crypto.createHash('sha256').update(supabaseVendor).digest('hex')==='dff1e545f4f35bd42895cd6f46431e56137dd13031e46a9759c446447c11a567','vendored Supabase SDK hash mismatch');
 ok(html.includes('Content-Security-Policy'),'index.html: CSP meta missing');
-ok(html.includes("script-src 'self' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.1/dist/umd/supabase.js"),'index.html: CSP script-src is not pinned');
+ok(html.includes("script-src 'self';"),'index.html: CSP script-src must be self-only');
 ok(html.includes("script-src-attr 'none'"),'index.html: inline script attributes must be blocked');
 ok(html.includes('<script src="/app.js"></script>'),'index.html: external app.js missing');
 ok(html.includes('id="directConnectForm"'),'Direct broker connection form missing');
@@ -49,7 +52,7 @@ ok(clientSource.includes('raw_events'),'index.html: raw_events integration missi
 ok(clientSource.includes('trade_notes'),'index.html: trade_notes integration missing');
 ok(clientSource.includes('groupMT5') && clientSource.includes('groupMT4'),'index.html: MT grouping functions missing');
 ok(clientSource.includes("GROUPING_VERSION='2.3'"),'index.html: grouping version is not 2.3');
-ok(clientSource.includes("LATEST_MT4_CONNECTOR='1.17'"),'index.html: latest MT4 connector version is not 1.15');
+ok(clientSource.includes("LATEST_MT4_CONNECTOR='1.18'"),'index.html: latest MT4 connector version is not 1.18');
 ok(clientSource.includes('markSelectedGhost'),'index.html: bulk Ghost workflow missing');
 ok(clientSource.includes('closeTradeReview'),'index.html: unsaved Trade Review guard missing');
 ok(clientSource.includes('connectorStatusList'),'index.html: connector version status UI missing');

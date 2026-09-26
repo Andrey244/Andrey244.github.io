@@ -4,7 +4,7 @@ const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const el=id=>document.getElementById(id);
 const GROUPING_VERSION='2.3';
 const GROUPING_RULE='Server-isolated MT4 overlap · MT5 exposure · duplicate guard';
-const LATEST_MT4_CONNECTOR='1.17';
+const LATEST_MT4_CONNECTOR='1.18';
 let model={trades:[],daily:[],symbols:[],weekday:[],summary:{}},monthDate=null,activeTrade=null,liveToken='';
 let membership=null,allTrades=[],scopedTrades=[],scopedRawEvents=[],tradeNotes=[],dailyReviewRows=[],accountSettings=[],connectorStatuses=[],brokerConnections=[],detectedAccounts=[],memberRows=[],selectedAccountKey='all',declineTarget=null,rawEvents=[],dailyReviewMap={},activeReviewDate=null;
 let directCollectorKey=null,directCollectorCheckPromise=null;
