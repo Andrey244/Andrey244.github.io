@@ -75,6 +75,9 @@ ok(!edgeShared.includes('console.log('),'Edge shared code must not log secrets')
 ok(cursorSql.includes('last_sync_at timestamptz'),'collector lease must return sync cursor');
 ok(cursorSql.includes("last_sync_at=case when v_job_type='SYNC' then now() else last_sync_at end"),'legacy cursor migration record missing');
 ok(mt5.includes('history_deals_get'),'MT5 adapter history-deal reader missing');
+ok(mt5.includes('history_deals_get(position=position)'),'MT5 boundary position-history repair missing');
+ok(mt5.includes('"portable": self.portable'),'MT5 portable mode must be explicit/configurable');
+ok(mt5.includes('portable: bool = False'),'MT5 portable mode must default to false');
 ok(mt5.includes('DEAL_REASON_SL'),'MT5 adapter explicit SL reason mapping missing');
 ok(mt5.includes('"closed_by_sl": bool(closed_by_sl)'),'MT5 adapter explicit SL payload missing');
 ok(!/\border_send\b|\border_check\b/.test(mt5),'MT5 adapter must never contain trade APIs');
