@@ -1,0 +1,6 @@
+name: Trading Journal CodeQL config
+
+paths-ignore:
+  - vendor/**
+  - downloads/**
+  - collector/mt4/**
