@@ -43,6 +43,25 @@ class ApiTests(unittest.TestCase):
         self.assertNotIn("Authorization", headers)
         self.assertNotIn("service_role", json.dumps(headers).lower())
 
+    def test_collector_api_sends_attempt_and_exact_sync_cursor(self):
+        transport = FakeTransport([(200, b'{"inserted":1}'), (200, b'{"accepted":true}')])
+        api = CollectorApi(
+            supabase_url="https://example.supabase.co",
+            publishable_key="public-key-" + "x" * 32,
+            token_provider=lambda: "tjc_" + "a" * 64,
+            transport=transport,
+        )
+        api.ingest_events("11111111-1111-4111-8111-111111111111", 3, [{"event_id":"1"}])
+        api.report_job(
+            "11111111-1111-4111-8111-111111111111",
+            3,
+            success=True,
+            sync_until_ms=2_000_000,
+        )
+        self.assertEqual(transport.calls[0][2]["attempt"], 3)
+        self.assertEqual(transport.calls[1][2]["attempt"], 3)
+        self.assertEqual(transport.calls[1][2]["sync_until_ms"], 2_000_000)
+
 
 class FakeKeyStore:
     def __init__(self):
@@ -73,12 +92,12 @@ class FakeApi:
         job, self.job = self.job, None
         return job
 
-    def ingest_events(self, job_id, events):
-        self.ingested.extend(events)
+    def ingest_events(self, job_id, attempt, events):
+        self.ingested.append((job_id, attempt, list(events)))
         return len(events)
 
-    def report_job(self, job_id, *, success, error_code=None):
-        self.reports.append((job_id, success, error_code))
+    def report_job(self, job_id, attempt, *, success, error_code=None, sync_until_ms=None):
+        self.reports.append((job_id, attempt, success, error_code, sync_until_ms))
 
 
 class FakeHistoryAdapter:
@@ -149,7 +168,13 @@ class WorkerTests(unittest.TestCase):
         self.assertEqual(adapter.history_calls[0][0], 1_080_000)
         self.assertEqual(adapter.history_calls[0][1], 2_000_000)
         self.assertEqual(len(api.ingested),1)
-        self.assertEqual(api.reports,[(job().job_id,True,None)])
+        self.assertEqual(api.ingested[0][0], job().job_id)
+        self.assertEqual(api.ingested[0][1], job().attempt)
+        self.assertEqual(len(api.ingested[0][2]), 1)
+        self.assertEqual(
+            api.reports,
+            [(job().job_id, job().attempt, True, None, 2_000_000)],
+        )
 
     def test_initial_sync_uses_configured_window(self):
         adapter = FakeHistoryAdapter()
@@ -173,7 +198,10 @@ class WorkerTests(unittest.TestCase):
             adapters={Platform.MT5:adapter},
         )
         worker.run_once()
-        self.assertEqual(api.reports[0][1:], (False,"WRITE_CAPABLE_CREDENTIAL"))
+        self.assertEqual(
+            api.reports[0][1:],
+            (job(job_type="VALIDATE").attempt, False, "WRITE_CAPABLE_CREDENTIAL", None),
+        )
 
     def test_key_mismatch_fails_before_decrypt(self):
         identity = FakeIdentity(key_id="local-key")
@@ -185,7 +213,10 @@ class WorkerTests(unittest.TestCase):
         )
         worker.run_once()
         self.assertEqual(identity.key_store.decrypt_calls,0)
-        self.assertEqual(api.reports[0][1:], (False,"INVALID_JOB_PAYLOAD"))
+        self.assertEqual(
+            api.reports[0][1:],
+            (job(key_id="other-key").attempt, False, "INVALID_JOB_PAYLOAD", None),
+        )
 
 
 if __name__ == "__main__":
