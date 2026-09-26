@@ -70,6 +70,8 @@ ok(dpapi.includes('CryptProtectData') && dpapi.includes('CryptUnprotectData'),'W
 ok(!/^\s*CRYPTPROTECT_LOCAL_MACHINE\s*=/m.test(dpapi),'DPAPI must not define machine-wide protection flag');
 ok(!/\|\s*CRYPTPROTECT_LOCAL_MACHINE\b/.test(dpapi),'DPAPI must not enable machine-wide protection flag');
 ok(identity.includes('hash_collector_token'),'collector token hash contract missing');
+ok((identity.match(/_atomic_write\(self\.token_path, protected\)/g)||[]).length===2,'collector token writes must use hardened fixed-permission atomic writer');
+ok(!identity.includes('_atomic_write(self.token_path, protected, 0o600)'),'stale atomic-write mode argument returned');
 ok(!identity.includes('print('),'collector identity code must not print secret material');
 
 ok(serviceSql.includes('revoke all on function public.collector_active_public_key_service() from public,anon,authenticated'),'service RPC anon/auth revoke missing');

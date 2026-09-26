@@ -47,7 +47,7 @@ class CollectorIdentityStore:
             token_bytes = bytearray(token.encode("utf-8"))
             try:
                 protected = self.protector.protect(bytes(token_bytes))
-                _atomic_write(self.token_path, protected, 0o600)
+                _atomic_write(self.token_path, protected)
             finally:
                 for i in range(len(token_bytes)):
                     token_bytes[i] = 0
@@ -76,7 +76,7 @@ class CollectorIdentityStore:
         token_bytes = bytearray(token.encode("utf-8"))
         try:
             protected = self.protector.protect(bytes(token_bytes))
-            _atomic_write(self.token_path, protected, 0o600)
+            _atomic_write(self.token_path, protected)
         finally:
             for i in range(len(token_bytes)):
                 token_bytes[i] = 0
