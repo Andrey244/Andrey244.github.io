@@ -15,6 +15,7 @@ CONFIG_ENV_MAP = {
     "mt4_bootstrap_symbol": "TJ_MT4_BOOTSTRAP_SYMBOL",
     "mt4_terminal_exe": "TJ_MT4_TERMINAL_EXE",
     "mt4_timeout_seconds": "TJ_MT4_TIMEOUT_SECONDS",
+    "mt4_history_all_confirmed": "TJ_MT4_HISTORY_ALL_CONFIRMED",
     "initial_sync_days": "TJ_INITIAL_SYNC_DAYS",
     "sync_overlap_seconds": "TJ_SYNC_OVERLAP_SECONDS",
     "ingest_batch_size": "TJ_INGEST_BATCH_SIZE",
