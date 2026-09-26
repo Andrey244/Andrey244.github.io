@@ -12,7 +12,7 @@ if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 from trading_journal_collector.api import CollectorApi
-from trading_journal_collector.errors import WriteCapableCredentialError
+from trading_journal_collector.errors import HistoryCoverageError, WriteCapableCredentialError
 from trading_journal_collector.models import CollectorJob, NormalizedEvent, Platform
 from trading_journal_collector.worker import CollectorWorker
 
@@ -188,6 +188,20 @@ class WorkerTests(unittest.TestCase):
         )
         worker.run_once()
         self.assertEqual(adapter.history_calls[0][0], max(0,1_000_000_000-86_400_000))
+
+    def test_history_coverage_failure_reports_specific_code(self):
+        adapter = FakeHistoryAdapter(error=HistoryCoverageError("details must not leak"))
+        api = FakeApi(job(job_type="SYNC"))
+        worker = CollectorWorker(
+            api=api,
+            identity=FakeIdentity(),
+            adapters={Platform.MT5:adapter},
+        )
+        worker.run_once()
+        self.assertEqual(
+            api.reports[0][1:],
+            (job(job_type="SYNC").attempt, False, "HISTORY_COVERAGE_UNVERIFIED", None),
+        )
 
     def test_write_capable_credential_reports_safe_code(self):
         adapter = FakeHistoryAdapter(error=WriteCapableCredentialError("must never leak broker details"))
