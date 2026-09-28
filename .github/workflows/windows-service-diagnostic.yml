@@ -51,7 +51,10 @@ jobs:
 
           & $machinePython -m pip install --disable-pip-version-check pywin32==312
           if ($LASTEXITCODE -ne 0) { throw 'Global pywin32 install failed.' }
-          & $machinePython -m pywin32_postinstall -install
+          $machineRoot = Split-Path -Parent $machinePython
+          $postInstall = Join-Path $machineRoot 'Scripts\pywin32_postinstall.py'
+          if (-not (Test-Path $postInstall)) { throw "pywin32 postinstall script missing: $postInstall" }
+          & $machinePython $postInstall -install
           if ($LASTEXITCODE -ne 0) { throw 'Global pywin32 postinstall failed.' }
 
           $machineRoot = Split-Path -Parent $machinePython
