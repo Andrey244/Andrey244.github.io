@@ -57,12 +57,17 @@ ok(installer.includes('$ServiceAccount = "NT SERVICE\\$ServiceName"'),'installer
 ok(installer.includes('"sc.exe" @("config", $ServiceName, "obj=", $ServiceAccount)'),'installer virtual-account configuration missing');
 ok(!installer.includes('NT AUTHORITY\\LocalService'),'shared LocalService identity must not return');
 ok(installer.includes('Get-BitLockerVolume'),'MT4 encrypted-volume verification missing');
+ok(installer.includes('[string]$Mt4WorkRoot = ""'),'Windows installer must allow a dedicated MT4 work volume');
+ok(installer.includes('"-Mt4WorkRoot", $Mt4WorkRoot'),'Windows installer must pass custom MT4 work root into preflight');
 ok(installer.includes('preflight.ps1'),'Windows installer must invoke fail-closed preflight');
 ok(preflight.includes('python_3_12'),'Windows preflight must check Python 3.12');
 ok(preflight.includes('supabase_network'),'Windows preflight must check Supabase connectivity');
 ok(preflight.includes('/rest/v1/rpc/signup_wait_seconds'),'Windows preflight must validate publishable key against a public Data API route');
 ok(!preflight.includes('application/openapi+json'),'Windows preflight must not probe secret-key-only PostgREST OpenAPI root');
 ok(!preflight.includes('$SupabaseUrl.TrimEnd(\'/\') + "/rest/v1/"'),'Windows preflight must not use the PostgREST OpenAPI root for publishable-key validation');
+ok(preflight.includes('[string]$Mt4WorkRoot = ""'),'Windows preflight must support a dedicated MT4 work volume');
+ok(preflight.includes('mt4_work_root_absolute'),'Windows preflight must reject ambiguous relative MT4 work roots');
+ok(preflight.includes('MT4 work volume is not mounted or accessible'),'Windows preflight must fail closed when the dedicated work volume is unavailable');
 ok(preflight.includes('mt4_exporter_ex4'),'Windows preflight must check compiled MT4 exporter');
 ok(preflight.includes('mt4_all_history_attestation'),'Windows preflight must require MT4 All History attestation');
 ok(preflight.includes('mt4_bitlocker'),'Windows preflight must verify MT4 BitLocker protection');
