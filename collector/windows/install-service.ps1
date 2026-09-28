@@ -82,7 +82,7 @@ function Prepare-MachinePywin32ServiceHost {
         Invoke-Checked $MachinePythonExe @(
             "-m", "pip", "install", "--disable-pip-version-check",
             ("pywin32==" + $expectedVersion)
-        )
+        ) | Out-Host
     }
 
     $machineRoot = Split-Path -Parent $MachinePythonExe
@@ -90,7 +90,7 @@ function Prepare-MachinePywin32ServiceHost {
     if (-not (Test-Path -LiteralPath $postInstall -PathType Leaf)) {
         throw "Machine pywin32 post-install script is missing: $postInstall"
     }
-    Invoke-Checked $MachinePythonExe @($postInstall, "-install")
+    Invoke-Checked $MachinePythonExe @($postInstall, "-install") | Out-Host
 
     $purelib = (& $MachinePythonExe -c "import sysconfig; print(sysconfig.get_paths()['purelib'])").Trim()
     $serviceSource = Join-Path $purelib "win32\pythonservice.exe"
