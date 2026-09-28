@@ -87,17 +87,24 @@ class TradingJournalCollectorService(win32serviceutil.ServiceFramework):
 
 
 def command_line() -> int:
-    # Running this module via "python -m trading_journal_collector.service"
-    # makes the class appear to live in "__main__". pywin32 otherwise derives
-    # the persisted PythonClass value from argv[0], which is a filesystem path
-    # and is not a stable importable service class. Register an explicit module
-    # path so pythonservice.exe can import the service under SCM.
-    win32serviceutil.HandleCommandLine(
-        TradingJournalCollectorService,
-        serviceClassString=(
+    # pywin32's service host is machine-global by design. The installer may
+    # provide a machine pythonservice.exe while keeping the Collector package
+    # isolated in its venv. In that case the PythonClass string includes the
+    # venv site-packages directory so the global service host can import it.
+    service_class_string = os.environ.get("TJ_SERVICE_CLASS_STRING", "").strip()
+    if not service_class_string:
+        service_class_string = (
             "trading_journal_collector.service."
             "TradingJournalCollectorService"
-        ),
+        )
+
+    service_exe = os.environ.get("TJ_PYTHON_SERVICE_EXE", "").strip()
+    if service_exe:
+        TradingJournalCollectorService._exe_name_ = service_exe
+
+    win32serviceutil.HandleCommandLine(
+        TradingJournalCollectorService,
+        serviceClassString=service_class_string,
     )
     return 0
 
