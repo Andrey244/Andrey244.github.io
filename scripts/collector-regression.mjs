@@ -54,6 +54,10 @@ ok(installer.includes('/inheritance:r'),'installer must remove inherited Program
 ok(installer.includes('$Root = Join-Path $env:ProgramData "TradingJournalCollector"'),'installer runtime root must match service default config path');
 ok(!installer.includes('[string]$Root ='),'installer must not advertise a root override the service cannot discover');
 ok(installer.includes('$ServiceAccount = "NT SERVICE\\$ServiceName"'),'installer must use a per-service virtual account');
+ok(installer.includes('$AdministratorsSid = "S-1-5-32-544"'),'installer must use locale-independent Administrators SID');
+ok(installer.includes('$SystemSid = "S-1-5-18"'),'installer must use locale-independent SYSTEM SID');
+ok(installer.includes('Translate([Security.Principal.SecurityIdentifier]).Value'),'installer must resolve the virtual service account to a SID before ACL hardening');
+ok(!installer.includes('BUILTIN\\Administrators'),'localized Administrators account name must not be hard-coded');
 ok(installer.includes('"sc.exe" @("config", $ServiceName, "obj=", $ServiceAccount)'),'installer virtual-account configuration missing');
 ok(!installer.includes('NT AUTHORITY\\LocalService'),'shared LocalService identity must not return');
 ok(installer.includes('Get-BitLockerVolume'),'MT4 encrypted-volume verification missing');
