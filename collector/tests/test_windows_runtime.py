@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import sys
 import unittest
+from unittest.mock import patch
 
 from trading_journal_collector.windows_dpapi import WindowsDpapiProtector
 
@@ -24,6 +25,20 @@ class WindowsDpapiRuntimeTests(unittest.TestCase):
         protected = first.protect(b"secret")
         with self.assertRaises(OSError):
             second.unprotect(protected)
+
+    def test_service_registration_uses_explicit_importable_class(self):
+        from trading_journal_collector import service
+
+        with patch.object(service.win32serviceutil, "HandleCommandLine") as handle:
+            self.assertEqual(service.command_line(), 0)
+
+        handle.assert_called_once_with(
+            service.TradingJournalCollectorService,
+            serviceClassString=(
+                "trading_journal_collector.service."
+                "TradingJournalCollectorService"
+            ),
+        )
 
 
 if __name__ == "__main__":
