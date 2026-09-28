@@ -60,6 +60,9 @@ ok(installer.includes('Get-BitLockerVolume'),'MT4 encrypted-volume verification 
 ok(installer.includes('preflight.ps1'),'Windows installer must invoke fail-closed preflight');
 ok(preflight.includes('python_3_12'),'Windows preflight must check Python 3.12');
 ok(preflight.includes('supabase_network'),'Windows preflight must check Supabase connectivity');
+ok(preflight.includes('/rest/v1/rpc/signup_wait_seconds'),'Windows preflight must validate publishable key against a public Data API route');
+ok(!preflight.includes('application/openapi+json'),'Windows preflight must not probe secret-key-only PostgREST OpenAPI root');
+ok(!preflight.includes('$SupabaseUrl.TrimEnd(\'/\') + "/rest/v1/"'),'Windows preflight must not use the PostgREST OpenAPI root for publishable-key validation');
 ok(preflight.includes('mt4_exporter_ex4'),'Windows preflight must check compiled MT4 exporter');
 ok(preflight.includes('mt4_all_history_attestation'),'Windows preflight must require MT4 All History attestation');
 ok(preflight.includes('mt4_bitlocker'),'Windows preflight must verify MT4 BitLocker protection');
