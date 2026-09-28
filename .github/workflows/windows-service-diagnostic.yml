@@ -58,7 +58,11 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Global pywin32 postinstall failed.' }
 
           $machineRoot = Split-Path -Parent $machinePython
+          $globalPurelib = (& $machinePython -c "import sysconfig; print(sysconfig.get_paths()['purelib'])").Trim()
+          $globalServiceSource = Join-Path $globalPurelib 'win32\pythonservice.exe'
           $globalServiceExe = Join-Path $machineRoot 'pythonservice.exe'
+          if (-not (Test-Path $globalServiceSource)) { throw "Global pythonservice source missing: $globalServiceSource" }
+          Copy-Item -LiteralPath $globalServiceSource -Destination $globalServiceExe -Force
           if (-not (Test-Path $globalServiceExe)) { throw "Global pythonservice.exe missing: $globalServiceExe" }
 
           $venvPython = 'C:\ProgramData\TradingJournalCollector\venv\Scripts\python.exe'
