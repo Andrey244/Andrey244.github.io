@@ -91,8 +91,8 @@ ok(clientSource.includes('accountScopeStatic'),'index.html: single-account stati
 ok(clientSource.includes('One idea. One logical trade.'),'index.html: header microcopy regression');
 ok(clientSource.includes('set_member_role'),'index.html: role assignment workflow missing');
 ok(clientSource.includes('canManageAccess'),'index.html: admin access gate missing');
-ok(clientSource.includes("eqBalance.up") && clientSource.includes("eqBalance.down"),'index.html: directional equity balance colors missing');
-ok(clientSource.includes(".eqBalance.down{color:var(--red)}"),'index.html: falling equity balance must be red');
+ok(stylesCss.includes(".eqBalance.up") && stylesCss.includes(".eqBalance.down"),'styles.css: directional equity balance colors missing');
+ok(stylesCss.includes(".eqBalance.down{color:var(--red)}"),'styles.css: falling equity balance must be red');
 ok(clientSource.includes("valueEl.innerHTML='<span>Equity</span> <span class=\"eqBalance"),'index.html: Equity label/balance color split missing');
 ok(clientSource.includes('memberTableHead') && clientSource.includes('memberActionPlaceholder'),'index.html: Access auto-layout/typography markers missing');
 ok(clientSource.includes('authHeader') && clientSource.includes('authForm') && clientSource.includes('authActions'),'index.html: auth page layout markers missing');
@@ -100,10 +100,10 @@ ok(clientSource.includes('toggleRecoveryPasswordBtn') && clientSource.includes('
 ok(clientSource.includes("Пароль успешно изменён. Войди с новым паролем."),'index.html: recovery completion flow missing');
 ok(clientSource.includes("Этот пароль уже установлен на аккаунте."),'index.html: same-password recovery message missing');
 ok(clientSource.includes('One idea. One logical trade.') && clientSource.includes('PRIVATE ACCESS'),'index.html: auth typography/microcopy regression');
-ok(clientSource.includes(':focus-visible'),'index.html: global focus-visible system missing');
-ok(clientSource.includes('prefers-reduced-motion:reduce'),'index.html: reduced-motion handling missing');
-ok(clientSource.includes('touch-action:manipulation'),'index.html: touch interaction baseline missing');
-ok(clientSource.includes('@media (hover:hover) and (pointer:fine)'),'index.html: hover capability gate missing');
+ok(stylesCss.includes(':focus-visible'),'styles.css: global focus-visible system missing');
+ok(stylesCss.includes('prefers-reduced-motion:reduce'),'styles.css: reduced-motion handling missing');
+ok(stylesCss.includes('touch-action:manipulation'),'styles.css: touch interaction baseline missing');
+ok(stylesCss.includes('@media (hover:hover) and (pointer:fine)'),'styles.css: hover capability gate missing');
 ok(clientSource.includes('role="dialog"') && clientSource.includes('aria-modal="true"'),'index.html: dialog semantics missing');
 ok(clientSource.includes('setupModalAccessibility'),'index.html: modal focus management missing');
 ok(clientSource.includes('<button type="button" class="tab on"'),'index.html: desktop navigation is not semantic buttons');
