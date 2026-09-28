@@ -68,56 +68,54 @@ function Invoke-Checked {
     }
 }
 
-function Prepare-PythonServiceRuntime {
+function Prepare-MachinePywin32ServiceHost {
     param(
-        [Parameter(Mandatory=$true)][string]$Python,
-        [Parameter(Mandatory=$true)][string]$VenvDir,
         [Parameter(Mandatory=$true)][string]$MachinePythonExe
     )
 
-    $versionTag = (& $Python -c "import sys; print(f'{sys.version_info.major}{sys.version_info.minor}')").Trim()
-    if ($versionTag -ne "312") {
-        throw "Unexpected Python service runtime version tag: $versionTag"
+    $expectedVersion = "312"
+    $installedVersion = (& $MachinePythonExe -c "import importlib.metadata as m; print(m.version('pywin32') if 'pywin32' in {d.metadata['Name'].lower() for d in m.distributions()} else '')" 2>$null).Trim()
+    if ($installedVersion -and $installedVersion -ne $expectedVersion) {
+        throw "Machine-wide pywin32 version $installedVersion is installed; expected $expectedVersion. Refusing to modify a conflicting global pywin32 install."
+    }
+    if (-not $installedVersion) {
+        Invoke-Checked $MachinePythonExe @(
+            "-m", "pip", "install", "--disable-pip-version-check",
+            ("pywin32==" + $expectedVersion)
+        )
     }
 
     $machineRoot = Split-Path -Parent $MachinePythonExe
-    $pythonDll = Join-Path $machineRoot ("python" + $versionTag + ".dll")
-    if (-not (Test-Path -LiteralPath $pythonDll -PathType Leaf)) {
-        throw "Python service runtime DLL is missing: $pythonDll"
+    $postInstall = Join-Path $machineRoot "Scripts\pywin32_postinstall.py"
+    if (-not (Test-Path -LiteralPath $postInstall -PathType Leaf)) {
+        throw "Machine pywin32 post-install script is missing: $postInstall"
+    }
+    Invoke-Checked $MachinePythonExe @($postInstall, "-install")
+
+    $purelib = (& $MachinePythonExe -c "import sysconfig; print(sysconfig.get_paths()['purelib'])").Trim()
+    $serviceSource = Join-Path $purelib "win32\pythonservice.exe"
+    $serviceExe = Join-Path $machineRoot "pythonservice.exe"
+    if (-not (Test-Path -LiteralPath $serviceSource -PathType Leaf)) {
+        throw "Machine pywin32 service host source is missing: $serviceSource"
+    }
+    Copy-Item -LiteralPath $serviceSource -Destination $serviceExe -Force
+
+    if (-not (Test-Path -LiteralPath $serviceExe -PathType Leaf)) {
+        throw "Machine pywin32 service host is missing after preparation: $serviceExe"
     }
 
-    $purelib = (& $Python -c "import sysconfig; print(sysconfig.get_paths()['purelib'])").Trim()
-    $pywin32System32 = Join-Path $purelib "pywin32_system32"
-    $pywintypesDll = Join-Path $pywin32System32 ("pywintypes" + $versionTag + ".dll")
-    $pythoncomDll = Join-Path $pywin32System32 ("pythoncom" + $versionTag + ".dll")
-    $servicemanagerPyd = Join-Path $purelib "win32\servicemanager.pyd"
-
-    foreach ($source in @($pythonDll, $pywintypesDll, $pythoncomDll, $servicemanagerPyd)) {
-        if (-not (Test-Path -LiteralPath $source -PathType Leaf)) {
-            throw "Required pywin32 service runtime file is missing: $source"
-        }
-        Copy-Item -LiteralPath $source -Destination (Join-Path $VenvDir (Split-Path -Leaf $source)) -Force
+    try {
+        & $MachinePythonExe -c "import servicemanager, win32serviceutil" 2>$null
+        if ($LASTEXITCODE -ne 0) { throw "import probe failed" }
+    } catch {
+        throw "Machine pywin32 import probe failed after post-install."
     }
 
-    foreach ($runtimeName in @("vcruntime140.dll", "vcruntime140_1.dll")) {
-        $runtimeSource = Join-Path $machineRoot $runtimeName
-        if (Test-Path -LiteralPath $runtimeSource -PathType Leaf) {
-            Copy-Item -LiteralPath $runtimeSource -Destination (Join-Path $VenvDir $runtimeName) -Force
-        }
-    }
-
-    foreach ($required in @(
-        (Join-Path $VenvDir ("python" + $versionTag + ".dll")),
-        (Join-Path $VenvDir ("pywintypes" + $versionTag + ".dll")),
-        (Join-Path $VenvDir ("pythoncom" + $versionTag + ".dll")),
-        (Join-Path $VenvDir "servicemanager.pyd")
-    )) {
-        if (-not (Test-Path -LiteralPath $required -PathType Leaf)) {
-            throw "Prepared service runtime file is missing: $required"
-        }
+    return [pscustomobject]@{
+        exe = $serviceExe
+        purelib = $purelib
     }
 }
-
 function Assert-BitLockerProtected {
     param([Parameter(Mandatory=$true)][string]$Path)
 
@@ -233,10 +231,11 @@ Invoke-Checked $Python @(
     ($CollectorSource + "[windows]")
 )
 
-# pythonservice.exe is copied into the venv root by pywin32 during service
-# registration. Windows service startup does not inherit the interactive user's
-# PATH, so keep the native Python/pywin32 DLLs beside the service host.
-Prepare-PythonServiceRuntime -Python $Python -VenvDir $VenvDir -MachinePythonExe $MachinePython.exe
+# pywin32 services are machine-global by design. Keep Collector dependencies
+# isolated in the venv, but host the Windows service with machine-wide pywin32.
+$MachineServiceHost = Prepare-MachinePywin32ServiceHost -MachinePythonExe $MachinePython.exe
+$VenvPurelib = (& $Python -c "import sysconfig; print(sysconfig.get_paths()['purelib'])").Trim()
+$ServiceClassString = $VenvPurelib + "\trading_journal_collector.service.TradingJournalCollectorService"
 
 $config = [ordered]@{
     collector_name = $CollectorName
@@ -256,11 +255,18 @@ $json = $config | ConvertTo-Json -Depth 4
 [IO.File]::WriteAllText($ConfigPath, $json, [Text.UTF8Encoding]::new($false))
 
 $env:TJ_CONFIG_PATH = $ConfigPath
-Invoke-Checked $Python @(
-    "-m", "trading_journal_collector.service",
-    "--startup", "delayed",
-    "install"
-)
+$env:TJ_PYTHON_SERVICE_EXE = $MachineServiceHost.exe
+$env:TJ_SERVICE_CLASS_STRING = $ServiceClassString
+try {
+    Invoke-Checked $Python @(
+        "-m", "trading_journal_collector.service",
+        "--startup", "delayed",
+        "install"
+    )
+} finally {
+    Remove-Item Env:TJ_PYTHON_SERVICE_EXE -ErrorAction SilentlyContinue
+    Remove-Item Env:TJ_SERVICE_CLASS_STRING -ErrorAction SilentlyContinue
+}
 
 # Microsoft-supported per-service virtual account. No reusable Windows
 # password is created or passed to the service installer.
