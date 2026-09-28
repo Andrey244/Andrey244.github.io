@@ -42,6 +42,35 @@ function Test-Administrator {
     return $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 }
 
+function Get-MachinePython312 {
+    $keys = @(
+        "HKLM:\SOFTWARE\Python\PythonCore\3.12\InstallPath",
+        "HKLM:\SOFTWARE\WOW6432Node\Python\PythonCore\3.12\InstallPath"
+    )
+
+    foreach ($key in $keys) {
+        if (-not (Test-Path -LiteralPath $key)) { continue }
+        try {
+            $item = Get-Item -LiteralPath $key -ErrorAction Stop
+            $candidate = [string]$item.GetValue("ExecutablePath")
+            if ([string]::IsNullOrWhiteSpace($candidate)) {
+                $base = [string]$item.GetValue("")
+                if (-not [string]::IsNullOrWhiteSpace($base)) {
+                    $candidate = Join-Path $base "python.exe"
+                }
+            }
+            if ([string]::IsNullOrWhiteSpace($candidate) -or -not (Test-Path -LiteralPath $candidate -PathType Leaf)) {
+                continue
+            }
+            $version = (& $candidate -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}')" 2>$null).Trim()
+            if ($version -match '^3\.12\.') {
+                return [pscustomobject]@{ exe=$candidate; version=$version }
+            }
+        } catch {}
+    }
+    return $null
+}
+
 function Test-BitLockerProtected {
     param([Parameter(Mandatory=$true)][string]$Path)
 
@@ -90,16 +119,11 @@ Add-Check -Name "administrator" -Passed (Test-Administrator) -Detail "Preflight 
 $os = Get-CimInstance Win32_OperatingSystem
 Add-Check -Name "windows_x64" -Passed ([Environment]::Is64BitOperatingSystem) -Detail ("OS=" + $os.Caption + " Version=" + $os.Version)
 
-$py = Get-Command py.exe -ErrorAction SilentlyContinue
-if ($null -eq $py) {
-    Add-Check -Name "python_3_12" -Passed $false -Detail "py.exe launcher not found."
+$machinePython = Get-MachinePython312
+if ($null -eq $machinePython) {
+    Add-Check -Name "python_3_12" -Passed $false -Detail "Machine-wide Python 3.12 is required for the Windows service. Per-user Python under a user profile is not accepted."
 } else {
-    try {
-        $version = (& py.exe -3.12 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}')" 2>$null).Trim()
-        Add-Check -Name "python_3_12" -Passed ($version -match '^3\.12\.') -Detail ("Python=" + $version)
-    } catch {
-        Add-Check -Name "python_3_12" -Passed $false -Detail "Python 3.12 is not available through py.exe."
-    }
+    Add-Check -Name "python_3_12" -Passed $true -Detail ("Machine Python=" + $machinePython.version + " Path=" + $machinePython.exe)
 }
 
 $rootParent = Split-Path -Parent $Root
