@@ -8,6 +8,7 @@ param(
     [string]$CollectorSource = (Resolve-Path (Join-Path $PSScriptRoot "..")),
     [string]$Mt5TerminalPath = "",
     [string]$Mt4GoldenDir = "",
+    [string]$Mt4WorkRoot = "",
     [string]$Mt4BootstrapSymbol = "EURUSD",
     [switch]$Mt4AllHistoryConfirmed,
     [switch]$NoStart
@@ -80,6 +81,13 @@ function Set-DirectoryAcl {
 
 Assert-Administrator
 
+if ($Mt4WorkRoot) {
+    if (-not [IO.Path]::IsPathRooted($Mt4WorkRoot)) {
+        throw "Mt4WorkRoot must be an absolute local path."
+    }
+    $Mt4WorkRoot = [IO.Path]::GetFullPath($Mt4WorkRoot)
+}
+
 $preflightArgs = @(
     "-NoProfile",
     "-ExecutionPolicy", "Bypass",
@@ -89,6 +97,7 @@ $preflightArgs = @(
 )
 if ($Mt5TerminalPath) { $preflightArgs += @("-Mt5TerminalPath", $Mt5TerminalPath) }
 if ($Mt4GoldenDir) { $preflightArgs += @("-Mt4GoldenDir", $Mt4GoldenDir) }
+if ($Mt4WorkRoot) { $preflightArgs += @("-Mt4WorkRoot", $Mt4WorkRoot) }
 if ($Mt4AllHistoryConfirmed) { $preflightArgs += "-Mt4AllHistoryConfirmed" }
 
 & powershell.exe @preflightArgs
@@ -98,7 +107,9 @@ if ($LASTEXITCODE -ne 0) {
 
 $Root = Join-Path $env:ProgramData "TradingJournalCollector"
 $IdentityDir = Join-Path $Root "identity"
-$Mt4WorkRoot = Join-Path $Root "mt4-work"
+if ([string]::IsNullOrWhiteSpace($Mt4WorkRoot)) {
+    $Mt4WorkRoot = Join-Path $Root "mt4-work"
+}
 $StateDir = Join-Path $Root "state"
 $VenvDir = Join-Path $Root "venv"
 $ConfigPath = Join-Path $Root "collector.json"
