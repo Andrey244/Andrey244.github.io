@@ -90,8 +90,9 @@ function Prepare-PythonServiceRuntime {
     $pywin32System32 = Join-Path $purelib "pywin32_system32"
     $pywintypesDll = Join-Path $pywin32System32 ("pywintypes" + $versionTag + ".dll")
     $pythoncomDll = Join-Path $pywin32System32 ("pythoncom" + $versionTag + ".dll")
+    $servicemanagerPyd = Join-Path $purelib "win32\servicemanager.pyd"
 
-    foreach ($source in @($pythonDll, $pywintypesDll, $pythoncomDll)) {
+    foreach ($source in @($pythonDll, $pywintypesDll, $pythoncomDll, $servicemanagerPyd)) {
         if (-not (Test-Path -LiteralPath $source -PathType Leaf)) {
             throw "Required pywin32 service runtime file is missing: $source"
         }
@@ -108,7 +109,8 @@ function Prepare-PythonServiceRuntime {
     foreach ($required in @(
         (Join-Path $VenvDir ("python" + $versionTag + ".dll")),
         (Join-Path $VenvDir ("pywintypes" + $versionTag + ".dll")),
-        (Join-Path $VenvDir ("pythoncom" + $versionTag + ".dll"))
+        (Join-Path $VenvDir ("pythoncom" + $versionTag + ".dll")),
+        (Join-Path $VenvDir "servicemanager.pyd")
     )) {
         if (-not (Test-Path -LiteralPath $required -PathType Leaf)) {
             throw "Prepared service runtime file is missing: $required"
