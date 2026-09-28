@@ -75,7 +75,7 @@ Current UI audit status:
 - calendar days and trade opening have keyboard paths;
 - buttons have disabled/active states and hover is gated to fine pointers;
 - coarse-pointer input/target sizing and safe-area/mobile handling are implemented;
-- TinyFish live-browser regression on the deployed unauthenticated auth surface passed on 2026-09-26 after the self-hosted SDK/CSP hardening.
+- Fresh live-browser regression on the deployed unauthenticated auth surface passed on 2026-09-28 against current HEAD `dc9b1560f5fabe7fcc33167e886ad3ce00460899`, including RU → EN → RU localization, password-eye behavior and desktop layout checks.
 
 Remaining P2 UI debt, not release blockers:
 - many raw hex values;
@@ -409,14 +409,19 @@ Remaining P2 cleanup is intentionally not urgent:
 - inline-style cleanup;
 - optional URL/deep-link SPA navigation.
 
-### B. Browser QA — LIVE UNAUDITED-AUTH PASS COMPLETED
-TinyFish live-browser regression was run against the deployed GitHub Pages site on 2026-09-26 after CSP/self-hosted SDK hardening:
-- page loaded without visible JS/CSP/resource failures;
-- login/signup controls remained responsive;
-- no duplicate/overlapping UI was observed;
-- the run discovered a stale MT4 v1.17 download link, which was fixed to v1.18 and guarded by Smoke.
+### B. Browser QA — CURRENT DEPLOYED AUTH SURFACE VERIFIED
+A fresh live-browser regression was run against deployed HEAD `dc9b1560f5fabe7fcc33167e886ad3ce00460899` on 2026-09-28 after the RU/EN completion commit:
+- Russian default auth UI passed;
+- RU → EN passed for the access heading, password label + placeholder, Sign in, Create account, Forgot password and approval hint, with no residual Russian text in the checked auth controls;
+- password-eye hidden/visible behavior passed without layout breakage;
+- EN → RU round-trip passed;
+- no clipped, duplicated, overlapping or unresponsive desktop auth controls were observed.
 
-This is not a substitute for the future authenticated direct-collector acceptance test with a real collector/terminal. Playwright-specific coverage is still optional if that runtime becomes available.
+This verifies the current deployed unauthenticated auth surface. It is not a substitute for the future authenticated direct-collector acceptance test with a real collector/terminal.
+
+User browser-QA preference from 2026-09-28:
+- do not run TinyFish again; its live widget causes severe client lag and clutter for the user;
+- if browser automation is needed later, prefer Playwright when available or leave the browser-only check explicitly pending rather than silently substituting TinyFish.
 
 ### C. Security — NATIVE AUDIT + HARDENING COMPLETED / CODEX SECURITY TOOL RUNTIME NOT EXPORTED
 Completed and verified:
@@ -431,7 +436,7 @@ Completed and verified:
 - primary collector readiness requires a fresh heartbeat (<2 minutes);
 - the legacy public `journal` Edge Function was retired to an explicit HTTP 410 tombstone;
 - frontend Supabase JS 2.117.1 is vendored locally after SHA-256 verification and CSP `script-src` is self-only;
-- all 23 production migrations are synchronized into the repository for disaster recovery.
+- all 25 production migrations are synchronized into the repository for disaster recovery.
 
 Supabase Advisor still reports intentional warnings for:
 - token-authenticated anonymous connector RPCs `ingest_mt_events` / `report_connector_status`;
@@ -505,10 +510,11 @@ Supabase Free-plan log optimization:
 - production log audit showed the dominant source was the manual MT4 connector, not the web UI;
 - in the sampled 24h window, `ingest_mt_events` generated 5,676 REST requests and about 14.7 MB of serialized edge-log payload, while `report_connector_status` generated 432 requests and about 1.1 MB;
 - both live terminals were still reporting connector v1.17 at audit time;
+- on 2026-09-28 both live `public.connector_status` rows were subsequently verified at connector v1.20 after the running terminals were upgraded;
 - manual Connector v1.20 keeps the 120-second history overlap but skips SyncHistory HTTP upload entirely while `OrdersHistoryTotal()` is unchanged;
 - status reporting defaults to every 1,800 seconds and `PrintDebug=false`;
 - v1.20 intentionally uses a new cursor state key, causing one bounded initial re-sync after upgrade; backend dedupe makes that safe;
-- the already-consumed Supabase Log Ingestion quota will not shrink. The request-rate reduction starts only after the running MT4 terminals are upgraded to v1.20.
+- the already-consumed Supabase Log Ingestion quota will not shrink. Both running MT4 terminals are now on v1.20, so the next required step is to remeasure `ingest_mt_events` and `report_connector_status` over a meaningful comparable interval and optimize further only if request volume remains high.
 
 Do not reintroduce periodic browser polling just to make the UI look live; Realtime + visibility reconciliation is intentional to minimize Supabase request/log volume.
 
