@@ -251,17 +251,39 @@ Invoke-Checked "sc.exe" @(
 )
 Invoke-Checked "sc.exe" @("failureflag", $ServiceName, "1")
 
+$RegistrationPath = Join-Path $StateDir "registration.json"
+
 if (-not $NoStart) {
     Invoke-Checked $Python @(
         "-m", "trading_journal_collector.service",
         "--wait", "30",
         "start"
     )
+
+    $deadline = (Get-Date).AddSeconds(40)
+    $serviceReady = $false
+    while ((Get-Date) -lt $deadline) {
+        $serviceState = Get-Service -Name $ServiceName -ErrorAction SilentlyContinue
+        if ($null -ne $serviceState -and $serviceState.Status -eq "Running" -and (Test-Path -LiteralPath $RegistrationPath -PathType Leaf)) {
+            $serviceReady = $true
+            break
+        }
+        if ($null -ne $serviceState -and $serviceState.Status -eq "Stopped") {
+            break
+        }
+        Start-Sleep -Milliseconds 500
+    }
+
+    if (-not $serviceReady) {
+        $finalState = Get-Service -Name $ServiceName -ErrorAction SilentlyContinue
+        $statusText = $(if($null -eq $finalState){"MISSING"}else{[string]$finalState.Status})
+        throw "Collector service failed runtime proof: status=$statusText registration_bundle_exists=$(Test-Path -LiteralPath $RegistrationPath -PathType Leaf)."
+    }
 }
 
 Write-Host "Trading Journal Collector installed."
 Write-Host "Service identity: $ServiceAccount"
 Write-Host "Config: $ConfigPath"
 Write-Host "Identity: $IdentityDir"
-Write-Host "Registration bundle: $(Join-Path $StateDir 'registration.json')"
+Write-Host "Registration bundle: $RegistrationPath"
 Write-Host "The registration bundle contains only public-key material and a token hash."
