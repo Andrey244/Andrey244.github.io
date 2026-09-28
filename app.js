@@ -366,8 +366,8 @@ function hideEquityTooltip(){
   const line=chart.querySelector('.equityHoverLine');
   const dot=chart.querySelector('.equityHoverDot');
   const tip=chart.querySelector('.equityTooltip');
-  if(line)line.style.opacity='0';
-  if(dot)dot.style.opacity='0';
+  if(line)line.classList.remove('on');
+  if(dot)dot.classList.remove('on');
   if(tip)tip.classList.remove('on');
 }
 function switchView(view){
@@ -1441,7 +1441,7 @@ function renderEquity(){
   if(!trades.length){
     const chart=el('equityChart');
     el('equityMeta').innerHTML='';
-    chart.innerHTML='<div class="empty" style="padding-top:100px">No counted trades yet</div>';
+    chart.innerHTML='<div class="empty emptyChart">'+esc(tx('No counted trades yet','Пока нет учитываемых сделок'))+'</div>';
     chart.tabIndex=-1;chart.setAttribute('role','status');chart.setAttribute('aria-label','No counted trades yet');
     return;
   }
@@ -1486,7 +1486,7 @@ function renderEquity(){
       '<path d="'+path+'" fill="none" stroke="#21df8c" stroke-width="3" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/>'+
       '<line class="equityHoverLine" x1="0" y1="'+py+'" x2="0" y2="'+(H-py)+'"></line>'+
       '<circle class="equityHoverDot" cx="0" cy="0" r="5" vector-effect="non-scaling-stroke"></circle>'+
-      '<rect class="equityHitArea" x="0" y="0" width="'+W+'" height="'+H+'" fill="transparent" style="cursor:crosshair"></rect>'+
+      '<rect class="equityHitArea" x="0" y="0" width="'+W+'" height="'+H+'" fill="transparent"></rect>'+
     '</svg>'+
     '<div class="equityTooltip" role="status"><div class="eqDate"></div><div class="eqValue"></div><div class="eqMeta"></div></div>';
 
@@ -1505,17 +1505,13 @@ function renderEquity(){
     const vx=(clientX-rect.left)/rect.width*W;
     const idx=Math.max(0,Math.min(points.length-1,Math.round((vx-px)/plotW*(points.length-1))));
     const p=points[idx],cx=X(idx),cy=Y(p.equity);
-    const screenX=cx/W*rect.width,screenY=cy/H*rect.height;
-
     line.setAttribute('x1',cx);
     line.setAttribute('x2',cx);
-    line.style.opacity='1';
+    line.classList.add('on');
     dot.setAttribute('cx',cx);
     dot.setAttribute('cy',cy);
-    dot.style.opacity='1';
+    dot.classList.add('on');
 
-    tip.style.left=Math.max(82,Math.min(rect.width-82,screenX))+'px';
-    tip.style.top=Math.max(62,screenY-8)+'px';
     tip.classList.add('on');
 
     const prevPoint=idx>0?points[idx-1]:null;
@@ -1548,8 +1544,8 @@ function renderEquity(){
   }
 
   function hidePoint(){
-    line.style.opacity='0';
-    dot.style.opacity='0';
+    line.classList.remove('on');
+    dot.classList.remove('on');
     tip.classList.remove('on');
   }
 
@@ -1575,16 +1571,16 @@ function renderMistakes(){
   const groups={};
   withMistake.forEach(t=>{const label=String(t.mistake).trim(),key=label.toLowerCase();if(!groups[key])groups[key]={label,count:0,pnl:0,wins:0};const g=groups[key];g.count++;g.pnl+=Number(t.pnl||0);if(isStrategyWin(t))g.wins++});
   const list=Object.values(groups).sort((a,b)=>a.pnl-b.pnl);
-  let html='<div class="mistakeSummary"><div class="mistakeCard"><div class="metricLabel">No mistake marked</div><div class="metricValue '+(sum(clean)>=0?'green':'red')+'" style="font-size:21px">'+money(sum(clean))+'</div><div class="sub">'+clean.length+' trades</div></div><div class="mistakeCard"><div class="metricLabel">With mistake / violation</div><div class="metricValue '+(sum(withMistake)>=0?'green':'red')+'" style="font-size:21px">'+money(sum(withMistake))+'</div><div class="sub">'+withMistake.length+' trades</div></div></div>';
+  let html='<div class="mistakeSummary"><div class="mistakeCard"><div class="metricLabel">No mistake marked</div><div class="metricValue compactMetric '+(sum(clean)>=0?'green':'red')+'">'+money(sum(clean))+'</div><div class="sub">'+clean.length+' trades</div></div><div class="mistakeCard"><div class="metricLabel">With mistake / violation</div><div class="metricValue compactMetric '+(sum(withMistake)>=0?'green':'red')+'">'+money(sum(withMistake))+'</div><div class="sub">'+withMistake.length+' trades</div></div></div>';
   if(list.length)html+='<div class="mistakeList">'+list.map(g=>'<div class="mistakeRow"><div><b>'+esc(g.label)+'</b><div class="sub">'+g.count+' trades</div></div><b class="'+(g.pnl>=0?'green':'red')+'">'+money(g.pnl)+'</b><span class="mistakeWr sub">'+(g.count?Math.round(g.wins/g.count*100):0)+'% WR</span></div>').join('')+'</div>';
   else html+='<div class="hint">Когда начнёшь отмечать Mistake / violation в Trade Review, здесь появится влияние ошибок на результат.</div>';
   el('mistakeAnalytics').innerHTML=html;
 }
 function renderWeekday(){
   const a=model.weekday.filter(x=>x.name!=='Sun'&&x.name!=='Sat'),mx=Math.max(1,...a.map(x=>Math.abs(x.value)));
-  el('weekday').innerHTML=a.map(x=>'<div class="rowbar"><div>'+x.name+'</div><div class="track"><div class="fill" style="width:'+(Math.abs(x.value)/mx*100)+'%"></div></div><div class="'+(x.value>=0?'green':'red')+'" style="text-align:right;font-weight:800">'+money(x.value)+'</div></div>').join('');
+  el('weekday').innerHTML=a.map(x=>{const pct=(Math.abs(x.value)/mx*100).toFixed(2);return '<div class="rowbar"><div>'+x.name+'</div><svg class="weekdayTrack" viewBox="0 0 100 18" preserveAspectRatio="none" aria-hidden="true"><rect class="weekdayTrackBg" x="0" y="0" width="100" height="18" rx="6"></rect><rect class="weekdayTrackFill" x="0" y="0" width="'+pct+'" height="18" rx="6"></rect></svg><div class="rowValue '+(x.value>=0?'green':'red')+'">'+money(x.value)+'</div></div>'}).join('');
 }
-function renderSymbols(){el('symbols').innerHTML=model.symbols.length?model.symbols.map(s=>'<div class="sym"><b>'+esc(s.symbol)+'</b><div class="metricValue '+(s.pnl>=0?'green':'red')+'" style="font-size:21px">'+money(s.pnl)+'</div><div class="sub">'+s.trades+' trades · '+s.wr.toFixed(0)+'% win · '+s.days+'d</div></div>').join(''):'<div class="empty">No trades yet</div>'}
+function renderSymbols(){el('symbols').innerHTML=model.symbols.length?model.symbols.map(s=>'<div class="sym"><b>'+esc(s.symbol)+'</b><div class="metricValue compactMetric '+(s.pnl>=0?'green':'red')+'">'+money(s.pnl)+'</div><div class="sub">'+s.trades+' '+esc(tx('trades','сделок'))+' · '+s.wr.toFixed(0)+'% WR · '+s.days+'d</div></div>').join(''):'<div class="empty">'+esc(tx('No trades yet','Сделок пока нет'))+'</div>'}
 function renderCalendar(){
   const y=monthDate.getFullYear(),m=monthDate.getMonth(),ym=y+'-'+String(m+1).padStart(2,'0');
   el('monthLabel').textContent=monthDate.toLocaleDateString(undefined,{month:'long',year:'numeric'});

@@ -18,6 +18,7 @@ async function retry(fn, attempts=8, delayMs=15000){
 
 const html=await fs.readFile('index.html','utf8');
 const appJs=await fs.readFile('app.js','utf8');
+const stylesCss=await fs.readFile('styles.css','utf8');
 const clientSource=html+'\n'+appJs;
 const supabaseVendor=await fs.readFile('vendor/supabase-2.117.1.js');
 const mt4Connector=await fs.readFile('downloads/TradeJournalConnector_MT4_v1.19.mq4','utf8');
@@ -42,6 +43,13 @@ ok(crypto.createHash('sha256').update(supabaseVendor).digest('hex')==='dff1e545f
 ok(html.includes('Content-Security-Policy'),'index.html: CSP meta missing');
 ok(html.includes("script-src 'self';"),'index.html: CSP script-src must be self-only');
 ok(html.includes("script-src-attr 'none'"),'index.html: inline script attributes must be blocked');
+ok(html.includes('<link rel="stylesheet" href="/styles.css">'),'index.html: external stylesheet missing');
+ok(html.includes("style-src 'self'; style-src-attr 'none';"),'index.html: stylesheet CSP must be self-only and block style attributes');
+ok(!/<style[\s>]/i.test(html),'index.html: inline style block returned');
+ok(!/\sstyle=["']/i.test(html),'index.html: inline style attribute returned');
+ok(!/\.style\.[A-Za-z]/.test(appJs),'app.js: runtime inline style mutation returned');
+ok(!/style=["']/.test(appJs),'app.js: generated inline style attribute returned');
+ok(stylesCss.includes('.equityHoverLine.on') && stylesCss.includes('.weekdayTrackFill'),'styles.css: extracted dynamic visual rules missing');
 ok(html.includes('<script src="/app.js"></script>'),'index.html: external app.js missing');
 ok(html.includes('id="directConnectForm"'),'Direct broker connection form missing');
 ok(html.includes('id="directInvestorPassword"') && html.includes('id="directInvestorPassword" class="input" type="password"'),'Direct Investor Password field missing');
