@@ -1029,7 +1029,7 @@ async function approveMember(i){
   const m=memberRows[i];if(!m||m.role==='owner'||m.approved)return;
   if(membership?.role==='admin'&&m.role!=='member'){showToast(tx('Admin can approve Members only.','Admin может одобрять только Members.'),'error');return;}
   const {error}=await sb.rpc('approve_member',{p_user_id:m.user_id,p_approved:true});
-  if(error)return alert(error.message);
+  if(error){showToast(error.message,'error');return;}
   await loadMembers();
 }
 async function revokeMember(i){
@@ -1037,7 +1037,7 @@ async function revokeMember(i){
   if(membership?.role==='admin'&&m.role!=='member'){showToast(tx('Admin can revoke Members only.','Admin может отзывать доступ только у Members.'),'error');return;}
   if(!(await askConfirm(tx('Revoke access for ','Отключить доступ для ')+m.email+tx('? The account will remain, but Journal access and token will be disabled.','? Его аккаунт останется, но журнал и token будут недоступны.'),{danger:true,confirmText:tx('Revoke','Отключить')})))return;
   const {error}=await sb.rpc('approve_member',{p_user_id:m.user_id,p_approved:false});
-  if(error)return alert(error.message);
+  if(error){showToast(error.message,'error');return;}
   await loadMembers();
 }
 function openDecline(i){
@@ -1060,7 +1060,7 @@ async function declineMember(mode){
   if(!(await askConfirm(text,{danger:true})))return;
 
   const {error}=await sb.rpc('decline_member',{p_user_id:declineTarget.user_id,p_mode:mode});
-  if(error)return alert(error.message);
+  if(error){showToast(error.message,'error');return;}
   closeDecline();
   await loadMembers();
 }
@@ -1657,7 +1657,7 @@ async function markSelectedGhost(){
   const now=new Date().toISOString();
   const rows=ids.map(id=>({user_id:u.id,trade_id:id,excluded_from_stats:true,exclusion_reason:'Bulk marked as accidental / technical trade',updated_at:now}));
   const {error}=await sb.from('trade_notes').upsert(rows,{onConflict:'user_id,trade_id'});
-  if(error)return alert(error.message);
+  if(error){showToast(error.message,'error');return;}
   setBulkSelectMode(false);
   await loadData();
 }
