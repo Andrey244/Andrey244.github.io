@@ -68,3 +68,47 @@ jobs:
         env:
           PYTHONPATH: collector/src
         run: python -m unittest discover -s collector/tests -p "test_windows_runtime.py" -v
+
+      - name: Ensure machine-wide Python registration for SCM
+        shell: pwsh
+        run: |
+          $keyPath = 'HKLM:\SOFTWARE\Python\PythonCore\3.12\InstallPath'
+          if (-not (Test-Path $keyPath)) {
+            $installer = Join-Path $env:RUNNER_TEMP 'python-3.12.10-amd64.exe'
+            Invoke-WebRequest 'https://www.python.org/ftp/python/3.12.10/python-3.12.10-amd64.exe' -OutFile $installer
+            $p = Start-Process -FilePath $installer -ArgumentList '/quiet InstallAllUsers=1 TargetDir="C:\Python312-TJCI" PrependPath=0 Include_test=0 Include_launcher=0' -Wait -PassThru
+            if ($p.ExitCode -ne 0) { throw "Python installer exit code $($p.ExitCode)" }
+          }
+          $key = Get-Item $keyPath
+          Write-Host ('Machine Python: ' + $key.GetValue('ExecutablePath'))
+
+      - name: Run real Windows SCM collector acceptance
+        shell: pwsh
+        run: |
+          $app = Get-Content '.\app.js' -Raw
+          $url = [regex]::Match($app, "SUPABASE_URL='([^']+)'").Groups[1].Value
+          $key = [regex]::Match($app, "SUPABASE_KEY='([^']+)'").Groups[1].Value
+          if (-not $url -or -not $key) { throw 'Public Supabase config not found in app.js' }
+
+          & '.\collector\windows\install-service.ps1' `
+            -SupabaseUrl $url `
+            -PublishableKey $key `
+            -CollectorName 'GitHub-CI-SCM-Acceptance'
+
+          $svc = Get-Service TradingJournalCollector
+          if ($svc.Status -ne 'Running') {
+            throw "Collector service is not Running: $($svc.Status)"
+          }
+          $registration = 'C:\ProgramData\TradingJournalCollector\state\registration.json'
+          if (-not (Test-Path $registration)) {
+            throw 'Collector registration.json was not created under real SCM startup.'
+          }
+          Write-Host 'Real Windows SCM collector acceptance passed.'
+
+      - name: Cleanup Windows SCM collector acceptance
+        if: always()
+        shell: pwsh
+        run: |
+          Stop-Service TradingJournalCollector -Force -ErrorAction SilentlyContinue
+          sc.exe delete TradingJournalCollector 2>$null | Out-Null
+          Start-Sleep -Seconds 2
