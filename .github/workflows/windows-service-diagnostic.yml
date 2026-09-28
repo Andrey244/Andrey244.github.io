@@ -57,9 +57,23 @@ jobs:
               Where-Object { $_.Message -match 'TradingJournalCollector|Trading Journal Collector' } |
               Select-Object TimeCreated,Id,Message |
               Format-List
-            Get-WinEvent -FilterHashtable @{LogName='Application'; StartTime=(Get-Date).AddMinutes(-5)} -ErrorAction SilentlyContinue |
-              Where-Object { $_.ProviderName -match 'Python|Application Error|Windows Error Reporting|SideBySide' -or $_.Message -match 'pythonservice|TradingJournalCollector|python312|pywintypes|pythoncom' } |
+            $appEvents = Get-WinEvent -FilterHashtable @{LogName='Application'; StartTime=(Get-Date).AddMinutes(-5)} -ErrorAction SilentlyContinue |
+              Where-Object { $_.ProviderName -match 'Python|Application Error|Windows Error Reporting|SideBySide' -or $_.Message -match 'pythonservice|TradingJournalCollector|python312|pywintypes|pythoncom' }
+            $appEvents |
               Select-Object TimeCreated,Id,ProviderName,Message |
               Format-List
+
+            Write-Host '=== PYTHON SERVICE RAW EVENT DATA ==='
+            foreach ($evt in ($appEvents | Where-Object ProviderName -eq 'Python Service')) {
+              Write-Host ('Event ID=' + $evt.Id + ' Time=' + $evt.TimeCreated)
+              Write-Host 'Properties:'
+              $index = 0
+              foreach ($prop in $evt.Properties) {
+                Write-Host ("  [" + $index + "] " + [string]$prop.Value)
+                $index++
+              }
+              Write-Host 'XML:'
+              Write-Host ($evt.ToXml())
+            }
             throw 'Windows SCM runtime proof failed.'
           }
