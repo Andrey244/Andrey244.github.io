@@ -65,6 +65,11 @@ ok(html.includes('downloads/TradeJournalConnector_MT4_v1.19.mq4') && html.includ
 ok(!html.includes('TradeJournalConnector_MT4_v1.17.mq4'),'index.html: stale MT4 v1.17 download link returned');
 ok(clientSource.includes('markSelectedGhost'),'index.html: bulk Ghost workflow missing');
 ok(clientSource.includes('closeTradeReview'),'index.html: unsaved Trade Review guard missing');
+ok(clientSource.includes('langToggleBtn') && clientSource.includes("localStorage.setItem('tj_lang'"),'index.html: RU/EN language switch missing');
+ok(clientSource.includes('toastHost') && clientSource.includes('showToast'),'index.html: toast notification system missing');
+ok(clientSource.includes('confirmModal') && clientSource.includes('askConfirm'),'index.html: custom confirmation modal missing');
+ok(!/\balert\s*\(/.test(appJs),'app.js: native alert() returned');
+ok(!/\bconfirm\s*\(/.test(appJs),'app.js: native confirm() returned');
 ok(clientSource.includes('connectorStatusList'),'index.html: connector version status UI missing');
 ok(clientSource.includes('avgWinLoss'),'index.html: avg win/loss breakdown missing');
 ok(clientSource.includes('isCashFlowEvent'),'index.html: cash-flow recognition missing');

@@ -19,6 +19,103 @@ const USD=String.fromCharCode(36);
 const money=n=>{n=Number(n||0);return (n<0?'-'+USD:n>0?'+'+USD:USD)+Math.abs(n).toLocaleString(undefined,{maximumFractionDigits:2})};
 const balanceMoney=n=>{n=Number(n||0);return (n<0?'-'+USD:USD)+Math.abs(n).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})};
 const price=n=>Number(n||0).toLocaleString(undefined,{maximumFractionDigits:5});
+let currentLang=(()=>{try{return localStorage.getItem('tj_lang')==='en'?'en':'ru'}catch(_e){return 'ru'}})();
+const tx=(en,ru)=>currentLang==='ru'?ru:en;
+const uiLocale=()=>currentLang==='ru'?'ru-RU':'en-US';
+const STATIC_I18N=[
+  ['One idea. One logical trade.','Одна идея. Одна логическая сделка.'],
+  ['PRIVATE ACCESS','ПРИВАТНЫЙ ДОСТУП'],['ACCESS PENDING','ДОСТУП ОЖИДАЕТ ОДОБРЕНИЯ'],
+  ['Password','Пароль'],['Insights','Аналитика'],['Trades','Сделки'],['Accounts','Счета'],['Connection','Подключение'],['Access','Доступ'],
+  ['All time','Всё время'],['Account','Счёт'],['All accounts','Все счета'],['PERFORMANCE','РЕЗУЛЬТАТЫ'],['Total P&L','Общий P&L'],
+  ['Win Rate','Винрейт'],['Trading Days','Торговые дни'],['Logical Trades','Логические сделки'],['Best Day','Лучший день'],['Worst Day','Худший день'],
+  ['Avg / Day','Среднее / день'],['Streak','Серия'],['EQUITY CURVE','КРИВАЯ КАПИТАЛА'],['AVG P&L BY DAY OF WEEK','СРЕДНИЙ P&L ПО ДНЯМ НЕДЕЛИ'],
+  ['RISK / QUALITY','РИСК / КАЧЕСТВО'],['Profit Factor','Profit Factor'],['Max Drawdown','Макс. просадка'],['MISTAKE ANALYTICS','АНАЛИТИКА ОШИБОК'],
+  ['SYMBOLS','ИНСТРУМЕНТЫ'],['TRADING CALENDAR','ТОРГОВЫЙ КАЛЕНДАРЬ'],['TRADING HISTORY','ИСТОРИЯ СДЕЛОК'],
+  ['BUY + SELL','BUY + SELL'],['Worked + SL + Other','Worked + SL + Другое'],['Worked','Worked'],['Other','Другое'],
+  ['All reviews','Все разборы'],['Reviewed','Разобрано'],['Unreviewed','Не разобрано'],['All history','Вся история'],['Counted only','Только учитываемые'],['Ghost only','Только Ghost'],
+  ['Select','Выбрать'],['Export','Экспорт'],['Mark as Ghost','Отметить Ghost'],['Cancel','Отмена'],['Date','Дата'],['Symbol','Инструмент'],['Side','Сторона'],['Orders','Ордера'],['Setup','Сетап'],
+  ['ACCOUNTS','СЧЕТА'],['LOGIN / SECURITY','ВХОД / БЕЗОПАСНОСТЬ'],['DIRECT BROKER CONNECTION','ПРЯМОЕ ПОДКЛЮЧЕНИЕ К БРОКЕРУ'],
+  ['Platform','Платформа'],['Login','Логин'],['Server','Сервер'],['Investor Password','Investor Password'],['Connect read-only','Подключить read-only'],
+  ['MANUAL CONNECTOR · FALLBACK','РУЧНОЙ CONNECTOR · РЕЗЕРВ'],['Supabase URL','Supabase URL'],['Private ingest token','Приватный ingest token'],['Copy token','Копировать token'],
+  ['DATA HEALTH','СОСТОЯНИЕ ДАННЫХ'],['Backup / Export','Backup / Экспорт'],['LOGICAL TRADE GROUPING','ГРУППИРОВКА ЛОГИЧЕСКИХ СДЕЛОК'],
+  ['Review','Разбор'],['More','Ещё'],['EXPORT / BACKUP','ЭКСПОРТ / BACKUP'],['Logical Trades CSV','Logical Trades CSV'],['Raw MT Events CSV','Raw MT Events CSV'],
+  ['Trade Reviews CSV','Trade Reviews CSV'],['Daily Reviews CSV','Daily Reviews CSV'],['Full Backup JSON','Full Backup JSON'],['PASSWORD RECOVERY','ВОССТАНОВЛЕНИЕ ПАРОЛЯ'],
+  ['DAILY REVIEW','РАЗБОР ДНЯ'],['What worked?','Что сработало?'],['What went wrong?','Что пошло не так?'],['Tomorrow focus','Фокус на завтра'],['Notes','Заметки'],
+  ['Save daily review','Сохранить разбор дня'],['TRADE REVIEW','РАЗБОР СДЕЛКИ'],['Tier / Model','Tier / Model'],['Probability %','Вероятность %'],['Plan followed?','План соблюдён?'],
+  ['Mistake / violation','Ошибка / нарушение'],['No mistake','Без ошибки'],['Bad entry','Плохой вход'],['Against bias','Против bias'],['News','Новости'],['EA error','Ошибка EA'],
+  ['Overtrade','Овертрейдинг'],['Plan violation','Нарушение плана'],['Save review','Сохранить разбор'],['Strategy outcome','Исход стратегии'],['Auto','Авто'],['Other / manual','Другое / вручную'],
+  ['Review next','Разобрать следующую'],['Confirm','Подтверждение'],['Close','Закрыть'],['Discard','Отменить изменения'],['Keep editing','Продолжить редактирование']
+];
+function bindStaticI18n(){
+  const byText=new Map();
+  STATIC_I18N.forEach(([en,ru],i)=>{byText.set(en,{en,ru,key:String(i)});byText.set(ru,{en,ru,key:String(i)})});
+  document.querySelectorAll('body *').forEach(node=>{
+    if(node.children.length)return;
+    const value=(node.textContent||'').replace(/\s+/g,' ').trim();
+    const pair=byText.get(value);
+    if(!pair)return;
+    node.dataset.i18nKey=pair.key;
+    node.dataset.i18nEn=pair.en;
+    node.dataset.i18nRu=pair.ru;
+  });
+}
+function applyLanguage(){
+  document.documentElement.lang=currentLang;
+  document.querySelectorAll('[data-i18n-key]').forEach(node=>{
+    node.textContent=currentLang==='ru'?node.dataset.i18nRu:node.dataset.i18nEn;
+  });
+  const langBtn=el('langToggleBtn');
+  if(langBtn){langBtn.textContent=currentLang==='ru'?'EN':'RU';langBtn.setAttribute('aria-label',tx('Switch to English','Переключить на русский'))}
+  const attrs={
+    search:['Symbol / setup / tag','Инструмент / сетап / тег'],
+    password:['Enter password','Введите пароль'],
+    newLoginPassword:['Minimum 6 characters','Минимум 6 символов'],
+    newLoginPassword2:['Repeat password','Повтори пароль'],
+    recoveryPassword:['Minimum 6 characters','Минимум 6 символов'],
+    recoveryPassword2:['Repeat password','Повтори пароль'],
+    fMistake:['Example: EA left enabled','Например: EA left enabled'],
+    fExclusionReason:['Reason, e.g. EA reopened after manual close','Причина, например: EA переоткрыл сделку после ручного закрытия']
+  };
+  Object.entries(attrs).forEach(([id,[en,ru]])=>{const n=el(id);if(n)n.placeholder=tx(en,ru)});
+  document.title='Trading Journal';
+}
+function setLanguage(lang){
+  currentLang=lang==='en'?'en':'ru';
+  try{localStorage.setItem('tj_lang',currentLang)}catch(_e){}
+  applyLanguage();
+  if(membership?.approved){
+    renderPeriodFilter();renderAll();renderHealth();renderAccounts();renderConnectorStatus();renderDirectConnections();
+    if(!el('rangeModal').classList.contains('hide'))renderRangePicker();
+  }
+}
+function showToast(message,type='info',timeout=3200){
+  const host=el('toastHost');if(!host)return;
+  const node=document.createElement('div');
+  node.className='toast '+type;
+  node.setAttribute('role',type==='error'?'alert':'status');
+  node.textContent=String(message||'');
+  host.appendChild(node);
+  requestAnimationFrame(()=>node.classList.add('on'));
+  setTimeout(()=>{node.classList.remove('on');setTimeout(()=>node.remove(),180)},timeout);
+}
+let confirmResolver=null;
+function closeConfirm(result=false){
+  const modal=el('confirmModal');
+  if(modal)modal.classList.add('hide');
+  const resolve=confirmResolver;confirmResolver=null;
+  if(resolve)resolve(!!result);
+}
+function askConfirm(message,{title,confirmText,danger=false}={}){
+  if(confirmResolver)closeConfirm(false);
+  el('confirmTitle').textContent=title||tx('Confirm','Подтверждение');
+  el('confirmMessage').textContent=String(message||'');
+  el('confirmOkBtn').textContent=confirmText||tx('Confirm','Подтвердить');
+  el('confirmCancelBtn').textContent=tx('Cancel','Отмена');
+  el('confirmOkBtn').classList.toggle('danger',!!danger);
+  el('confirmOkBtn').classList.toggle('primary',!danger);
+  el('confirmModal').classList.remove('hide');
+  return new Promise(resolve=>{confirmResolver=resolve});
+}
 function paint(node,n){node.classList.remove('green','red');if(n>0)node.classList.add('green');if(n<0)node.classList.add('red')}
 async function withBusyButton(btn,busyText,task){
   if(!btn||btn.disabled)return;
@@ -45,9 +142,9 @@ function mondayOfWeekKey(k){
   const d=dateFromKey(k),dow=d.getDay(),back=dow===0?6:dow-1;
   d.setDate(d.getDate()-back);return dayKey(d);
 }
-function formatRangeDate(k){return dateFromKey(k).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'})}
+function formatRangeDate(k){return dateFromKey(k).toLocaleDateString(uiLocale(),{day:'numeric',month:'short',year:'numeric'})}
 function rangeLabel(r){
-  if(r.mode==='all')return 'All time';
+  if(r.mode==='all')return tx('All time','Всё время');
   if(r.start===r.end)return formatRangeDate(r.start);
   return formatRangeDate(r.start)+' — '+formatRangeDate(r.end);
 }
@@ -60,13 +157,13 @@ function restoreRange(){
 }
 function makePresetRange(mode){
   const today=dayKey(new Date());
-  if(mode==='all')return{mode:'all',start:null,end:null,label:'All time'};
-  if(mode==='today')return{mode,start:today,end:today,label:'Сегодня'};
-  if(mode==='yesterday'){const y=shiftKey(today,-1);return{mode,start:y,end:y,label:'Вчера'}}
-  if(mode==='week')return{mode,start:mondayOfWeekKey(today),end:today,label:'Эта неделя'};
-  if(mode==='last7')return{mode,start:shiftKey(today,-6),end:today,label:'Последние 7 дней'};
-  if(mode==='last30')return{mode,start:shiftKey(today,-29),end:today,label:'Последние 30 дней'};
-  if(mode==='month')return{mode,start:firstOfMonthKey(today),end:today,label:'Этот месяц'};
+  if(mode==='all')return{mode:'all',start:null,end:null,label:tx('All time','Всё время')};
+  if(mode==='today')return{mode,start:today,end:today,label:tx('Today','Сегодня')};
+  if(mode==='yesterday'){const y=shiftKey(today,-1);return{mode,start:y,end:y,label:tx('Yesterday','Вчера')}}
+  if(mode==='week')return{mode,start:mondayOfWeekKey(today),end:today,label:tx('This week','Эта неделя')};
+  if(mode==='last7')return{mode,start:shiftKey(today,-6),end:today,label:tx('Last 7 days','Последние 7 дней')};
+  if(mode==='last30')return{mode,start:shiftKey(today,-29),end:today,label:tx('Last 30 days','Последние 30 дней')};
+  if(mode==='month')return{mode,start:firstOfMonthKey(today),end:today,label:tx('This month','Этот месяц')};
   return dateRange;
 }
 function hash(s){let a=2166136261;for(let i=0;i<s.length;i++){a^=s.charCodeAt(i);a=Math.imul(a,16777619)}return (a>>>0).toString(36)}
@@ -105,6 +202,7 @@ function requestCloseModal(id){
   if(id==='declineModal')return closeDecline();
   if(id==='exportModal')return closeExport();
   if(id==='recoveryModal')return el('closeRecoveryModal').click();
+  if(id==='confirmModal')return closeConfirm(false);
 }
 function setupModalAccessibility(){
   const focusable='button:not([disabled]),a[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
@@ -161,21 +259,21 @@ async function handleSession(session){
   startJournalRealtime(session.user.id);
   if(canManageAccess()) await loadMembers();
 }
-el('loginBtn').onclick=()=>withBusyButton(el('loginBtn'),'Вхожу…',async()=>{
+el('loginBtn').onclick=()=>withBusyButton(el('loginBtn'),tx('Signing in…','Вхожу…'),async()=>{
   const {error}=await sb.auth.signInWithPassword({email:el('email').value.trim(),password:el('password').value});
-  el('authMsg').textContent=error?error.message:'Вход выполнен';
+  el('authMsg').textContent=error?error.message:tx('Signed in','Вход выполнен');
 });
 el('forgotPasswordBtn').onclick=async()=>{
   const email=el('email').value.trim();
-  if(!email){el('authMsg').textContent='Сначала введи email аккаунта.';return}
-  el('authMsg').textContent='Отправляю письмо для сброса пароля…';
+  if(!email){el('authMsg').textContent=tx('Enter the account email first.','Сначала введи email аккаунта.');return}
+  el('authMsg').textContent=tx('Sending password reset email…','Отправляю письмо для сброса пароля…');
   const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:'https://andrey244.github.io/'});
-  el('authMsg').textContent=error?error.message:'Письмо для сброса пароля отправлено. Открой его на этом устройстве.';
+  el('authMsg').textContent=error?error.message:tx('Password reset email sent. Open it on this device.','Письмо для сброса пароля отправлено. Открой его на этом устройстве.');
 };
 
-el('signupBtn').onclick=()=>withBusyButton(el('signupBtn'),'Создаю…',async()=>{
+el('signupBtn').onclick=()=>withBusyButton(el('signupBtn'),tx('Creating…','Создаю…'),async()=>{
   const email=el('email').value.trim();
-  if(!email){el('authMsg').textContent='Введи email.';return;}
+  if(!email){el('authMsg').textContent=tx('Enter email.','Введи email.');return;}
 
   const wait=await sb.rpc('signup_wait_seconds',{p_email:email});
   if(!wait.error && Number(wait.data||0)>0){
@@ -609,12 +707,12 @@ function buildDetectedAccounts(events){
   const settingsMap={};accountSettings.forEach(s=>settingsMap[[String(s.source||'').toUpperCase(),String(s.account||''),String(s.server||'')].join('|')]=s);
   detectedAccounts=Object.values(map).map(a=>Object.assign(a,settingsMap[a.key]||{})).sort((a,b)=>(a.label||a.account).localeCompare(b.label||b.account));
   const select=el('accountScope'),staticScope=el('accountScopeStatic');
-  select.innerHTML='<option value="all">All accounts</option>'+detectedAccounts.map(a=>'<option value="'+esc(a.key)+'">'+esc(a.label||((a.source?a.source+' · ':'')+a.account+(a.server?' · '+a.server:'')))+'</option>').join('');
+  select.innerHTML='<option value="all">'+esc(tx('All accounts','Все счета'))+'</option>'+detectedAccounts.map(a=>'<option value="'+esc(a.key)+'">'+esc(a.label||((a.source?a.source+' · ':'')+a.account+(a.server?' · '+a.server:'')))+'</option>').join('');
   if(selectedAccountKey!=='all'&&!detectedAccounts.some(a=>a.key===selectedAccountKey))selectedAccountKey='all';
   select.value=selectedAccountKey;
   if(detectedAccounts.length<=1){
     const a=detectedAccounts[0];
-    staticScope.textContent=a?(a.label||((a.source?a.source+' · ':'')+a.account)):'No account connected';
+    staticScope.textContent=a?(a.label||((a.source?a.source+' · ':'')+a.account)):tx('No account connected','Нет подключённого счёта');
     staticScope.classList.remove('hide');
     select.classList.add('hide');
   }else{
@@ -678,8 +776,8 @@ function applyFilters(){
 el('accountScope').onchange=()=>{selectedAccountKey=el('accountScope').value;applyFilters()};
 
 function renderPeriodFilter(){
-  el('periodLabel').textContent=dateRange.mode==='all'?'All time':rangeLabel(dateRange);
-  el('periodSummary').textContent=dateRange.mode==='all'?'Вся история':(dateRange.label+' · '+rangeLabel(dateRange));
+  el('periodLabel').textContent=dateRange.mode==='all'?tx('All time','Всё время'):rangeLabel(dateRange);
+  el('periodSummary').textContent=dateRange.mode==='all'?tx('All history','Вся история'):(dateRange.label+' · '+rangeLabel(dateRange));
   el('clearPeriodBtn').classList.toggle('hide',dateRange.mode==='all');
 }
 function monthStart(d){return new Date(d.getFullYear(),d.getMonth(),1)}
@@ -713,9 +811,9 @@ function setRange(r){
 function rangeMonthHtml(d){
   const y=d.getFullYear(),m=d.getMonth(),first=new Date(y,m,1).getDay(),days=new Date(y,m+1,0).getDate();
   const mondayFirst=(first+6)%7;
-  const names=['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+  const names=currentLang==='ru'?['Пн','Вт','Ср','Чт','Пт','Сб','Вс']:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
   const r=normalizedDraft(),today=dayKey(new Date());
-  let html='<div class="rangeMonth"><div class="rangeMonthTitle">'+d.toLocaleDateString('ru-RU',{month:'long',year:'numeric'})+'</div><div class="rangeWeek">'+names.map(x=>'<span>'+x+'</span>').join('')+'</div><div class="rangeDays">';
+  let html='<div class="rangeMonth"><div class="rangeMonthTitle">'+d.toLocaleDateString(uiLocale(),{month:'long',year:'numeric'})+'</div><div class="rangeWeek">'+names.map(x=>'<span>'+x+'</span>').join('')+'</div><div class="rangeDays">';
   for(let i=0;i<mondayFirst;i++)html+='<button type="button" class="rangeDay blank" tabindex="-1"></button>';
   for(let day=1;day<=days;day++){
     const key=y+'-'+String(m+1).padStart(2,'0')+'-'+String(day).padStart(2,'0');
@@ -731,12 +829,12 @@ function renderRangePicker(){
   el('rangeMonths').innerHTML=rangeMonthHtml(rangeViewMonth)+rangeMonthHtml(addMonths(rangeViewMonth,1));
   const r=normalizedDraft();
   if(r.mode==='all'){
-    el('rangePreview').textContent='Всё время';
+    el('rangePreview').textContent=tx('All time','Всё время');
   }else if(r.start&&r.end){
     const days=Math.round((dateFromKey(r.end)-dateFromKey(r.start))/86400000)+1;
     el('rangePreview').textContent=rangeLabel(r)+' · '+days+' дн.';
   }else{
-    el('rangePreview').textContent='Выбери период';
+    el('rangePreview').textContent=tx('Choose a period','Выбери период');
   }
   document.querySelectorAll('[data-range-preset]').forEach(b=>b.classList.toggle('on',b.dataset.rangePreset===rangeDraft.mode));
   setupRangeDragHandlers();
@@ -818,7 +916,7 @@ el('rangeNextMonth').onclick=()=>{rangeViewMonth=addMonths(rangeViewMonth,1);ren
 el('applyCustomRangeBtn').onclick=()=>{
   const r=normalizedDraft();
   if(r.mode==='all')return setRange(makePresetRange('all'));
-  if(!r.start||!r.end)return alert('Выбери период.');
+  if(!r.start||!r.end){showToast(tx('Choose a period.','Выбери период.'),'error');return;}
   setRange({...r,label:r.mode==='custom'?'Свой период':r.label});
 };
 document.querySelectorAll('[data-range-preset]').forEach(b=>b.onclick=()=>{
@@ -838,11 +936,11 @@ function renderAccounts(){
   el('accountList').innerHTML=detectedAccounts.length?detectedAccounts.map((a,i)=>
     '<div class="accountRow">'+
       '<div class="memberMeta"><b>'+esc(a.label||a.account)+'</b><span class="badge">'+esc(a.source)+'</span><div class="sub">'+esc(a.account)+(a.server?' · '+esc(a.server):'')+' · '+a.raw+' raw events</div></div>'+
-      '<label class="accountEdit"><span class="accountEditLabel">Account name</span><input class="input" id="accountLabel_'+i+'" value="'+esc(a.label||'')+'" placeholder="Main MT4"></label>'+
-      '<label class="accountEdit"><span class="accountEditLabel">Starting balance</span><input class="input" id="accountBalance_'+i+'" type="number" min="0" step="0.01" inputmode="decimal" value="'+(a.starting_balance==null?'':esc(a.starting_balance))+'" placeholder="10000"></label>'+
+      '<label class="accountEdit"><span class="accountEditLabel">'+esc(tx('Account name','Название счёта'))+'</span><input class="input" id="accountLabel_'+i+'" value="'+esc(a.label||'')+'" placeholder="Main MT4"></label>'+
+      '<label class="accountEdit"><span class="accountEditLabel">'+esc(tx('Starting balance','Начальный баланс'))+'</span><input class="input" id="accountBalance_'+i+'" type="number" min="0" step="0.01" inputmode="decimal" value="'+(a.starting_balance==null?'':esc(a.starting_balance))+'" placeholder="10000"></label>'+
       '<button class="btn" data-account-index="'+i+'">Save</button>'+
     '</div>'
-  ).join(''):'<div class="empty">Подключённых счетов пока нет.</div>';
+  ).join(''):'<div class="empty">'+esc(tx('No connected accounts yet.','Подключённых счетов пока нет.'))+'</div>';
   document.querySelectorAll('[data-account-index]').forEach(b=>b.onclick=()=>saveAccountLabel(Number(b.dataset.accountIndex)));
 }
 async function saveAccountLabel(i){
@@ -851,7 +949,7 @@ async function saveAccountLabel(i){
   const startingBalance=balanceRaw===''?null:Number(balanceRaw);
   if(startingBalance!==null&&(!Number.isFinite(startingBalance)||startingBalance<0)){
     el('accountBalance_'+i).focus();
-    return alert('Starting balance must be 0 or higher.');
+    showToast(tx('Starting balance must be 0 or higher.','Starting balance должен быть 0 или выше.'),'error');return;
   }
   const user=(await sb.auth.getUser()).data.user;
   const row={
@@ -865,7 +963,7 @@ async function saveAccountLabel(i){
     updated_at:new Date().toISOString()
   };
   const {error}=await sb.from('account_settings').upsert(row,{onConflict:'user_id,source,account,server'});
-  if(error)return alert(error.message);
+  if(error){showToast(error.message,'error');return;}
   await loadData();
 }
 
@@ -922,29 +1020,29 @@ async function setMemberRole(i,role){
   const oldRole=m.role;
   if(oldRole===role)return;
   const label=role==='admin'?'Admin':'Member';
-  if(!confirm('Выдать роль '+label+' для '+m.email+'?')){renderMembers();return}
+  if(!(await askConfirm(tx('Assign role ','Выдать роль ')+label+tx(' to ',' для ')+m.email+'?'))){renderMembers();return}
   const {error}=await sb.rpc('set_member_role',{p_user_id:m.user_id,p_role:role});
-  if(error){alert(error.message);return loadMembers()}
+  if(error){showToast(error.message,'error');return loadMembers()}
   await loadMembers();
 }
 async function approveMember(i){
   const m=memberRows[i];if(!m||m.role==='owner'||m.approved)return;
-  if(membership?.role==='admin'&&m.role!=='member')return alert('Admin может одобрять только Members.');
+  if(membership?.role==='admin'&&m.role!=='member'){showToast(tx('Admin can approve Members only.','Admin может одобрять только Members.'),'error');return;}
   const {error}=await sb.rpc('approve_member',{p_user_id:m.user_id,p_approved:true});
   if(error)return alert(error.message);
   await loadMembers();
 }
 async function revokeMember(i){
   const m=memberRows[i];if(!m||m.role==='owner'||!m.approved)return;
-  if(membership?.role==='admin'&&m.role!=='member')return alert('Admin может отзывать доступ только у Members.');
-  if(!confirm('Отключить доступ для '+m.email+'? Его аккаунт останется, но журнал и token будут недоступны.'))return;
+  if(membership?.role==='admin'&&m.role!=='member'){showToast(tx('Admin can revoke Members only.','Admin может отзывать доступ только у Members.'),'error');return;}
+  if(!(await askConfirm(tx('Revoke access for ','Отключить доступ для ')+m.email+tx('? The account will remain, but Journal access and token will be disabled.','? Его аккаунт останется, но журнал и token будут недоступны.'),{danger:true,confirmText:tx('Revoke','Отключить')})))return;
   const {error}=await sb.rpc('approve_member',{p_user_id:m.user_id,p_approved:false});
   if(error)return alert(error.message);
   await loadMembers();
 }
 function openDecline(i){
   const m=memberRows[i];if(!m||m.role==='owner'||m.approved)return;
-  if(membership?.role==='admin'&&m.role!=='member')return alert('Admin может отклонять только Members.');
+  if(membership?.role==='admin'&&m.role!=='member'){showToast(tx('Admin can decline Members only.','Admin может отклонять только Members.'),'error');return;}
   declineTarget=m;
   el('declineEmail').textContent=m.email||'No email';
   el('declineModal').classList.remove('hide');
@@ -959,7 +1057,7 @@ async function declineMember(mode){
   const text=mode==='block_5m'
     ? 'Удалить заявку '+email+' и заблокировать новые заявки от этого email на 5 минут?'
     : 'Полностью удалить pending-заявку '+email+'? Повторная регистрация будет доступна сразу.';
-  if(!confirm(text))return;
+  if(!(await askConfirm(text,{danger:true})))return;
 
   const {error}=await sb.rpc('decline_member',{p_user_id:declineTarget.user_id,p_mode:mode});
   if(error)return alert(error.message);
@@ -999,14 +1097,14 @@ function renderHealth(){
   };
   const coverage=times.length>1?Math.max(0,Math.round((Math.max(...times)-Math.min(...times))/86400000))+'d':'—';
   el('healthGrid').innerHTML=[
-    ['Raw ↔ Logical',Math.abs(diff)<0.01?'Matched':'Δ '+money(diff)],
-    ['Eligible events',String(eligible.length)],
-    ['Unassigned',String(orphan)],
-    ['Duplicate assignment',String(dup)],
-    ['Latest broker event',times.length?fmtAge(Math.max(...times)):'—'],
-    ['Latest ingest',received.length?fmtAge(Math.max(...received)):'—'],
-    ['Loaded coverage',coverage],
-    ['Logical trades',String(healthTrades.length)]
+    [tx('Raw ↔ Logical','Raw ↔ Logical'),Math.abs(diff)<0.01?tx('Matched','Совпадает'):'Δ '+money(diff)],
+    [tx('Eligible events','Подходящие события'),String(eligible.length)],
+    [tx('Unassigned','Не назначено'),String(orphan)],
+    [tx('Duplicate assignment','Дубликаты назначения'),String(dup)],
+    [tx('Latest broker event','Последнее событие брокера'),times.length?fmtAge(Math.max(...times)):'—'],
+    [tx('Latest ingest','Последний ingest'),received.length?fmtAge(Math.max(...received)):'—'],
+    [tx('Loaded coverage','Загруженный период'),coverage],
+    [tx('Logical trades','Логические сделки'),String(healthTrades.length)]
   ].map(x=>'<div class="healthCell"><div class="metricLabel">'+esc(x[0])+'</div><b>'+esc(x[1])+'</b></div>').join('');
   el('groupingVersion').textContent='Grouping v'+GROUPING_VERSION+' · '+GROUPING_RULE;
 }
@@ -1021,7 +1119,7 @@ function setDirectCollectorUi(state,message){
   const badge=el('directCollectorState');
   if(!badge)return;
   badge.className='directReady'+(state?' '+state:'');
-  badge.textContent=state==='ready'?'Ready':state==='wait'?'Not provisioned':state==='error'?'Unavailable':'Checking…';
+  badge.textContent=state==='ready'?tx('Ready','Готов'):state==='wait'?tx('Not provisioned','Не настроен'):state==='error'?tx('Unavailable','Недоступен'):tx('Checking…','Проверка…');
   el('directCollectorMsg').textContent=message||'';
 }
 async function edgePost(name,body){
@@ -1050,18 +1148,18 @@ async function edgePost(name,body){
   return payload;
 }
 async function ensureDirectCollectorReady(force=false){
-  if(directCollectorKey&&!force){setDirectFormEnabled(true);setDirectCollectorUi('ready','Direct collector готов. Используй только Investor Password.');return directCollectorKey}
+  if(directCollectorKey&&!force){setDirectFormEnabled(true);setDirectCollectorUi('ready',tx('Direct collector is ready. Use Investor Password only.','Direct collector готов. Используй только Investor Password.'));return directCollectorKey}
   if(directCollectorCheckPromise&&!force)return directCollectorCheckPromise;
   directCollectorKey=null;
   setDirectFormEnabled(false);
-  setDirectCollectorUi('','Проверяю доступность direct collector…');
+  setDirectCollectorUi('',tx('Checking direct collector availability…','Проверяю доступность direct collector…'));
   directCollectorCheckPromise=(async()=>{
     try{
       const data=await edgePost('broker-key',{});
       if(data?.algorithm!=='RSA-OAEP-SHA256'||!data?.key_id||!String(data?.public_key_pem||'').includes('BEGIN PUBLIC KEY'))throw Object.assign(new Error('Invalid collector key response.'),{code:'invalid_collector_key'});
       directCollectorKey={key_id:String(data.key_id),algorithm:String(data.algorithm),public_key_pem:String(data.public_key_pem)};
       setDirectFormEnabled(true);
-      setDirectCollectorUi('ready','Direct collector готов. Пароль шифруется до отправки.');
+      setDirectCollectorUi('ready',tx('Direct collector is ready. Password is encrypted before sending.','Direct collector готов. Пароль шифруется до отправки.'));
       return directCollectorKey;
     }catch(error){
       directCollectorKey=null;
@@ -1124,7 +1222,7 @@ async function encryptInvestorPassword(secret,pem){
 }
 async function disconnectDirectConnection(connectionId,button){
   if(!connectionId)return;
-  if(!confirm('Disconnect this broker account? The encrypted Investor Password will be deleted.'))return;
+  if(!(await askConfirm(tx('Disconnect this broker account? The encrypted Investor Password will be deleted.','Отключить этот брокерский счёт? Зашифрованный Investor Password будет удалён.'),{danger:true,confirmText:tx('Disconnect','Отключить')})))return;
   await withBusyButton(button,'Disconnecting…',async()=>{
     try{
       await edgePost('broker-disconnect',{connection_id:connectionId});
@@ -1261,18 +1359,18 @@ function renderAll(){
   el('avgWinLoss').innerHTML='<span>Avg Win <b class="green">'+money(s.avgWin)+'</b></span><span>Avg Loss <b class="red">'+money(s.avgLoss)+'</b></span>';
 
   if(singleDay){
-    el('lblDays').textContent='Worked / SL / Other';
+    el('lblDays').textContent=tx('Worked / SL / Other','Worked / SL / Другое');
     el('mDays').textContent=s.wins+'W / '+s.losses+'L / '+s.other+'O';
-    el('lblBest').textContent='Best Trade';
-    el('lblWorst').textContent='Worst Trade';
-    el('lblAvg').textContent='Avg / Trade';
+    el('lblBest').textContent=tx('Best Trade','Лучшая сделка');
+    el('lblWorst').textContent=tx('Worst Trade','Худшая сделка');
+    el('lblAvg').textContent=tx('Avg / Trade','Среднее / сделка');
     [['mBest',s.bestTrade],['mWorst',s.worstTrade],['mAvg',s.avgTrade]].forEach(([id,n])=>{el(id).textContent=money(n);paint(el(id),n)});
   }else{
-    el('lblDays').textContent='Trading Days';
+    el('lblDays').textContent=tx('Trading Days','Торговые дни');
     el('mDays').textContent=s.days;
-    el('lblBest').textContent='Best Day';
-    el('lblWorst').textContent='Worst Day';
-    el('lblAvg').textContent='Avg / Day';
+    el('lblBest').textContent=tx('Best Day','Лучший день');
+    el('lblWorst').textContent=tx('Worst Day','Худший день');
+    el('lblAvg').textContent=tx('Avg / Day','Среднее / день');
     [['mBest',s.best],['mWorst',s.worst],['mAvg',s.avg]].forEach(([id,n])=>{el(id).textContent=money(n);paint(el(id),n)});
   }
 
@@ -1521,17 +1619,17 @@ el('prevMonth').onclick=()=>{monthDate=new Date(monthDate.getFullYear(),monthDat
 el('nextMonth').onclick=()=>{monthDate=new Date(monthDate.getFullYear(),monthDate.getMonth()+1,1);renderCalendar()};
 
 function tradeEmptyMessage({q,result,ghost,side,source,review}){
-  if(q)return 'No trades match your search.';
-  if(ghost==='ghost')return 'No ghost trades in this period.';
-  if(ghost==='counted')return 'No counted trades in this period.';
-  if(result==='loss')return 'No SL trades in this period.';
-  if(result==='worked')return 'No worked trades in this period.';
-  if(result==='other')return 'No Other trades in this period.';
-  if(review==='reviewed')return 'No reviewed trades in this period.';
-  if(review==='unreviewed')return 'No unreviewed trades in this period.';
+  if(q)return tx('No trades match your search.','Нет сделок по этому поиску.');
+  if(ghost==='ghost')return tx('No ghost trades in this period.','Нет Ghost-сделок за этот период.');
+  if(ghost==='counted')return tx('No counted trades in this period.','Нет учитываемых сделок за этот период.');
+  if(result==='loss')return tx('No SL trades in this period.','Нет SL-сделок за этот период.');
+  if(result==='worked')return tx('No worked trades in this period.','Нет Worked-сделок за этот период.');
+  if(result==='other')return tx('No Other trades in this period.','Нет сделок Other за этот период.');
+  if(review==='reviewed')return tx('No reviewed trades in this period.','Нет разобранных сделок за этот период.');
+  if(review==='unreviewed')return tx('No unreviewed trades in this period.','Нет неразобранных сделок за этот период.');
   if(side)return 'No '+side+' trades in this period.';
   if(source)return 'No '+source+' trades in this period.';
-  return dateRange.mode==='all'?'No trades yet.':'No trades in the selected period.';
+  return dateRange.mode==='all'?tx('No trades yet.','Сделок пока нет.'):tx('No trades in the selected period.','Нет сделок в выбранном периоде.');
 }
 function updateBulkGhostBar(){
   el('bulkGhostBar').classList.toggle('hide',!bulkSelectMode);
@@ -1554,7 +1652,7 @@ function toggleTradeSelection(id){
 async function markSelectedGhost(){
   const ids=[...selectedTradeIds];
   if(!ids.length)return;
-  if(!confirm('Mark '+ids.length+' selected trade'+(ids.length===1?'':'s')+' as Ghost? They will stay in history but be excluded from analytics.'))return;
+  if(!(await askConfirm(tx('Mark ','Отметить ')+ids.length+tx(' selected trade(s) as Ghost? They stay in history but are excluded from analytics.',' выбранных сделок как Ghost? Они останутся в истории, но будут исключены из аналитики.'))))return;
   const u=(await sb.auth.getUser()).data.user;
   const now=new Date().toISOString();
   const rows=ids.map(id=>({user_id:u.id,trade_id:id,excluded_from_stats:true,exclusion_reason:'Bulk marked as accidental / technical trade',updated_at:now}));
@@ -1567,7 +1665,7 @@ function renderReviewQueue(){
   const counted=scopedTrades.filter(t=>!t.excluded_from_stats);
   const reviewed=counted.filter(isTradeReviewed).length;
   const pending=counted.length-reviewed;
-  el('reviewProgressText').textContent=reviewed+' / '+counted.length+' reviewed';
+  el('reviewProgressText').textContent=reviewed+' / '+counted.length+' '+tx('reviewed','разобрано');
   el('reviewNextBtn').disabled=pending===0;
   el('reviewQueue').classList.toggle('complete',pending===0&&counted.length>0);
 }
@@ -1636,7 +1734,7 @@ async function closeDailyReview(force=false){
   if(!force&&activeReviewDate&&dailyReviewSnapshot&&dailyReviewState()!==dailyReviewSnapshot){
     if(typeof askConfirm==='function'){
       if(!(await askConfirm('Discard unsaved daily review changes?')))return false;
-    }else if(!confirm('Discard unsaved daily review changes?'))return false;
+    }else if(!(await askConfirm(tx('Discard unsaved daily review changes?','Отменить несохранённые изменения разбора дня?'),{danger:true,confirmText:tx('Discard','Отменить изменения')})))return false;
   }
   el('dailyModal').classList.add('hide');activeReviewDate=null;dailyReviewSnapshot='';return true;
 }
@@ -1666,9 +1764,9 @@ function tradeReviewState(){
     notes:el('fNotes').value
   });
 }
-function closeTradeReview(force=false){
+async function closeTradeReview(force=false){
   if(!force&&activeTrade&&tradeReviewSnapshot&&tradeReviewState()!==tradeReviewSnapshot){
-    if(!confirm('Discard unsaved changes?'))return false;
+    if(!(await askConfirm(tx('Discard unsaved changes?','Отменить несохранённые изменения?'),{danger:true,confirmText:tx('Discard','Отменить изменения')})))return false;
   }
   el('tradeModal').classList.add('hide');
   activeTrade=null;
@@ -1691,7 +1789,7 @@ el('saveReview').onclick=async()=>{
   const probability=probabilityRaw===''?null:Number(probabilityRaw);
   if(probability!==null&&(!Number.isFinite(probability)||probability<0||probability>100)){
     el('fProbability').focus();
-    return alert('Probability must be between 0% and 100%.');
+    showToast(tx('Probability must be between 0% and 100%.','Вероятность должна быть от 0% до 100%.'),'error');return;
   }
   const u=(await sb.auth.getUser()).data.user;
   const now=new Date().toISOString();
@@ -1716,14 +1814,22 @@ el('declineRemoveBtn').onclick=()=>declineMember('remove');
 el('declineBlockBtn').onclick=()=>declineMember('block_5m');
 
 el('tokenBtn').onclick=async()=>{
-  if(!confirm('Создать новый ingest token? Если старый уже был, он перестанет работать.'))return;
-  const {data,error}=await sb.rpc('create_or_rotate_ingest_token');if(error)return alert(error.message);
-  liveToken=data;el('tokenBox').textContent=data;
+  if(!(await askConfirm(tx('Create a new ingest token? Any previous token will stop working.','Создать новый ingest token? Если старый уже был, он перестанет работать.'))))return;
+  const {data,error}=await sb.rpc('create_or_rotate_ingest_token');if(error){showToast(error.message,'error');return}
+  liveToken=data;el('tokenBox').textContent=data;showToast(tx('Token created.','Token создан.'),'success');
 };
-el('copyTokenBtn').onclick=async()=>{if(!liveToken)return alert('Сначала создай token.');await navigator.clipboard.writeText(liveToken);alert('Token скопирован')};
+el('copyTokenBtn').onclick=async()=>{
+  if(!liveToken){showToast(tx('Create a token first.','Сначала создай token.'),'error');return}
+  await navigator.clipboard.writeText(liveToken);showToast(tx('Token copied.','Token скопирован'),'success');
+};
+el('langToggleBtn').onclick=()=>setLanguage(currentLang==='ru'?'en':'ru');
+el('confirmCancelBtn').onclick=()=>closeConfirm(false);
+el('confirmOkBtn').onclick=()=>closeConfirm(true);
 
 if('serviceWorker' in navigator){
   window.addEventListener('load',()=>navigator.serviceWorker.register('/service-worker.js').catch(()=>{}));
 }
+bindStaticI18n();
+applyLanguage();
 setupModalAccessibility();
 boot();
