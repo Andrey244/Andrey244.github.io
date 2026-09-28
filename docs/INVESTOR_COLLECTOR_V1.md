@@ -394,6 +394,7 @@ Phase 4 — MT4 end-to-end (repository launcher foundation complete):
 - launcher validates connected account/server/read-only state, overwrites/unlinks the credential config after exporter status, terminates the terminal and destroys the slot;
 - Linux CI tests the orchestration with a fake terminal process;
 - Windows installer requires BitLocker protection on the MT4 work volume;
+- the MT4 work root is configurable via `-Mt4WorkRoot`, so a dedicated BitLocker-protected data volume or VHDX can hold disposable worker slots while collector identity/config/state remain under ProgramData;
 - still pending: real MetaEditor EX4 compilation and live Windows/broker terminal validation.
 
 Phase 5 — frontend direct-connect UX (fail-closed UI implemented):
