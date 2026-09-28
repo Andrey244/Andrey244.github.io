@@ -1,0 +1,65 @@
+name: Windows Collector SCM Diagnostic
+
+on:
+  push:
+    branches:
+      - diagnostic/windows-service-scm-2026-09-28
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  scm-runtime:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install machine-wide Python 3.12
+        shell: pwsh
+        run: |
+          $installer = Join-Path $env:RUNNER_TEMP 'python-3.12.10-amd64.exe'
+          Invoke-WebRequest 'https://www.python.org/ftp/python/3.12.10/python-3.12.10-amd64.exe' -OutFile $installer
+          $p = Start-Process -FilePath $installer -ArgumentList '/quiet InstallAllUsers=1 TargetDir="C:\Python312-TJCI" PrependPath=0 Include_test=0 Include_launcher=0' -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "Python installer exit code $($p.ExitCode)" }
+
+      - name: Read public Supabase config
+        shell: pwsh
+        run: |
+          $text = Get-Content '.\app.js' -Raw
+          $url = [regex]::Match($text, "SUPABASE_URL='([^']+)'").Groups[1].Value
+          $key = [regex]::Match($text, "SUPABASE_KEY='([^']+)'").Groups[1].Value
+          "TJ_TEST_SUPABASE_URL=$url" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "TJ_TEST_SUPABASE_KEY=$key" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Install collector without auto-start
+        shell: pwsh
+        run: |
+          & '.\collector\windows\install-service.ps1' `
+            -SupabaseUrl $env:TJ_TEST_SUPABASE_URL `
+            -PublishableKey $env:TJ_TEST_SUPABASE_KEY `
+            -CollectorName 'GitHub-CI-SCM-Probe' `
+            -NoStart
+
+      - name: Start collector and inspect runtime
+        shell: pwsh
+        run: |
+          sc.exe qc TradingJournalCollector
+          reg.exe query 'HKLM\SYSTEM\CurrentControlSet\Services\TradingJournalCollector\PythonClass' /ve
+          sc.exe start TradingJournalCollector | Out-Host
+          Start-Sleep -Seconds 15
+          Get-Service TradingJournalCollector | Format-List Name,Status,StartType
+          $registration = 'C:\ProgramData\TradingJournalCollector\state\registration.json'
+          Write-Host ('registration exists=' + (Test-Path $registration))
+          if (-not ((Get-Service TradingJournalCollector).Status -eq 'Running' -and (Test-Path $registration))) {
+            Get-WinEvent -FilterHashtable @{LogName='System'; ProviderName='Service Control Manager'; StartTime=(Get-Date).AddMinutes(-5)} -ErrorAction SilentlyContinue |
+              Where-Object { $_.Message -match 'TradingJournalCollector|Trading Journal Collector' } |
+              Select-Object TimeCreated,Id,Message |
+              Format-List
+            Get-WinEvent -FilterHashtable @{LogName='Application'; StartTime=(Get-Date).AddMinutes(-5)} -ErrorAction SilentlyContinue |
+              Where-Object { $_.ProviderName -match 'Python|Application Error|Windows Error Reporting|SideBySide' -or $_.Message -match 'pythonservice|TradingJournalCollector|python312|pywintypes|pythoncom' } |
+              Select-Object TimeCreated,Id,ProviderName,Message |
+              Format-List
+            throw 'Windows SCM runtime proof failed.'
+          }
