@@ -69,7 +69,8 @@ ok(clientSource.includes('connectorStatusList'),'index.html: connector version s
 ok(clientSource.includes('avgWinLoss'),'index.html: avg win/loss breakdown missing');
 ok(clientSource.includes('isCashFlowEvent'),'index.html: cash-flow recognition missing');
 ok(clientSource.includes('strategyOrderCount'),'index.html: strategy order-count helper missing');
-ok(clientSource.includes("function strategyOutcome(t){return t.stopLossHit?'loss':'win'}"),'index.html: strategy outcome must depend on explicit SL marker');
+ok(clientSource.includes("return t.stopLossHit?'loss':'win';"),'index.html: automatic strategy outcome must still depend on explicit SL marker');
+ok(clientSource.includes("if(override==='other')return 'other';"),'index.html: manual Other strategy outcome override missing');
 ok(mt4Connector.includes('closed_by_sl'),'MT4 connector: explicit SL marker missing');
 ok(clientSource.includes('stabilizeTradeIds'),'index.html: trade id collision guard missing');
 ok(clientSource.includes('syncContextualTradeFilters'),'index.html: contextual filter logic missing');
