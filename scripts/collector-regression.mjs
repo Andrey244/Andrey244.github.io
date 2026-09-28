@@ -64,7 +64,12 @@ ok(installer.includes('Get-BitLockerVolume'),'MT4 encrypted-volume verification 
 ok(installer.includes('[string]$Mt4WorkRoot = ""'),'Windows installer must allow a dedicated MT4 work volume');
 ok(installer.includes('"-Mt4WorkRoot", $Mt4WorkRoot'),'Windows installer must pass custom MT4 work root into preflight');
 ok(installer.includes('preflight.ps1'),'Windows installer must invoke fail-closed preflight');
+ok(installer.includes('HKLM:\\SOFTWARE\\Python\\PythonCore\\3.12\\InstallPath'),'Windows installer must discover machine-wide Python 3.12');
+ok(installer.includes('Invoke-Checked $MachinePython.exe @("-m", "venv", $VenvDir)'),'Windows installer must build the service venv from machine-wide Python');
+ok(!installer.includes('Invoke-Checked "py.exe" @("-3.12", "-m", "venv", $VenvDir)'),'Windows installer must not build service venv from ambiguous per-user py launcher');
 ok(preflight.includes('python_3_12'),'Windows preflight must check Python 3.12');
+ok(preflight.includes('HKLM:\\SOFTWARE\\Python\\PythonCore\\3.12\\InstallPath'),'Windows preflight must require machine-wide Python 3.12 registration');
+ok(preflight.includes('Per-user Python under a user profile is not accepted'),'Windows preflight must reject per-user Python for service runtime');
 ok(preflight.includes('supabase_network'),'Windows preflight must check Supabase connectivity');
 ok(preflight.includes('/rest/v1/rpc/signup_wait_seconds'),'Windows preflight must validate publishable key against a public Data API route');
 ok(!preflight.includes('application/openapi+json'),'Windows preflight must not probe secret-key-only PostgREST OpenAPI root');
