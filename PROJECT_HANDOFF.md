@@ -448,7 +448,7 @@ Codex Security is installed/enabled in ChatGPT, but its scanner actions are not 
 
 Independent CodeQL security-extended scanning is enabled for Python and JavaScript/TypeScript and fails CI on unexpected findings. One exact reviewed exception is allowed: `py/clear-text-storage-sensitive-data` in the MT4 adapter, because the official MT4 startup mechanism requires the Investor Password in a short-lived config file. The exception is scoped by rule+path and retains BitLocker, service-account ACL, disposable-slot, overwrite/unlink and full-slot cleanup mitigations.
 
-### D. Direct Investor Password collector — HARDENED FOUNDATION IMPLEMENTED / REAL WINDOWS TERMINAL ACCEPTANCE PENDING
+### D. Direct Investor Password collector — WINDOWS SCM ACCEPTANCE COMPLETE / REAL BROKER TERMINAL ACCEPTANCE PENDING
 Source of truth: `docs/INVESTOR_COLLECTOR_V1.md`.
 
 Implemented:
@@ -459,6 +459,8 @@ Implemented:
 - full production migration history mirrored in `supabase/migrations/`;
 - RSA-3072 collector identity, current-user DPAPI protection and non-secret registration bundle;
 - Windows service installer using per-service virtual account `NT SERVICE\\TradingJournalCollector`, not shared LocalService;
+- Windows service hosting uses machine-wide pywin32/pythonservice while Collector dependencies remain isolated in the ProgramData venv; `PythonClass` is path-qualified to that venv;
+- real Windows SCM acceptance now runs in the `collector-windows` Smoke job and requires the service to reach `Running` and create `state/registration.json`;
 - ProgramData root is read/execute for the service; mutable identity/state/MT4 work directories have separate write ACLs;
 - MT4 install path requires verifiable BitLocker protection for the disposable work volume and supports a dedicated absolute `-Mt4WorkRoot` on an external BitLocker-protected data volume/VHDX; collector identity/config/state remain under ProgramData;
 - MT4 sync fails closed unless All History was explicitly operator-confirmed;
@@ -470,14 +472,13 @@ Implemented:
 - legacy `journal` Edge Function is a 410 tombstone;
 - current manual MT4 Connector download/status is v1.20.
 
-Windows/VPS preflight is implemented at `collector/windows/preflight.ps1` and is mandatory from the installer. It fails closed on Windows/admin/Python/network/terminal/MT4 EX4/All-History/BitLocker prerequisites before runtime state is created.
+Windows/VPS preflight is implemented at `collector/windows/preflight.ps1` and is mandatory from the installer. It fails closed on Windows/admin/machine-wide Python/network/terminal/MT4 EX4/All-History/BitLocker prerequisites before runtime state is created. On 2026-09-28 a real SCM failure was traced in CI to pywin32 `pythonservice.exe` failing to import `servicemanager` from a venv-local host. The accepted architecture now installs/validates pinned pywin32 in machine Python, runs its elevated post-install, hosts SCM with the machine `pythonservice.exe`, and points `PythonClass` at the isolated Collector venv. Smoke #204 proved this path under real Windows SCM.
 
 Still pending before real Investor Password production use:
-- run the preflight and install/provision the collector on the owned Windows/VPS host;
+- complete the final service install/provision on the owned Windows PC test host, then later reproduce the validated setup on the VPS;
 - register the real `registration.json` node;
 - install/validate real MT5 terminal under the Windows service identity;
-- compile `TradeJournalExport_MT4.mq4` to EX4 in the target broker MetaEditor;
-- explicitly set/validate MT4 Account History = All History and only then install with `-Mt4AllHistoryConfirmed`;
+- the PC test host has already compiled `TradeJournalExport_MT4.mq4` v0.12 to EX4 in MetaEditor with 0 errors and has explicitly set/validated MT4 Account History = All History; real Direct Collector broker-session validation is still pending;
 - run the complete MT4 and MT5 acceptance matrix: correct/wrong password, wrong server, master-password rejection, account/server mismatch, historical import coverage, retry/idempotency, reconnect, disconnect credential deletion and multi-account isolation.
 
 Do not provision a fake node just to enable the UI. The current fail-closed state is intentional until a real primary collector is online.
