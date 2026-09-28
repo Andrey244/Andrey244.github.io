@@ -8,7 +8,8 @@ const LATEST_MT4_CONNECTOR='1.19';
 let model={trades:[],daily:[],symbols:[],weekday:[],summary:{}},monthDate=null,activeTrade=null,liveToken='';
 let membership=null,allTrades=[],scopedTrades=[],scopedRawEvents=[],tradeNotes=[],dailyReviewRows=[],accountSettings=[],connectorStatuses=[],brokerConnections=[],detectedAccounts=[],memberRows=[],selectedAccountKey='all',declineTarget=null,rawEvents=[],dailyReviewMap={},activeReviewDate=null;
 let directCollectorKey=null,directCollectorCheckPromise=null;
-let bulkSelectMode=false,selectedTradeIds=new Set(),tradeReviewSnapshot='';
+let bulkSelectMode=false,selectedTradeIds=new Set(),tradeReviewSnapshot='',dailyReviewSnapshot='';
+let journalRealtimeChannel=null,realtimeRebuildTimer=null,lastFullLoadAt=0;
 let dateRange={mode:'all',start:null,end:null,label:'All time'};
 let rangeDraft={mode:'custom',start:null,end:null,label:'Свой период'},rangeViewMonth=null;
 let rangeDrag={active:false,pointerId:null,anchor:null,last:null};
@@ -142,7 +143,7 @@ async function handleSession(session){
   el('auth').classList.toggle('hide',!!session);
   el('app').classList.add('hide');
   el('pendingAccess').classList.add('hide');
-  if(!session){membership=null;return;}
+  if(!session){membership=null;stopJournalRealtime();return;}
 
   const {data,error}=await sb.from('app_members').select('*').eq('user_id',session.user.id).maybeSingle();
   if(error){el('authMsg').textContent=error.message;await sb.auth.signOut();return;}
@@ -157,6 +158,7 @@ async function handleSession(session){
   el('accessTab').classList.toggle('hide',!canManageAccess());
   el('mobileAccessBtn').classList.toggle('hide',!canManageAccess());
   await loadData();
+  startJournalRealtime(session.user.id);
   if(canManageAccess()) await loadMembers();
 }
 el('loginBtn').onclick=()=>withBusyButton(el('loginBtn'),'Вхожу…',async()=>{
@@ -324,7 +326,9 @@ function dedupeEvents(events){
   });
 }
 function freshTrade(e,side,strategy,gid){
-  return {id:'LT_'+hash([e.source,e.account,e.symbol,strategy,gid||'',e.event_id].join('|')),source:e.source,account:e.account,server:e.server||'',symbol:e.symbol,side,strategy,openedAt:e.event_time||e.open_time,closedAt:null,pnl:0,entryQty:0,exitQty:0,entryVal:0,exitVal:0,entries:0,exits:0,orders:{},events:[]};
+  const legacyId='LT_'+hash([e.source,e.account,e.symbol,strategy,gid||'',e.event_id].join('|'));
+  const stableId='LT_'+hash([String(e.source||'').toUpperCase(),e.account,e.server||'',e.event_id].join('|'));
+  return {id:stableId,legacyId,source:e.source,account:e.account,server:e.server||'',symbol:e.symbol,side,strategy,openedAt:e.event_time||e.open_time,closedAt:null,pnl:0,entryQty:0,exitQty:0,entryVal:0,exitVal:0,entries:0,exits:0,orders:{},events:[]};
 }
 function finalize(t){t.avgEntry=t.entryQty?t.entryVal/t.entryQty:0;t.avgExit=t.exitQty?t.exitVal/t.exitQty:0;t.orderCount=Object.keys(t.orders).length;t.pnl=Math.round(t.pnl*100)/100;return t}
 function addMT5(t,e,before){
@@ -396,36 +400,51 @@ function groupMT4(rows){
   return out;
 }
 function stabilizeTradeIds(trades){
-  const counts={};
-  trades.forEach(t=>counts[t.id]=(counts[t.id]||0)+1);
+  const stableCounts={},legacyCounts={};
   trades.forEach(t=>{
-    t.legacyId=t.id;
-    t.legacyCollision=counts[t.id]>1;
-    if(t.legacyCollision){
-      t.id='LT_'+hash([t.source,t.account,t.server||'',t.symbol,t.strategy,t.openedAt,(t.events||[])[0]||''].join('|'));
+    stableCounts[t.id]=(stableCounts[t.id]||0)+1;
+    if(t.legacyId)legacyCounts[t.legacyId]=(legacyCounts[t.legacyId]||0)+1;
+  });
+  trades.forEach(t=>{
+    t.legacyCollision=!!(t.legacyId&&legacyCounts[t.legacyId]>1);
+    if(stableCounts[t.id]>1){
+      t.id='LT_'+hash([t.source,t.account,t.server||'',(t.events||[])[0]||'',t.openedAt].join('|'));
     }
   });
   return trades;
 }
 function strategyOrderCount(t){return Number(t.orderCount||0)}
-function strategyOutcome(t){return t.stopLossHit?'loss':'win'}
+function strategyOutcome(t){
+  const override=String(t.outcome_override||'').toLowerCase();
+  if(override==='worked')return 'win';
+  if(override==='loss')return 'loss';
+  if(override==='other')return 'other';
+  return t.stopLossHit?'loss':'win';
+}
 function isStrategyWin(t){return strategyOutcome(t)==='win'}
 function isStrategyLoss(t){return strategyOutcome(t)==='loss'}
+function isStrategyOther(t){return strategyOutcome(t)==='other'}
+function outcomeLabel(t){
+  const x=strategyOutcome(t);
+  return x==='loss'?'SL':x==='other'?'Other':'Worked';
+}
+function isTradeReviewed(t){return !!t.reviewed_at}
 function buildModel(trades){
   const dayMap={};
   trades.forEach(t=>{
     const d=tradeDayKey(t);
-    if(!dayMap[d])dayMap[d]={date:d,pnl:0,trades:0,wins:0,losses:0};
+    if(!dayMap[d])dayMap[d]={date:d,pnl:0,trades:0,wins:0,losses:0,other:0};
     const x=dayMap[d];
     x.pnl+=t.pnl;x.trades++;
-    if(isStrategyLoss(t))x.losses++;else x.wins++;
+    if(isStrategyLoss(t))x.losses++;else if(isStrategyOther(t))x.other++;else x.wins++;
   });
   const daily=Object.values(dayMap).sort((a,b)=>a.date.localeCompare(b.date));
-  daily.forEach(d=>d.wr=d.trades?d.wins/d.trades*100:null);
+  daily.forEach(d=>{const classified=d.wins+d.losses;d.wr=classified?d.wins/classified*100:null});
 
   const pnl=trades.reduce((s,t)=>s+t.pnl,0);
   const wins=trades.filter(isStrategyWin).length;
   const losses=trades.filter(isStrategyLoss).length;
+  const other=trades.filter(isStrategyOther).length;
   const pnlWins=trades.filter(t=>Number(t.pnl)>0);
   const pnlLosses=trades.filter(t=>Number(t.pnl)<0);
   const gp=pnlWins.reduce((s,t)=>s+t.pnl,0);
@@ -443,7 +462,7 @@ function buildModel(trades){
 
   let streak='—',type='',n=0;
   for(let i=0;i<trades.length;i++){
-    const z=isStrategyLoss(trades[i])?'L':'W';
+    const z=isStrategyLoss(trades[i])?'L':isStrategyOther(trades[i])?'O':'W';
     if(!type){type=z;n=1}
     else if(z===type)n++;
     else break;
@@ -464,14 +483,15 @@ function buildModel(trades){
     const s=sm[t.symbol];
     s.pnl+=t.pnl;s.trades++;
     if(isStrategyWin(t))s.wins++;
+    if(isStrategyLoss(t))s.losses=(s.losses||0)+1;
     s.days[tradeDayKey(t)]=1;
   });
   const symbols=Object.values(sm)
-    .map(s=>({symbol:s.symbol,pnl:s.pnl,trades:s.trades,wr:s.trades?s.wins/s.trades*100:0,days:Object.keys(s.days).length}))
+    .map(s=>({symbol:s.symbol,pnl:s.pnl,trades:s.trades,wr:(s.wins+(s.losses||0))?s.wins/(s.wins+(s.losses||0))*100:0,days:Object.keys(s.days).length}))
     .sort((a,b)=>b.pnl-a.pnl);
 
   return{trades,daily,weekday,symbols,summary:{
-    pnl,wins,losses,wr:trades.length?wins/trades.length*100:0,
+    pnl,wins,losses,other,wr:(wins+losses)?wins/(wins+losses)*100:0,
     days:daily.length,trades:trades.length,
     best:best?best.pnl:0,worst:worst?worst.pnl:0,avg:daily.length?pnl/daily.length:0,
     bestTrade:bestTrade?bestTrade.pnl:0,worstTrade:worstTrade?worstTrade.pnl:0,
@@ -485,40 +505,99 @@ function buildModel(trades){
 function setDataLoading(on){
   el('app').classList.toggle('dataLoading',!!on);
   if(on && !el('trades').classList.contains('hide')){
-    el('tradeRows').innerHTML=Array.from({length:5},()=>'<tr class="skeletonRow"><td colspan="6"><span class="skeletonLine"></span></td></tr>').join('');
+    el('tradeRows').innerHTML=Array.from({length:5},()=>'<tr class="skeletonRow"><td colspan="7"><span class="skeletonLine"></span></td></tr>').join('');
   }
 }
-async function loadData(){
-  setDataLoading(true);
+function rebuildJournalData(){
+  dailyReviewMap={};dailyReviewRows.forEach(r=>dailyReviewMap[r.review_date]=r);
+  const noteMap={};tradeNotes.forEach(n=>noteMap[n.trade_id]=n);
+  const groupingEvents=dedupeEvents(rawEvents);
+  const grouped=stabilizeTradeIds(
+    groupMT5(groupingEvents.filter(e=>String(e.source).toUpperCase()==='MT5'))
+      .concat(groupMT4(groupingEvents.filter(e=>String(e.source).toUpperCase()==='MT4')))
+      .filter(t=>t.closedAt)
+  );
+  allTrades=grouped.map(t=>Object.assign(t,noteMap[t.id]||(!t.legacyCollision?noteMap[t.legacyId]:null)||{}))
+    .sort((a,b)=>new Date(b.closedAt)-new Date(a.closedAt));
+  buildDetectedAccounts(rawEvents);
+  restoreRange();
+  applyFilters();
+  renderAccounts();
+  renderConnectorStatus();
+  renderDirectConnections();
+}
+async function loadData({silent=false}={}){
+  if(!silent)setDataLoading(true);
   try{
     el('sync').textContent='Syncing…';
-    const [events,notes,settings,dailyReviews,statuses,directConnections]=await Promise.all([fetchAll('raw_events'),fetchAll('trade_notes'),fetchAll('account_settings'),fetchAll('daily_reviews'),fetchAll('connector_status'),fetchAll('broker_connections')]);
-    rawEvents=events||[];
-    tradeNotes=notes||[];
-    dailyReviewRows=dailyReviews||[];
-    accountSettings=settings||[];
-    connectorStatuses=statuses||[];
-    brokerConnections=directConnections||[];
-    dailyReviewMap={};dailyReviewRows.forEach(r=>dailyReviewMap[r.review_date]=r);
-    const noteMap={};tradeNotes.forEach(n=>noteMap[n.trade_id]=n);
-    const groupingEvents=dedupeEvents(events);
-    const grouped=stabilizeTradeIds(groupMT5(groupingEvents.filter(e=>String(e.source).toUpperCase()==='MT5')).concat(groupMT4(groupingEvents.filter(e=>String(e.source).toUpperCase()==='MT4'))).filter(t=>t.closedAt));
-    allTrades=grouped.map(t=>Object.assign(t,noteMap[t.id]||(!t.legacyCollision?noteMap[t.legacyId]:null)||{})).sort((a,b)=>new Date(b.closedAt)-new Date(a.closedAt));
-    buildDetectedAccounts(events);
-    restoreRange();
-    applyFilters();
-    renderAccounts();
-    renderConnectorStatus();
-    renderDirectConnections();
-    el('sync').textContent='Synced · '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    const rawResult=await fetchAll('raw_events');
+    const optional=await Promise.allSettled([
+      fetchAll('trade_notes'),
+      fetchAll('account_settings'),
+      fetchAll('daily_reviews'),
+      fetchAll('connector_status'),
+      fetchAll('broker_connections')
+    ]);
+    rawEvents=rawResult||[];
+    const targets=['tradeNotes','accountSettings','dailyReviewRows','connectorStatuses','brokerConnections'];
+    const degraded=[];
+    optional.forEach((result,i)=>{
+      if(result.status==='fulfilled')globalThis[targets[i]]=result.value||[];
+      else degraded.push(targets[i]);
+    });
+    // globalThis assignment does not update lexical lets in all browsers; assign explicitly.
+    if(optional[0].status==='fulfilled')tradeNotes=optional[0].value||[];
+    if(optional[1].status==='fulfilled')accountSettings=optional[1].value||[];
+    if(optional[2].status==='fulfilled')dailyReviewRows=optional[2].value||[];
+    if(optional[3].status==='fulfilled')connectorStatuses=optional[3].value||[];
+    if(optional[4].status==='fulfilled')brokerConnections=optional[4].value||[];
+    rebuildJournalData();
+    lastFullLoadAt=Date.now();
+    el('sync').textContent=(degraded.length?'Synced · partial':'Synced · live')+' · '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
   }catch(e){
     el('sync').textContent='Sync error';
-    alert(e.message||String(e));
+    if(typeof showToast==='function')showToast(String(e?.message||e),'error');
   }finally{
-    setDataLoading(false);
+    if(!silent)setDataLoading(false);
   }
 }
-
+function stopJournalRealtime(){
+  if(realtimeRebuildTimer){clearTimeout(realtimeRebuildTimer);realtimeRebuildTimer=null}
+  if(journalRealtimeChannel){
+    try{sb.removeChannel(journalRealtimeChannel)}catch(_e){}
+    journalRealtimeChannel=null;
+  }
+}
+function scheduleRealtimeRebuild(){
+  if(realtimeRebuildTimer)clearTimeout(realtimeRebuildTimer);
+  realtimeRebuildTimer=setTimeout(()=>{
+    realtimeRebuildTimer=null;
+    rebuildJournalData();
+    el('sync').textContent='Synced · live · '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  },350);
+}
+function startJournalRealtime(userId){
+  stopJournalRealtime();
+  if(!userId)return;
+  journalRealtimeChannel=sb.channel('journal-raw-'+userId)
+    .on('postgres_changes',{
+      event:'INSERT',
+      schema:'public',
+      table:'raw_events',
+      filter:'user_id=eq.'+userId
+    },payload=>{
+      const row=payload?.new;
+      if(!row)return;
+      if(rawEvents.some(e=>String(e.id)===String(row.id)))return;
+      rawEvents.push(row);
+      scheduleRealtimeRebuild();
+    })
+    .subscribe();
+}
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState!=='visible'||!membership?.approved)return;
+  if(Date.now()-lastFullLoadAt>5*60*1000)loadData({silent:true});
+});
 function accountKey(x){return [String(x.source||'').toUpperCase(),String(x.account||''),String(x.server||'')].join('|')}
 function buildDetectedAccounts(events){
   const map={};
@@ -908,11 +987,26 @@ function renderHealth(){
   const status=el('healthStatus');
   status.classList.toggle('warn',!ok);
   status.innerHTML='<span class="healthDot"></span><span>'+(ok?'PASS':'CHECK')+'</span>';
+  const times=healthEvents.map(e=>new Date(e.close_time||e.event_time||e.open_time||0).getTime()).filter(Number.isFinite).filter(x=>x>0);
+  const received=healthEvents.map(e=>new Date(e.received_at||0).getTime()).filter(Number.isFinite).filter(x=>x>0);
+  const fmtAge=ms=>{
+    if(!ms)return '—';
+    const sec=Math.max(0,Math.round((Date.now()-ms)/1000));
+    if(sec<60)return sec+'s ago';
+    if(sec<3600)return Math.round(sec/60)+'m ago';
+    if(sec<86400)return Math.round(sec/3600)+'h ago';
+    return Math.round(sec/86400)+'d ago';
+  };
+  const coverage=times.length>1?Math.max(0,Math.round((Math.max(...times)-Math.min(...times))/86400000))+'d':'—';
   el('healthGrid').innerHTML=[
     ['Raw ↔ Logical',Math.abs(diff)<0.01?'Matched':'Δ '+money(diff)],
     ['Eligible events',String(eligible.length)],
     ['Unassigned',String(orphan)],
-    ['Duplicate assignment',String(dup)]
+    ['Duplicate assignment',String(dup)],
+    ['Latest broker event',times.length?fmtAge(Math.max(...times)):'—'],
+    ['Latest ingest',received.length?fmtAge(Math.max(...received)):'—'],
+    ['Loaded coverage',coverage],
+    ['Logical trades',String(healthTrades.length)]
   ].map(x=>'<div class="healthCell"><div class="metricLabel">'+esc(x[0])+'</div><b>'+esc(x[1])+'</b></div>').join('');
   el('groupingVersion').textContent='Grouping v'+GROUPING_VERSION+' · '+GROUPING_RULE;
 }
@@ -1119,7 +1213,7 @@ function exportData(kind){
   if(kind==='trades'){
     const cols=[
       {label:'Trade ID',key:'id'},{label:'Source',key:'source'},{label:'Account',key:'account'},{label:'Server',key:'server'},{label:'Symbol',key:'symbol'},{label:'Side',key:'side'},
-      {label:'Opened',key:'openedAt'},{label:'Closed',key:'closedAt'},{label:'Net P&L',key:'pnl'},{label:'Orders',key:'orderCount'},{label:'Strategy result',get:r=>strategyOutcome(r).toUpperCase()},{label:'Strategy',key:'strategy'},
+      {label:'Opened',key:'openedAt'},{label:'Closed',key:'closedAt'},{label:'Net P&L',key:'pnl'},{label:'Orders',key:'orderCount'},{label:'Strategy result',get:r=>outcomeLabel(r)},{label:'Strategy',key:'strategy'},
       {label:'Setup',key:'setup'},{label:'Tier / Model',key:'tier'},{label:'Probability',key:'probability'},{label:'CR',key:'cr_value'},{label:'Plan followed',key:'plan_ok'},
       {label:'Mistake',key:'mistake'},{label:'Ghost',get:r=>r.excluded_from_stats?'YES':'NO'},{label:'Ghost reason',key:'exclusion_reason'},{label:'Notes',key:'notes'},
       {label:'Grouping version',get:()=>GROUPING_VERSION}
@@ -1133,7 +1227,7 @@ function exportData(kind){
   }
   if(kind==='notes'){
     const rows=tradeNotes.filter(n=>tradeIds.has(n.trade_id));
-    const keys=['trade_id','setup','tier','probability','cr_value','plan_ok','mistake','excluded_from_stats','exclusion_reason','notes','updated_at'];
+    const keys=['trade_id','setup','tier','probability','cr_value','plan_ok','outcome_override','mistake','excluded_from_stats','exclusion_reason','notes','reviewed_at','updated_at'];
     downloadText('trade_reviews_'+stamp+'.csv',rowsToCsv(rows,keys.map(k=>({label:k,key:k}))),'text/csv;charset=utf-8');return;
   }
   if(kind==='daily'){
@@ -1167,8 +1261,8 @@ function renderAll(){
   el('avgWinLoss').innerHTML='<span>Avg Win <b class="green">'+money(s.avgWin)+'</b></span><span>Avg Loss <b class="red">'+money(s.avgLoss)+'</b></span>';
 
   if(singleDay){
-    el('lblDays').textContent='Wins / Losses';
-    el('mDays').textContent=s.wins+'W / '+s.losses+'L';
+    el('lblDays').textContent='Worked / SL / Other';
+    el('mDays').textContent=s.wins+'W / '+s.losses+'L / '+s.other+'O';
     el('lblBest').textContent='Best Trade';
     el('lblWorst').textContent='Worst Trade';
     el('lblAvg').textContent='Avg / Trade';
@@ -1426,12 +1520,15 @@ function renderCalendar(){
 el('prevMonth').onclick=()=>{monthDate=new Date(monthDate.getFullYear(),monthDate.getMonth()-1,1);renderCalendar()};
 el('nextMonth').onclick=()=>{monthDate=new Date(monthDate.getFullYear(),monthDate.getMonth()+1,1);renderCalendar()};
 
-function tradeEmptyMessage({q,result,ghost,side,source}){
+function tradeEmptyMessage({q,result,ghost,side,source,review}){
   if(q)return 'No trades match your search.';
   if(ghost==='ghost')return 'No ghost trades in this period.';
   if(ghost==='counted')return 'No counted trades in this period.';
-  if(result==='loss')return 'No losing trades in this period.';
-  if(result==='win')return 'No winning trades in this period.';
+  if(result==='loss')return 'No SL trades in this period.';
+  if(result==='worked')return 'No worked trades in this period.';
+  if(result==='other')return 'No Other trades in this period.';
+  if(review==='reviewed')return 'No reviewed trades in this period.';
+  if(review==='unreviewed')return 'No unreviewed trades in this period.';
   if(side)return 'No '+side+' trades in this period.';
   if(source)return 'No '+source+' trades in this period.';
   return dateRange.mode==='all'?'No trades yet.':'No trades in the selected period.';
@@ -1466,10 +1563,24 @@ async function markSelectedGhost(){
   setBulkSelectMode(false);
   await loadData();
 }
+function renderReviewQueue(){
+  const counted=scopedTrades.filter(t=>!t.excluded_from_stats);
+  const reviewed=counted.filter(isTradeReviewed).length;
+  const pending=counted.length-reviewed;
+  el('reviewProgressText').textContent=reviewed+' / '+counted.length+' reviewed';
+  el('reviewNextBtn').disabled=pending===0;
+  el('reviewQueue').classList.toggle('complete',pending===0&&counted.length>0);
+}
+function openNextUnreviewed(){
+  const next=scopedTrades.filter(t=>!t.excluded_from_stats&&!isTradeReviewed(t))
+    .sort((a,b)=>new Date(a.closedAt)-new Date(b.closedAt))[0];
+  if(next)openTrade(next.id);
+}
 function renderTrades(){
-  const q=el('search').value.toLowerCase().trim(),side=el('sideFilter').value,source=el('sourceFilter').value,result=el('resultFilter').value,ghost=el('ghostFilter').value;
+  const q=el('search').value.toLowerCase().trim(),side=el('sideFilter').value,source=el('sourceFilter').value,result=el('resultFilter').value,ghost=el('ghostFilter').value,review=el('reviewFilter').value;
   const rows=scopedTrades.filter(t=>(!side||t.side===side)&&(!source||t.source===source))
-    .filter(t=>result==='win'?isStrategyWin(t):result==='loss'?isStrategyLoss(t):true)
+    .filter(t=>result==='worked'?isStrategyWin(t):result==='loss'?isStrategyLoss(t):result==='other'?isStrategyOther(t):true)
+    .filter(t=>review==='reviewed'?isTradeReviewed(t):review==='unreviewed'?!isTradeReviewed(t):true)
     .filter(t=>ghost==='ghost'?!!t.excluded_from_stats:ghost==='counted'?!t.excluded_from_stats:true)
     .filter(t=>!q||[t.symbol,t.setup,t.tags,t.strategy,t.mistake,t.exclusion_reason].join(' ').toLowerCase().includes(q));
 
@@ -1477,8 +1588,8 @@ function renderTrades(){
   el('tradeRows').innerHTML=rows.length?rows.map(t=>{
     const selected=selectedTradeIds.has(t.id);
     const check=bulkSelectMode?'<td class="bulkCheck"><input type="checkbox" '+(selected?'checked':'')+' tabindex="-1" aria-label="Select trade"></td>':'';
-    return '<tr class="tradeRow '+(t.excluded_from_stats?'ghostRow ':'')+(selected?'bulkSelected':'')+'" data-id="'+esc(t.id)+'">'+check+'<td class="tradeDate">'+new Date(t.closedAt).toLocaleString()+'</td><td class="tradeSymbol"><button type="button" class="tradeOpenBtn" data-open-trade="'+esc(t.id)+'" aria-label="Open '+esc(t.symbol)+' '+esc(t.side)+' trade">'+esc(t.symbol)+'</button>'+(t.excluded_from_stats?'<span class="ghostBadge">GHOST</span>':'')+'</td><td class="tradeSide"><span class="pill">'+esc(t.side)+'</span></td><td class="tradePnl '+(t.pnl>=0?'green':'red')+'">'+money(t.pnl)+'</td><td class="tradeOrders">'+t.orderCount+(isStrategyLoss(t)?'<span class="slBadge">SL</span>':'')+'</td><td class="tradeSetup">'+esc(t.setup||t.strategy||'')+'</td></tr>';
-  }).join(''):'<tr><td colspan="'+emptyCols+'" class="empty">'+esc(tradeEmptyMessage({q,result,ghost,side,source}))+'</td></tr>';
+    return '<tr class="tradeRow '+(t.excluded_from_stats?'ghostRow ':'')+(selected?'bulkSelected':'')+'" data-id="'+esc(t.id)+'">'+check+'<td class="tradeDate">'+new Date(t.closedAt).toLocaleString()+'</td><td class="tradeSymbol"><button type="button" class="tradeOpenBtn" data-open-trade="'+esc(t.id)+'" aria-label="Open '+esc(t.symbol)+' '+esc(t.side)+' trade">'+esc(t.symbol)+'</button>'+(t.excluded_from_stats?'<span class="ghostBadge">GHOST</span>':'')+(isTradeReviewed(t)?'<span class="reviewedBadge">REVIEWED</span>':'')+'</td><td class="tradeSide"><span class="pill">'+esc(t.side)+'</span></td><td class="tradePnl '+(t.pnl>=0?'green':'red')+'">'+money(t.pnl)+'</td><td class="tradeOrders">'+t.orderCount+(isStrategyLoss(t)?'<span class="slBadge">SL</span>':'')+'</td><td class="tradeSetup">'+esc(t.setup||t.strategy||'')+'</td></tr>';
+  }).join(''):'<tr><td colspan="'+emptyCols+'" class="empty">'+esc(tradeEmptyMessage({q,result,ghost,side,source,review}))+'</td></tr>';
 
   document.querySelectorAll('#tradeRows tr[data-id]').forEach(r=>r.onclick=e=>{
     const id=r.dataset.id;
@@ -1493,38 +1604,52 @@ function renderTrades(){
     openTrade(id);
   });
   updateBulkGhostBar();
+  renderReviewQueue();
 }
 
-el('search').oninput=renderTrades;el('sideFilter').onchange=renderTrades;el('sourceFilter').onchange=renderTrades;el('resultFilter').onchange=renderTrades;el('ghostFilter').onchange=renderTrades;
+el('search').oninput=renderTrades;el('sideFilter').onchange=renderTrades;el('sourceFilter').onchange=renderTrades;el('resultFilter').onchange=renderTrades;el('ghostFilter').onchange=renderTrades;el('reviewFilter').onchange=renderTrades;
 el('bulkSelectBtn').onclick=()=>setBulkSelectMode(!bulkSelectMode);
 el('bulkCancelBtn').onclick=()=>setBulkSelectMode(false);
 el('bulkGhostBtn').onclick=markSelectedGhost;
+el('reviewNextBtn').onclick=openNextUnreviewed;
 
 function openDailyReview(date){
   activeReviewDate=date;
   const dayTrades=model.trades.filter(t=>tradeDayKey(t)===date);
-  const pnl=dayTrades.reduce((s,t)=>s+t.pnl,0),wins=dayTrades.filter(isStrategyWin).length,losses=dayTrades.filter(isStrategyLoss).length;
-  const wr=dayTrades.length?wins/dayTrades.length*100:0;
+  const pnl=dayTrades.reduce((s,t)=>s+t.pnl,0),wins=dayTrades.filter(isStrategyWin).length,losses=dayTrades.filter(isStrategyLoss).length,other=dayTrades.filter(isStrategyOther).length;
+  const wr=(wins+losses)?wins/(wins+losses)*100:0;
   el('dailyTitle').textContent=new Date(date+'T12:00:00').toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'});
-  const stats=[['P&L',money(pnl)],['Logical Trades',dayTrades.length],['Win Rate',wr.toFixed(1)+'%'],['Wins / Losses',wins+' / '+losses]];
+  const stats=[['P&L',money(pnl)],['Logical Trades',dayTrades.length],['Win Rate',wr.toFixed(1)+'%'],['Worked / SL / Other',wins+' / '+losses+' / '+other]];
   el('dailyStats').innerHTML=stats.map(x=>'<div class="kv"><small>'+esc(x[0])+'</small><b>'+esc(x[1])+'</b></div>').join('');
   const r=dailyReviewMap[date]||{};
   el('dWorked').value=r.what_worked||'';
   el('dWrong').value=r.what_wrong||'';
   el('dTomorrow').value=r.tomorrow_focus||'';
   el('dNotes').value=r.notes||'';
+  dailyReviewSnapshot=dailyReviewState();
   el('dailyModal').classList.remove('hide');
 }
-function closeDailyReview(){el('dailyModal').classList.add('hide');activeReviewDate=null}
-el('closeDailyModal').onclick=closeDailyReview;
+function dailyReviewState(){
+  return JSON.stringify({worked:el('dWorked').value,wrong:el('dWrong').value,tomorrow:el('dTomorrow').value,notes:el('dNotes').value});
+}
+async function closeDailyReview(force=false){
+  if(!force&&activeReviewDate&&dailyReviewSnapshot&&dailyReviewState()!==dailyReviewSnapshot){
+    if(typeof askConfirm==='function'){
+      if(!(await askConfirm('Discard unsaved daily review changes?')))return false;
+    }else if(!confirm('Discard unsaved daily review changes?'))return false;
+  }
+  el('dailyModal').classList.add('hide');activeReviewDate=null;dailyReviewSnapshot='';return true;
+}
+el('closeDailyModal').onclick=()=>closeDailyReview();
 el('saveDailyReview').onclick=async()=>{
   if(!activeReviewDate)return;
   const u=(await sb.auth.getUser()).data.user;
   const row={user_id:u.id,review_date:activeReviewDate,what_worked:el('dWorked').value,what_wrong:el('dWrong').value,tomorrow_focus:el('dTomorrow').value,notes:el('dNotes').value,updated_at:new Date().toISOString()};
   const {error}=await sb.from('daily_reviews').upsert(row,{onConflict:'user_id,review_date'});
-  if(error)return alert(error.message);
-  closeDailyReview();
-  await loadData();
+  if(error){if(typeof showToast==='function')showToast(error.message,'error');return}
+  dailyReviewSnapshot=dailyReviewState();
+  await closeDailyReview(true);
+  await loadData({silent:true});
 }
 
 function tradeReviewState(){
@@ -1534,6 +1659,7 @@ function tradeReviewState(){
     probability:el('fProbability').value,
     cr:el('fCr').value,
     plan:el('fPlan').value,
+    outcome:el('fOutcome').value,
     mistake:el('fMistake').value,
     excluded:el('fExcluded').checked,
     exclusionReason:el('fExclusionReason').value,
@@ -1552,9 +1678,9 @@ function closeTradeReview(force=false){
 function openTrade(id){
   const t=scopedTrades.find(x=>x.id===id)||allTrades.find(x=>x.id===id);if(!t)return;activeTrade=t;
   el('modalTitle').textContent=t.symbol+' '+t.side+' · '+money(t.pnl)+(t.excluded_from_stats?' · GHOST':'');
-  const details=[['Source',t.source],['Account',t.account+(t.server?' · '+t.server:'')],['Opened',new Date(t.openedAt).toLocaleString()],['Closed',new Date(t.closedAt).toLocaleString()],['Orders',t.orderCount],['Result',isStrategyLoss(t)?'SL':'Worked'],['Entries / exits',t.entries+' / '+t.exits],['Strategy',t.strategy]];
+  const details=[['Source',t.source],['Account',t.account+(t.server?' · '+t.server:'')],['Opened',new Date(t.openedAt).toLocaleString()],['Closed',new Date(t.closedAt).toLocaleString()],['Orders',t.orderCount],['Result',outcomeLabel(t)],['Entries / exits',t.entries+' / '+t.exits],['Strategy',t.strategy]];
   el('tradeDetails').innerHTML=details.map(x=>'<div class="kv"><small>'+esc(x[0])+'</small><b>'+esc(x[1])+'</b></div>').join('');
-  el('fSetup').value=t.setup||'';el('fTier').value=t.tier||'';el('fProbability').value=t.probability==null?'':t.probability;el('fCr').value=t.cr_value==null?'':t.cr_value;el('fPlan').value=t.plan_ok||'';el('fMistake').value=t.mistake||'';document.querySelectorAll('[data-mistake]').forEach(b=>b.classList.toggle('on',b.dataset.mistake===(t.mistake||'')));el('fExcluded').checked=!!t.excluded_from_stats;el('fExclusionReason').value=t.exclusion_reason||'';el('fExclusionReason').disabled=!el('fExcluded').checked;el('fNotes').value=t.notes||'';
+  el('fSetup').value=t.setup||'';el('fTier').value=t.tier||'';el('fProbability').value=t.probability==null?'':t.probability;el('fCr').value=t.cr_value==null?'':t.cr_value;el('fPlan').value=t.plan_ok||'';el('fOutcome').value=t.outcome_override||'';el('fMistake').value=t.mistake||'';document.querySelectorAll('[data-mistake]').forEach(b=>b.classList.toggle('on',b.dataset.mistake===(t.mistake||'')));el('fExcluded').checked=!!t.excluded_from_stats;el('fExclusionReason').value=t.exclusion_reason||'';el('fExclusionReason').disabled=!el('fExcluded').checked;el('fNotes').value=t.notes||'';
   el('tradeModal').classList.remove('hide');
   tradeReviewSnapshot=tradeReviewState();
 }
@@ -1568,11 +1694,12 @@ el('saveReview').onclick=async()=>{
     return alert('Probability must be between 0% and 100%.');
   }
   const u=(await sb.auth.getUser()).data.user;
-  const row={user_id:u.id,trade_id:activeTrade.id,setup:el('fSetup').value,tier:el('fTier').value,probability,cr_value:el('fCr').value===''?null:Number(el('fCr').value),plan_ok:el('fPlan').value,mistake:el('fMistake').value,excluded_from_stats:el('fExcluded').checked,exclusion_reason:el('fExcluded').checked?(el('fExclusionReason').value.trim()||'Accidental / technical trade'):null,notes:el('fNotes').value,updated_at:new Date().toISOString()};
-  const {error}=await sb.from('trade_notes').upsert(row,{onConflict:'user_id,trade_id'});if(error)return alert(error.message);
+  const now=new Date().toISOString();
+  const row={user_id:u.id,trade_id:activeTrade.id,setup:el('fSetup').value,tier:el('fTier').value,probability,cr_value:el('fCr').value===''?null:Number(el('fCr').value),plan_ok:el('fPlan').value,outcome_override:el('fOutcome').value||null,mistake:el('fMistake').value,excluded_from_stats:el('fExcluded').checked,exclusion_reason:el('fExcluded').checked?(el('fExclusionReason').value.trim()||'Accidental / technical trade'):null,notes:el('fNotes').value,reviewed_at:now,updated_at:now};
+  const {error}=await sb.from('trade_notes').upsert(row,{onConflict:'user_id,trade_id'});if(error){if(typeof showToast==='function')showToast(error.message,'error');return}
   tradeReviewSnapshot=tradeReviewState();
   closeTradeReview(true);
-  await loadData();
+  await loadData({silent:true});
 };
 
 document.querySelectorAll('[data-mistake]').forEach(b=>b.onclick=()=>{el('fMistake').value=b.dataset.mistake||'';document.querySelectorAll('[data-mistake]').forEach(x=>x.classList.toggle('on',x===b))});

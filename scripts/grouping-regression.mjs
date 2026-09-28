@@ -28,7 +28,7 @@ function extractFunction(name){
   throw new Error('unterminated function '+name);
 }
 
-const names=['dayKey','utcDayKey','tradeDayKey','eventDayKey','hash','tag','accountKey','dedupeEvents','freshTrade','finalize','addMT5','groupMT5','summarizeMT4','groupMT4','stabilizeTradeIds','strategyOrderCount','strategyOutcome','isStrategyWin','isStrategyLoss','buildModel'];
+const names=['dayKey','utcDayKey','tradeDayKey','eventDayKey','hash','tag','accountKey','dedupeEvents','freshTrade','finalize','addMT5','groupMT5','summarizeMT4','groupMT4','stabilizeTradeIds','strategyOrderCount','strategyOutcome','isStrategyWin','isStrategyLoss','isStrategyOther','buildModel'];
 const context=vm.createContext({console});
 for(const name of names) vm.runInContext(extractFunction(name),context);
 
@@ -74,6 +74,9 @@ rows=[
   mt4(31,'2026-09-22T10:05:00Z','2026-09-22T10:15:00Z',{server:'Server-B'})
 ];
 ok(groupMT4(rows).length===2,'different servers must not merge');
+const stableA=groupMT4([mt4(32,'2026-09-22T10:00:00Z','2026-09-22T10:20:00Z',{server:'Server-A',comment:'STRAT:A'})])[0];
+const stableB=groupMT4([mt4(32,'2026-09-22T10:00:00Z','2026-09-22T10:20:00Z',{server:'Server-A',comment:'STRAT:B'})])[0];
+ok(stableA.id===stableB.id,'Logical Trade stable id must not change when strategy/comment grouping label changes');
 
 // 5) Duplicate raw event is defensively removed before grouping.
 const duplicate=mt4(40,'2026-09-22T10:00:00Z','2026-09-22T10:10:00Z',{profit:7});
@@ -124,11 +127,18 @@ ok(strategyOrderCount({source:'MT4',orderCount:6,pnl:25})===6,'worked basket mus
 ok(strategyOrderCount({source:'MT4',orderCount:6,pnl:-50})===6,'negative P&L must not fabricate a seventh broker order');
 ok(strategyOutcome({source:'MT4',orderCount:6,pnl:-50})==='win','negative P&L alone must not imply SL');
 ok(strategyOutcome({source:'MT4',orderCount:6,pnl:-50,stopLossHit:true})==='loss','explicit SL marker must classify LOSS');
+ok(strategyOutcome({source:'MT4',orderCount:1,pnl:0,outcome_override:'other'})==='other','manual Other override must classify OTHER');
+ok(strategyOutcome({source:'MT4',orderCount:1,pnl:-5,outcome_override:'worked',stopLossHit:true})==='win','explicit Worked override must take precedence over automatic SL evidence');
 const wrModel=buildModel([
   {source:'MT4',closedAt:'2026-09-24T10:00:00Z',symbol:'EURUSD',orderCount:6,pnl:-10,stopLossHit:false},
   {source:'MT4',closedAt:'2026-09-24T11:00:00Z',symbol:'EURUSD',orderCount:6,pnl:-20,stopLossHit:true}
 ]);
-ok(wrModel.summary.wins===1&&wrModel.summary.losses===1&&wrModel.summary.wr===50,'strategy WR must use explicit SL marker, not money P&L');
+ok(wrModel.summary.wins===1&&wrModel.summary.losses===1&&wrModel.summary.other===0&&wrModel.summary.wr===50,'strategy WR must use explicit SL marker, not money P&L');
+const triModel=buildModel([
+  {source:'MT4',closedAt:'2026-09-24T12:00:00Z',symbol:'EURUSD',pnl:0,outcome_override:'other'},
+  {source:'MT4',closedAt:'2026-09-24T13:00:00Z',symbol:'EURUSD',pnl:10,outcome_override:'worked'}
+]);
+ok(triModel.summary.wins===1&&triModel.summary.other===1&&triModel.summary.wr===100,'Other trades must be excluded from strategy WR denominator');
 
 // 10) MT4 broker-day semantics: a late broker-time close must not roll into the next Tashkent day.
 const lateMt4Trade={source:'MT4',closedAt:'2026-09-24T19:20:00.000Z'};
