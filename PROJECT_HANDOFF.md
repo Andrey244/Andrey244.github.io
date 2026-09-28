@@ -460,7 +460,7 @@ Implemented:
 - RSA-3072 collector identity, current-user DPAPI protection and non-secret registration bundle;
 - Windows service installer using per-service virtual account `NT SERVICE\\TradingJournalCollector`, not shared LocalService;
 - ProgramData root is read/execute for the service; mutable identity/state/MT4 work directories have separate write ACLs;
-- MT4 install path requires verifiable BitLocker protection for the disposable work volume;
+- MT4 install path requires verifiable BitLocker protection for the disposable work volume and supports a dedicated absolute `-Mt4WorkRoot` on an external BitLocker-protected data volume/VHDX; collector identity/config/state remain under ProgramData;
 - MT4 sync fails closed unless All History was explicitly operator-confirmed;
 - MT4 exporter v0.12 and manual connector v1.20 separate explicit `closed_by_sl` evidence from price-proximity diagnostics;
 - MT5 defaults to non-portable mode and repairs initial-window exit boundaries using `history_deals_get(position=...)`; it fails closed if prior entry history cannot be recovered;
