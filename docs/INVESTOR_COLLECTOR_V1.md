@@ -453,3 +453,17 @@ Additional production hardening applied after the first collector foundation:
 - `20260926121712 collector_strict_lease_expiry_v1`.
 All production migrations are mirrored in the repository.
 The legacy `journal` Edge Function is retired with HTTP 410.
+
+
+## Manual fallback connector operational note — 2026-09-28
+
+The website fallback download is currently `TradeJournalConnector_MT4_v1.20.mq4`.
+
+This is separate from the direct Windows collector exporter. v1.20 reduces Supabase Free-plan log/request volume without weakening history safety:
+- `SyncEverySeconds` still checks local MT4 history frequently;
+- no ingest HTTP request is made when `OrdersHistoryTotal()` is unchanged;
+- when history changes, the existing 120-second overlap is uploaded and backend canonical dedupe absorbs duplicates;
+- cursor/history-count state advances only after the whole scan succeeds;
+- connector status defaults to every 30 minutes;
+- debug printing defaults off;
+- the v1.20 cursor key intentionally causes one bounded repair re-sync after upgrade.

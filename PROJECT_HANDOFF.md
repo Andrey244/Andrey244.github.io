@@ -15,7 +15,7 @@ If the user opens a new chat, use this exact starting instruction:
 - Static frontend: single-page `index.html` on GitHub Pages.
 - Supabase project: `ylriyjxcefovzwzinpqd`
 - Current grouping version: `2.3`
-- Current MT4 connector: `v1.18`
+- Current MT4 connector: `v1.20`
 - PWA files exist: `manifest.webmanifest`, `service-worker.js`, `app-icon.svg`.
 - Smoke workflow: `.github/workflows/smoke.yml`
 - Regression script: `scripts/grouping-regression.mjs`
@@ -131,15 +131,15 @@ Current working path:
 `MT4/MT5 terminal → Connector/Reader → Supabase → Journal`
 
 MT4 current connector:
-- `downloads/TradeJournalConnector_MT4_v1.18.mq4`
+- `downloads/TradeJournalConnector_MT4_v1.20.mq4`
 - generic mirror: `downloads/TradeJournalConnector_MT4.mq4`
 - read-only;
 - no AutoTrading permission required for journal sync;
 - uses Supabase WebRequest;
 - sends connector status.
 
-### v1.18 SL metadata
-v1.18 preserves:
+### v1.20 manual connector
+v1.20 preserves:
 - stop loss;
 - take profit;
 - explicit `closed_by_sl` from broker close/comment evidence;
@@ -457,13 +457,13 @@ Implemented:
 - ProgramData root is read/execute for the service; mutable identity/state/MT4 work directories have separate write ACLs;
 - MT4 install path requires verifiable BitLocker protection for the disposable work volume;
 - MT4 sync fails closed unless All History was explicitly operator-confirmed;
-- MT4 exporter v0.12 and manual connector v1.18 separate explicit `closed_by_sl` evidence from price-proximity diagnostics;
+- MT4 exporter v0.12 and manual connector v1.20 separate explicit `closed_by_sl` evidence from price-proximity diagnostics;
 - MT5 defaults to non-portable mode and repairs initial-window exit boundaries using `history_deals_get(position=...)`; it fails closed if prior entry history cannot be recovered;
 - SYNC cursor advances to the exact collected `sync_until_ms`, never report time;
 - ingest/report require the current job `attempt` and an unexpired lease; ingest holds a job row lock while canonical ingest runs;
 - collector public key is exposed only when the primary node has a fresh heartbeat;
 - legacy `journal` Edge Function is a 410 tombstone;
-- current manual MT4 Connector download/status is v1.18.
+- current manual MT4 Connector download/status is v1.20.
 
 Windows/VPS preflight is implemented at `collector/windows/preflight.ps1` and is mandatory from the installer. It fails closed on Windows/admin/Python/network/terminal/MT4 EX4/All-History/BitLocker prerequisites before runtime state is created.
 
@@ -477,6 +477,40 @@ Still pending before real Investor Password production use:
 
 Do not provision a fake node just to enable the UI. The current fail-closed state is intentional until a real primary collector is online.
 
+
+
+## Post-audit journal product hardening — 2026-09-28
+
+User-approved scope explicitly excludes:
+- multi-currency/reporting-currency work for now; all current accounts are USD;
+- moving Logical Trade materialization/raw-event analytics to a new backend architecture for scale. Current dataset is still small enough for browser grouping.
+
+Implemented:
+- live Journal updates use one filtered Supabase Realtime `raw_events INSERT` subscription per authenticated user; there is no 20–30 second REST polling loop;
+- a silent full reconcile happens only when the browser returns visible after more than five minutes;
+- `loadData()` treats `raw_events` as critical and loads notes/settings/reviews/status/connectors with `Promise.allSettled`, so an optional-table failure no longer blanks the whole Journal;
+- Logical Trade IDs now anchor to source + account + server + first raw event id, while legacy IDs remain a read fallback for old notes;
+- `trade_notes.reviewed_at` and `outcome_override` are canonical DB fields; manual override values are `worked | loss | other`;
+- automatic Strategy Outcome remains explicit-SL-only for LOSS; negative P&L alone is never LOSS;
+- `Other` is excluded from the strategy Win Rate denominator;
+- Trades has Reviewed/Unreviewed filtering, review progress and Review next;
+- Daily Review has an unsaved-changes guard;
+- RU/EN UI switch is persisted locally;
+- browser-native `alert()` / `confirm()` were removed in favor of toasts and the app confirmation modal;
+- Data Health now also shows latest broker event, latest ingest, loaded coverage and Logical Trade count;
+- CSS is externalized to `/styles.css`; CSP is `style-src 'self'; style-src-attr 'none'` and no runtime `.style.*` writes are allowed by Smoke;
+- migration `20260928100019 journal_review_outcome_and_realtime_v1` adds review/outcome fields and publishes only `raw_events` to `supabase_realtime`.
+
+Supabase Free-plan log optimization:
+- production log audit showed the dominant source was the manual MT4 connector, not the web UI;
+- in the sampled 24h window, `ingest_mt_events` generated 5,676 REST requests and about 14.7 MB of serialized edge-log payload, while `report_connector_status` generated 432 requests and about 1.1 MB;
+- both live terminals were still reporting connector v1.17 at audit time;
+- manual Connector v1.20 keeps the 120-second history overlap but skips SyncHistory HTTP upload entirely while `OrdersHistoryTotal()` is unchanged;
+- status reporting defaults to every 1,800 seconds and `PrintDebug=false`;
+- v1.20 intentionally uses a new cursor state key, causing one bounded initial re-sync after upgrade; backend dedupe makes that safe;
+- the already-consumed Supabase Log Ingestion quota will not shrink. The request-rate reduction starts only after the running MT4 terminals are upgraded to v1.20.
+
+Do not reintroduce periodic browser polling just to make the UI look live; Realtime + visibility reconciliation is intentional to minimize Supabase request/log volume.
 
 ---
 

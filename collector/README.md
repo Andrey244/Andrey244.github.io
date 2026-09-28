@@ -18,7 +18,7 @@ Source of truth:
 - Fresh-heartbeat requirement before the frontend accepts Investor Password entry.
 - MT5 read-only probe/history sync, non-portable default, explicit `DEAL_REASON_SL`, and initial-boundary position-history repair.
 - MT4 disposable `/portable` worker slot, short-lived startup config, All-History fail-closed gate and exporter v0.12.
-- Manual MT4 Connector v1.18 with explicit SL evidence separated from price-proximity diagnostics.
+- Manual MT4 Connector v1.20 with explicit SL evidence separated from price-proximity diagnostics.
 - Windows CI validates pinned MetaTrader5/pywin32 imports, PowerShell parsing and real DPAPI round-trip.
 - Direct-connect frontend is implemented but stays fail-closed until a real primary collector heartbeat is fresh.
 
@@ -121,3 +121,17 @@ The installer:
 - run correct/wrong Investor Password, wrong server, master-password rejection, historical coverage, retry/idempotency, reconnect and disconnect tests for both platforms.
 
 No code-only CI result substitutes for this live broker-terminal acceptance.
+
+
+## Manual fallback log optimization
+
+Current fallback download: `downloads/TradeJournalConnector_MT4_v1.20.mq4`.
+
+v1.20 is designed for the Supabase Free plan:
+- it keeps the 120-second closed-history overlap;
+- it does not POST that overlap on every timer tick when `OrdersHistoryTotal()` is unchanged;
+- connector status defaults to one report every 30 minutes;
+- `PrintDebug` defaults to false;
+- first run after upgrading intentionally replays the configured initial window once; server-side dedupe prevents duplicate journal events.
+
+The web Journal uses a filtered Supabase Realtime subscription for new `raw_events` rather than aggressive REST polling.
