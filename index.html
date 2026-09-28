@@ -70,7 +70,7 @@
     <div class="panel">
       <div class="accountbar">
         <div class="accountControl"><label class="metricLabel" for="accountScope">Account</label><select id="accountScope" class="select"><option value="all">All accounts</option></select><div id="accountScopeStatic" class="accountScopeStatic hide"></div></div>
-        <div class="hint accountHint">Можно подключить несколько MT4/MT5 счетов и смотреть статистику вместе или отдельно.</div>
+        <div class="hint accountHint" id="accountHint">Можно подключить несколько MT4/MT5 счетов и смотреть статистику вместе или отдельно.</div>
       </div>
     </div>
     <div class="panel">
@@ -130,12 +130,12 @@
   <section id="accounts" class="hide">
     <div class="panel">
       <div class="panelTitle">ACCOUNTS</div>
-      <div class="hint uMb12">Счета определяются автоматически по данным MetaTrader. Здесь можно дать им понятные названия, например «Alpari Demo» или «Main MT4».</div>
+      <div class="hint uMb12" id="accountsIntroHint">Счета определяются автоматически по данным MetaTrader. Здесь можно дать им понятные названия, например «Alpari Demo» или «Main MT4».</div>
       <div id="accountList" class="accountList"></div>
     </div>
     <div class="panel">
       <div class="panelTitle">LOGIN / SECURITY</div>
-      <div class="hint uMb12">Если не помнишь пароль для входа с другого устройства, можешь изменить его здесь, пока уже вошёл в журнал.</div>
+      <div class="hint uMb12" id="passwordIntroHint">Если не помнишь пароль для входа с другого устройства, можешь изменить его здесь, пока уже вошёл в журнал.</div>
       <div class="form">
         <div><label class="metricLabel" for="newLoginPassword">Новый пароль</label><input id="newLoginPassword" class="input" type="password" autocomplete="new-password" placeholder="Минимум 6 символов"></div>
         <div><label class="metricLabel" for="newLoginPassword2">Повтори пароль</label><input id="newLoginPassword2" class="input" type="password" autocomplete="new-password" placeholder="Повтори пароль"></div>
@@ -164,7 +164,7 @@
       <div class="directHead">
         <div>
           <div class="panelTitle">DIRECT BROKER CONNECTION</div>
-          <div class="hint directIntro">Read-only подключение через Investor Password. Master password не нужен и будет отклонён, если терминал разрешает торговлю.</div>
+          <div class="hint directIntro" id="directIntro">Read-only подключение через Investor Password. Master password не нужен и будет отклонён, если терминал разрешает торговлю.</div>
         </div>
         <div id="directCollectorState" class="directReady">Checking…</div>
       </div>
@@ -197,8 +197,8 @@
       <div class="metricLabel">Supabase URL</div><div class="code">https://ylriyjxcefovzwzinpqd.supabase.co</div>
       <div class="spacer12"></div>
       <div class="metricLabel">Private ingest token</div><div id="tokenBox" class="code">Нажми «Создать / обновить token».</div>
-      <div class="actions"><button class="btn primary" id="tokenBtn">Создать / обновить token</button><button class="btn" id="copyTokenBtn">Copy token</button></div><div class="actions"><a class="btn primary" href="downloads/TradeJournalConnector_MT4_v1.20.mq4" download>Скачать MT4 Connector v1.20</a></div><div id="connectorStatusList" class="connectorStatusList"></div>
-      <div class="warning uMt14">В MetaTrader добавь <b>https://ylriyjxcefovzwzinpqd.supabase.co</b> в Tools → Options → Expert Advisors → Allow WebRequest. В Connector EA вставляется только этот ingest token.</div>
+      <div class="actions"><button class="btn primary" id="tokenBtn">Создать / обновить token</button><button class="btn" id="copyTokenBtn">Copy token</button></div><div class="actions"><a class="btn primary" id="mt4DownloadBtn" href="downloads/TradeJournalConnector_MT4_v1.20.mq4" download>Скачать MT4 Connector v1.20</a></div><div id="connectorStatusList" class="connectorStatusList"></div>
+      <div class="warning uMt14" id="manualConnectorHint">В MetaTrader добавь <b>https://ylriyjxcefovzwzinpqd.supabase.co</b> в Tools → Options → Expert Advisors → Allow WebRequest. В Connector EA вставляется только этот ingest token.</div>
     </div>
     <div class="panel">
       <div class="healthTop"><div><div class="panelTitle uMb4">DATA HEALTH</div><div id="healthStatus" class="healthStatus"><span class="healthDot"></span><span>Checking…</span></div></div><button class="btn" id="exportBackupBtn" type="button">Backup / Export</button></div>
@@ -207,8 +207,8 @@
     </div>
     <div class="panel">
       <div class="panelTitle">LOGICAL TRADE GROUPING</div>
-      <div class="warning">Журнал не считает каждый MT order отдельным трейдом. Доливки и частичные закрытия объединяются в одну campaign. Для максимально точного разделения одновременно живущих стратегий используй comment вида <b>TG:EU_0551 STRAT:EURUSD_V05</b>.</div>
-      <div class="hint uMt12">MT5: группировка идёт по TG, а если его нет — по экспозиции внутри Account + Symbol + Strategy/Magic. MT4: одинаковые Symbol + Side + Strategy/Magic объединяются только пока периоды жизни ордеров реально пересекаются. Как только позиция полностью закрыта, следующий ордер считается новым Logical Trade — даже если EA переоткрыл его в ту же секунду.</div>
+      <div class="warning" id="groupingIntro">Журнал не считает каждый MT order отдельным трейдом. Доливки и частичные закрытия объединяются в одну campaign. Для максимально точного разделения одновременно живущих стратегий используй comment вида <b>TG:EU_0551 STRAT:EURUSD_V05</b>.</div>
+      <div class="hint uMt12" id="groupingDetail">MT5: группировка идёт по TG, а если его нет — по экспозиции внутри Account + Symbol + Strategy/Magic. MT4: одинаковые Symbol + Side + Strategy/Magic объединяются только пока периоды жизни ордеров реально пересекаются. Как только позиция полностью закрыта, следующий ордер считается новым Logical Trade — даже если EA переоткрыл его в ту же секунду.</div>
     </div>
   </section>
 
@@ -233,7 +233,7 @@
       <div><div class="panelTitle uM004">EXPORT / BACKUP</div><h2 id="exportTitle">Скачать данные</h2></div>
       <button class="btn" id="closeExportModal" type="button">Закрыть</button>
     </div>
-    <div class="hint uM12014">CSV учитывает выбранные Account + Period. Full Backup JSON сохраняет всю историю аккаунта журнала.</div>
+    <div class="hint uM12014" id="exportHint">CSV учитывает выбранные Account + Period. Full Backup JSON сохраняет всю историю аккаунта журнала.</div>
     <div class="exportGrid">
       <button class="btn" data-export="trades">Logical Trades CSV</button>
       <button class="btn" data-export="raw">Raw MT Events CSV</button>
@@ -285,7 +285,7 @@
         <div class="rangeFooter">
           <div>
             <div id="rangePreview" class="rangeSelectionText">—</div>
-            <div class="hint">Зажми левую кнопку мыши на дате и протяни до конечного дня.</div>
+            <div class="hint" id="rangeDragHint">Зажми левую кнопку мыши на дате и протяни до конечного дня.</div>
           </div>
           <div class="actions uM0">
             <button class="btn" id="cancelRangeBtn">Отмена</button>
@@ -303,14 +303,14 @@
       <div><div class="panelTitle uM004">DECLINE REQUEST</div><h2 id="declineEmail">—</h2></div>
       <button class="btn" id="closeDeclineModal">Закрыть</button>
     </div>
-    <div class="warning uMt14">
+    <div class="warning uMt14" id="declineHint">
       Выбери, что сделать с этой заявкой. В обоих вариантах pending-аккаунт удаляется полностью, чтобы он не висел в списке.
     </div>
     <div class="actions uMt16Wrap">
       <button class="btn" id="declineRemoveBtn">Просто удалить заявку</button>
       <button class="btn danger" id="declineBlockBtn">Удалить + блок 5 минут</button>
     </div>
-    <div class="hint uMt12">
+    <div class="hint uMt12" id="declineDetail">
       «Просто удалить» — человек сможет зарегистрироваться снова сразу (полезно, если ошиблись email).<br>
       «Блок 5 минут» — этот email не сможет создать новую заявку в течение 5 минут.
     </div>
@@ -348,7 +348,7 @@
       <div class="wide"><label class="metricLabel" for="fMistake">Mistake / violation</label><input id="fMistake" class="input" list="mistakeSuggestions" placeholder="Например: EA left enabled"><div class="presetChips" id="mistakePresets"><button type="button" class="presetChip" data-mistake="">No mistake</button><button type="button" class="presetChip" data-mistake="Wrong entry">Bad entry</button><button type="button" class="presetChip" data-mistake="Ignored bias">Against bias</button><button type="button" class="presetChip" data-mistake="Entered before news">News</button><button type="button" class="presetChip" data-mistake="EA left enabled">EA error</button><button type="button" class="presetChip" data-mistake="Overtrading">Overtrade</button><button type="button" class="presetChip" data-mistake="Plan violation">Plan violation</button></div></div>
       <datalist id="mistakeSuggestions"><option value="EA left enabled"><option value="Wrong entry"><option value="Ignored bias"><option value="Entered before news"><option value="Plan violation"><option value="Overtrading"></datalist>
       <div class="wide ghostToggle">
-        <label><input id="fExcluded" type="checkbox"><span>Ghost trade — случайная / техническая сделка. Оставить в истории, но полностью исключить из P&L, Win Rate, Drawdown и всей аналитики.</span></label>
+        <label><input id="fExcluded" type="checkbox"><span id="ghostHelpText">Ghost trade — случайная / техническая сделка. Оставить в истории, но полностью исключить из P&L, Win Rate, Drawdown и всей аналитики.</span></label>
         <input id="fExclusionReason" class="input uMt10" aria-label="Ghost trade exclusion reason" placeholder="Причина, например: EA переоткрыл сделку после ручного закрытия">
       </div>
       <div class="wide"><label class="metricLabel" for="fNotes">Notes</label><textarea id="fNotes" class="textarea" rows="4"></textarea></div>

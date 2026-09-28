@@ -81,6 +81,45 @@ function applyLanguage(){
     fExclusionReason:['Reason, e.g. EA reopened after manual close','Причина, например: EA переоткрыл сделку после ручного закрытия']
   };
   Object.entries(attrs).forEach(([id,[en,ru]])=>{const n=el(id);if(n)n.placeholder=tx(en,ru)});
+  const setText=(id,en,ru)=>{const n=el(id);if(n)n.textContent=tx(en,ru)};
+  setText('accountHint','Connect multiple MT4/MT5 accounts and view their statistics together or separately.','Можно подключить несколько MT4/MT5 счетов и смотреть статистику вместе или отдельно.');
+  setText('accountsIntroHint','Accounts are detected automatically from MetaTrader data. Give them clear names such as “Alpari Demo” or “Main MT4”.','Счета определяются автоматически по данным MetaTrader. Здесь можно дать им понятные названия, например «Alpari Demo» или «Main MT4».');
+  setText('passwordIntroHint','If you do not remember the password for another device, change it here while you are already signed in.','Если не помнишь пароль для входа с другого устройства, можешь изменить его здесь, пока уже вошёл в журнал.');
+  setText('directIntro','Read-only connection through Investor Password. A master password is not needed and will be rejected if the terminal allows trading.','Read-only подключение через Investor Password. Master password не нужен и будет отклонён, если терминал разрешает торговлю.');
+  setText('directSecretHint','The password is encrypted with RSA-OAEP/SHA-256 in the browser and is not stored in browser storage.','Пароль шифруется RSA-OAEP/SHA-256 в браузере и не сохраняется в browser storage.');
+  if(!liveToken)setText('tokenBox','Click “Create / rotate token”.','Нажми «Создать / обновить token».');
+  setText('tokenBtn','Create / rotate token','Создать / обновить token');
+  setText('mt4DownloadBtn','Download MT4 Connector v1.20','Скачать MT4 Connector v1.20');
+  setText('exportHint','CSV uses the selected Account + Period. Full Backup JSON keeps the full journal account history.','CSV учитывает выбранные Account + Period. Full Backup JSON сохраняет всю историю аккаунта журнала.');
+  setText('rangeDragHint','Hold the left mouse button on a date and drag to the end date.','Зажми левую кнопку мыши на дате и протяни до конечного дня.');
+  setText('declineHint','Choose what to do with this request. In both cases the pending account is removed completely so it does not remain in the list.','Выбери, что сделать с этой заявкой. В обоих вариантах pending-аккаунт удаляется полностью, чтобы он не висел в списке.');
+  setText('declineRemoveBtn','Delete request','Просто удалить заявку');
+  setText('declineBlockBtn','Delete + block 5 minutes','Удалить + блок 5 минут');
+  setText('ghostHelpText','Ghost trade — accidental / technical trade. Keep it in history but exclude it completely from P&L, Win Rate, Drawdown and all analytics.','Ghost trade — случайная / техническая сделка. Оставить в истории, но полностью исключить из P&L, Win Rate, Drawdown и всей аналитики.');
+  const manualHint=el('manualConnectorHint');
+  if(manualHint)manualHint.innerHTML=currentLang==='ru'
+    ? 'В MetaTrader добавь <b>https://ylriyjxcefovzwzinpqd.supabase.co</b> в Tools → Options → Expert Advisors → Allow WebRequest. В Connector EA вставляется только этот ingest token.'
+    : 'In MetaTrader add <b>https://ylriyjxcefovzwzinpqd.supabase.co</b> under Tools → Options → Expert Advisors → Allow WebRequest. Put only this ingest token into the Connector EA.';
+  const groupingIntro=el('groupingIntro');
+  if(groupingIntro)groupingIntro.innerHTML=currentLang==='ru'
+    ? 'Журнал не считает каждый MT order отдельным трейдом. Доливки и частичные закрытия объединяются в одну campaign. Для максимально точного разделения одновременно живущих стратегий используй comment вида <b>TG:EU_0551 STRAT:EURUSD_V05</b>.'
+    : 'The journal does not treat every MT order as a separate trade. Scale-ins and partial closes are grouped into one campaign. For the most precise separation of simultaneous strategies, use a comment such as <b>TG:EU_0551 STRAT:EURUSD_V05</b>.';
+  setText('groupingDetail','MT5: grouping uses TG, or exposure within Account + Symbol + Strategy/Magic when TG is absent. MT4: same Symbol + Side + Strategy/Magic are grouped only while order lifetimes actually overlap. Once exposure is flat, the next order is a new Logical Trade even if the EA reopens in the same second.','MT5: группировка идёт по TG, а если его нет — по экспозиции внутри Account + Symbol + Strategy/Magic. MT4: одинаковые Symbol + Side + Strategy/Magic объединяются только пока периоды жизни ордеров реально пересекаются. Как только позиция полностью закрыта, следующий ордер считается новым Logical Trade — даже если EA переоткрыл его в ту же секунду.');
+  const declineDetail=el('declineDetail');
+  if(declineDetail)declineDetail.innerHTML=currentLang==='ru'
+    ? '«Просто удалить» — человек сможет зарегистрироваться снова сразу (полезно, если ошиблись email).<br>«Блок 5 минут» — этот email не сможет создать новую заявку в течение 5 минут.'
+    : '“Delete request” lets the person sign up again immediately (useful for a mistyped email).<br>“Block 5 minutes” prevents this email from creating a new request for 5 minutes.';
+  const clearPeriod=el('clearPeriodBtn');
+  if(clearPeriod){clearPeriod.title=tx('Clear period','Сбросить период');clearPeriod.setAttribute('aria-label',tx('Clear period','Сбросить период'))}
+  const placeholderPairs={
+    directLogin:['Broker account login','Логин брокерского счёта'],
+    directServer:['Exact broker server','Точное имя broker server'],
+    directInvestorPassword:['Read-only password','Read-only пароль'],
+    dWorked:['What worked well today?','Что сегодня сработало хорошо?'],
+    dWrong:['What mistakes, violations or bad decisions happened?','Какие ошибки, нарушения или плохие решения были?'],
+    dTomorrow:['What should you focus on next trading day?','На чём сфокусироваться в следующий торговый день?']
+  };
+  Object.entries(placeholderPairs).forEach(([id,[en,ru]])=>{const n=el(id);if(n)n.placeholder=tx(en,ru)});
   document.title='Trading Journal';
 }
 function setLanguage(lang){
@@ -355,8 +394,8 @@ bindPasswordToggle('password','togglePasswordBtn');
 el('changeLoginPasswordBtn').onclick=async()=>{
   const p1=el('newLoginPassword').value,p2=el('newLoginPassword2').value,msg=el('passwordChangeMsg');
   msg.textContent='';
-  if(p1.length<6){msg.textContent='Пароль должен быть минимум 6 символов.';return}
-  if(p1!==p2){msg.textContent='Пароли не совпадают.';return}
+  if(p1.length<6){msg.textContent=tx('Password must be at least 6 characters.','Пароль должен быть минимум 6 символов.');return}
+  if(p1!==p2){msg.textContent=tx('Passwords do not match.','Пароли не совпадают.');return}
   const {error}=await sb.auth.updateUser({password:p1});
   if(error){msg.textContent=error.message;return}
   el('newLoginPassword').value='';el('newLoginPassword2').value='';
@@ -942,7 +981,7 @@ function renderAccounts(){
       '<div class="memberMeta"><b>'+esc(a.label||a.account)+'</b><span class="badge">'+esc(a.source)+'</span><div class="sub">'+esc(a.account)+(a.server?' · '+esc(a.server):'')+' · '+a.raw+' raw events</div></div>'+
       '<label class="accountEdit"><span class="accountEditLabel">'+esc(tx('Account name','Название счёта'))+'</span><input class="input" id="accountLabel_'+i+'" value="'+esc(a.label||'')+'" placeholder="Main MT4"></label>'+
       '<label class="accountEdit"><span class="accountEditLabel">'+esc(tx('Starting balance','Начальный баланс'))+'</span><input class="input" id="accountBalance_'+i+'" type="number" min="0" step="0.01" inputmode="decimal" value="'+(a.starting_balance==null?'':esc(a.starting_balance))+'" placeholder="10000"></label>'+
-      '<button class="btn" data-account-index="'+i+'">Save</button>'+
+      '<button class="btn" data-account-index="'+i+'">'+esc(tx('Save','Сохранить'))+'</button>'+
     '</div>'
   ).join(''):'<div class="empty">'+esc(tx('No connected accounts yet.','Подключённых счетов пока нет.'))+'</div>';
   document.querySelectorAll('[data-account-index]').forEach(b=>b.onclick=()=>saveAccountLabel(Number(b.dataset.accountIndex)));
@@ -995,19 +1034,19 @@ function renderMembers(){
 
     let actionUi='';
     if(isOwner){
-      actionUi='<span class="memberActionPlaceholder">Protected</span>';
+      actionUi='<span class="memberActionPlaceholder">'+esc(tx('Protected','Защищено'))+'</span>';
     }else if(m.approved&&canManage){
-      actionUi='<button class="btn danger" data-revoke-index="'+i+'">Revoke</button>';
+      actionUi='<button class="btn danger" data-revoke-index="'+i+'">'+esc(tx('Revoke','Отключить'))+'</button>';
     }else if(!m.approved&&canManage){
-      actionUi='<div class="memberActions"><button class="btn primary" data-approve-index="'+i+'">Approve</button><button class="btn danger" data-decline-index="'+i+'">Decline</button></div>';
+      actionUi='<div class="memberActions"><button class="btn primary" data-approve-index="'+i+'">'+esc(tx('Approve','Одобрить'))+'</button><button class="btn danger" data-decline-index="'+i+'">'+esc(tx('Decline','Отклонить'))+'</button></div>';
     }else if(m.role==='admin'){
-      actionUi='<span class="memberActionPlaceholder">Owner only</span>';
+      actionUi='<span class="memberActionPlaceholder">'+esc(tx('Owner only','Только Owner'))+'</span>';
     }
 
     return '<div class="memberRow">'+
-      '<div class="memberMeta"><b>'+esc(m.email||'No email')+'</b><div class="sub">'+(m.approved?'Approved account':'Waiting approval')+'</div></div>'+
+      '<div class="memberMeta"><b>'+esc(m.email||tx('No email','Нет email'))+'</b><div class="sub">'+esc(m.approved?tx('Approved account','Аккаунт одобрен'):tx('Waiting approval','Ожидает одобрения'))+'</div></div>'+
       '<div class="memberRoleCell">'+roleUi+'</div>'+
-      '<div class="memberAccessCell"><span class="memberAccessState '+(m.approved?'green':'amber')+'">'+(m.approved?'Active':'Pending')+'</span><span class="memberAccessHint">'+(m.approved?'Access on':'No journal access')+'</span></div>'+
+      '<div class="memberAccessCell"><span class="memberAccessState '+(m.approved?'green':'amber')+'">'+esc(m.approved?tx('Active','Активен'):tx('Pending','Ожидает'))+'</span><span class="memberAccessHint">'+esc(m.approved?tx('Access on','Доступ включён'):tx('No journal access','Нет доступа к журналу'))+'</span></div>'+
       '<div class="memberActionCell">'+actionUi+'</div>'+
     '</div>';
   }).join('');
@@ -1094,10 +1133,10 @@ function renderHealth(){
   const fmtAge=ms=>{
     if(!ms)return '—';
     const sec=Math.max(0,Math.round((Date.now()-ms)/1000));
-    if(sec<60)return sec+'s ago';
-    if(sec<3600)return Math.round(sec/60)+'m ago';
-    if(sec<86400)return Math.round(sec/3600)+'h ago';
-    return Math.round(sec/86400)+'d ago';
+    if(sec<60)return sec+tx('s ago','с назад');
+    if(sec<3600)return Math.round(sec/60)+tx('m ago','м назад');
+    if(sec<86400)return Math.round(sec/3600)+tx('h ago','ч назад');
+    return Math.round(sec/86400)+tx('d ago','дн назад');
   };
   const coverage=times.length>1?Math.max(0,Math.round((Math.max(...times)-Math.min(...times))/86400000))+'d':'—';
   el('healthGrid').innerHTML=[
@@ -1288,10 +1327,10 @@ function renderConnectorStatus(){
   el('connectorStatusList').innerHTML=rows.map(a=>{
     const s=statusMap[a.key],version=s?.version||'';
     const current=version===LATEST_MT4_CONNECTOR;
-    const state=current?'Current':version?'Update available':'Install v'+LATEST_MT4_CONNECTOR;
+    const state=current?tx('Current','Актуально'):version?tx('Update available','Доступно обновление'):tx('Install v','Установить v')+LATEST_MT4_CONNECTOR;
     const cls=current?'current':version?'update':'unknown';
-    const seen=s?.last_seen?new Date(s.last_seen).toLocaleString():'No live version report yet';
-    return '<div class="connectorStatusRow"><div class="connectorStatusMeta"><b>'+esc(a.label||a.account)+' · MT4 '+(version?'v'+version:'version unknown')+'</b><span>'+esc(seen)+'</span></div><span class="connectorState '+cls+'">'+esc(state)+'</span></div>';
+    const seen=s?.last_seen?new Date(s.last_seen).toLocaleString(uiLocale()):tx('No live version report yet','Пока нет live-отчёта о версии');
+    return '<div class="connectorStatusRow"><div class="connectorStatusMeta"><b>'+esc(a.label||a.account)+' · MT4 '+(version?'v'+version:tx('version unknown','версия неизвестна'))+'</b><span>'+esc(seen)+'</span></div><span class="connectorState '+cls+'">'+esc(state)+'</span></div>';
   }).join('');
 }
 function csvCell(v){
@@ -1353,14 +1392,14 @@ function renderAll(){
   const brokerPnl=scopedTrades.reduce((z,t)=>z+Number(t.pnl||0),0);
   const ghostPnl=scopedTrades.filter(t=>t.excluded_from_stats).reduce((z,t)=>z+Number(t.pnl||0),0);
   el('pnlBridge').innerHTML=Math.abs(ghostPnl)>=0.005
-    ? 'Broker <b>'+money(brokerPnl)+'</b> · Ghost <b>'+money(ghostPnl)+'</b> excluded'
+    ? tx('Broker ','Broker ')+'<b>'+money(brokerPnl)+'</b> · Ghost <b>'+money(ghostPnl)+'</b> '+tx('excluded','исключено')
     : '';
   el('mWr').textContent=s.wr.toFixed(1)+'%';
   el('mTrades').textContent=s.trades;
   el('mStreak').textContent=s.streak;
   el('mPf').textContent=s.pf===Infinity?'∞':Number(s.pf).toFixed(2);
   el('mDd').textContent=money(s.dd);paint(el('mDd'),s.dd);
-  el('avgWinLoss').innerHTML='<span>Avg Win <b class="green">'+money(s.avgWin)+'</b></span><span>Avg Loss <b class="red">'+money(s.avgLoss)+'</b></span>';
+  el('avgWinLoss').innerHTML='<span>'+esc(tx('Avg Win','Средний Win'))+' <b class="green">'+money(s.avgWin)+'</b></span><span>'+esc(tx('Avg Loss','Средний Loss'))+' <b class="red">'+money(s.avgLoss)+'</b></span>';
 
   if(singleDay){
     el('lblDays').textContent=tx('Worked / SL / Other','Worked / SL / Другое');
@@ -1686,7 +1725,7 @@ function renderTrades(){
   el('tradeRows').innerHTML=rows.length?rows.map(t=>{
     const selected=selectedTradeIds.has(t.id);
     const check=bulkSelectMode?'<td class="bulkCheck"><input type="checkbox" '+(selected?'checked':'')+' tabindex="-1" aria-label="Select trade"></td>':'';
-    return '<tr class="tradeRow '+(t.excluded_from_stats?'ghostRow ':'')+(selected?'bulkSelected':'')+'" data-id="'+esc(t.id)+'">'+check+'<td class="tradeDate">'+new Date(t.closedAt).toLocaleString()+'</td><td class="tradeSymbol"><button type="button" class="tradeOpenBtn" data-open-trade="'+esc(t.id)+'" aria-label="Open '+esc(t.symbol)+' '+esc(t.side)+' trade">'+esc(t.symbol)+'</button>'+(t.excluded_from_stats?'<span class="ghostBadge">GHOST</span>':'')+(isTradeReviewed(t)?'<span class="reviewedBadge">REVIEWED</span>':'')+'</td><td class="tradeSide"><span class="pill">'+esc(t.side)+'</span></td><td class="tradePnl '+(t.pnl>=0?'green':'red')+'">'+money(t.pnl)+'</td><td class="tradeOrders">'+t.orderCount+(isStrategyLoss(t)?'<span class="slBadge">SL</span>':'')+'</td><td class="tradeSetup">'+esc(t.setup||t.strategy||'')+'</td></tr>';
+    return '<tr class="tradeRow '+(t.excluded_from_stats?'ghostRow ':'')+(selected?'bulkSelected':'')+'" data-id="'+esc(t.id)+'">'+check+'<td class="tradeDate">'+new Date(t.closedAt).toLocaleString()+'</td><td class="tradeSymbol"><button type="button" class="tradeOpenBtn" data-open-trade="'+esc(t.id)+'" aria-label="Open '+esc(t.symbol)+' '+esc(t.side)+' trade">'+esc(t.symbol)+'</button>'+(t.excluded_from_stats?'<span class="ghostBadge">GHOST</span>':'')+(isTradeReviewed(t)?'<span class="reviewedBadge">'+esc(tx('REVIEWED','РАЗОБРАНО'))+'</span>':'')+'</td><td class="tradeSide"><span class="pill">'+esc(t.side)+'</span></td><td class="tradePnl '+(t.pnl>=0?'green':'red')+'">'+money(t.pnl)+'</td><td class="tradeOrders">'+t.orderCount+(isStrategyLoss(t)?'<span class="slBadge">SL</span>':'')+'</td><td class="tradeSetup">'+esc(t.setup||t.strategy||'')+'</td></tr>';
   }).join(''):'<tr><td colspan="'+emptyCols+'" class="empty">'+esc(tradeEmptyMessage({q,result,ghost,side,source,review}))+'</td></tr>';
 
   document.querySelectorAll('#tradeRows tr[data-id]').forEach(r=>r.onclick=e=>{
@@ -1717,7 +1756,7 @@ function openDailyReview(date){
   const pnl=dayTrades.reduce((s,t)=>s+t.pnl,0),wins=dayTrades.filter(isStrategyWin).length,losses=dayTrades.filter(isStrategyLoss).length,other=dayTrades.filter(isStrategyOther).length;
   const wr=(wins+losses)?wins/(wins+losses)*100:0;
   el('dailyTitle').textContent=new Date(date+'T12:00:00').toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'});
-  const stats=[['P&L',money(pnl)],['Logical Trades',dayTrades.length],['Win Rate',wr.toFixed(1)+'%'],['Worked / SL / Other',wins+' / '+losses+' / '+other]];
+  const stats=[['P&L',money(pnl)],[tx('Logical Trades','Логические сделки'),dayTrades.length],[tx('Win Rate','Винрейт'),wr.toFixed(1)+'%'],[tx('Worked / SL / Other','Worked / SL / Другое'),wins+' / '+losses+' / '+other]];
   el('dailyStats').innerHTML=stats.map(x=>'<div class="kv"><small>'+esc(x[0])+'</small><b>'+esc(x[1])+'</b></div>').join('');
   const r=dailyReviewMap[date]||{};
   el('dWorked').value=r.what_worked||'';
@@ -1774,7 +1813,7 @@ async function closeTradeReview(force=false){
 function openTrade(id){
   const t=scopedTrades.find(x=>x.id===id)||allTrades.find(x=>x.id===id);if(!t)return;activeTrade=t;
   el('modalTitle').textContent=t.symbol+' '+t.side+' · '+money(t.pnl)+(t.excluded_from_stats?' · GHOST':'');
-  const details=[['Source',t.source],['Account',t.account+(t.server?' · '+t.server:'')],['Opened',new Date(t.openedAt).toLocaleString()],['Closed',new Date(t.closedAt).toLocaleString()],['Orders',t.orderCount],['Result',outcomeLabel(t)],['Entries / exits',t.entries+' / '+t.exits],['Strategy',t.strategy]];
+  const details=[[tx('Source','Источник'),t.source],[tx('Account','Счёт'),t.account+(t.server?' · '+t.server:'')],[tx('Opened','Открыта'),new Date(t.openedAt).toLocaleString(uiLocale())],[tx('Closed','Закрыта'),new Date(t.closedAt).toLocaleString(uiLocale())],[tx('Orders','Ордера'),t.orderCount],[tx('Result','Результат'),outcomeLabel(t)],[tx('Entries / exits','Входы / выходы'),t.entries+' / '+t.exits],[tx('Strategy','Стратегия'),t.strategy]];
   el('tradeDetails').innerHTML=details.map(x=>'<div class="kv"><small>'+esc(x[0])+'</small><b>'+esc(x[1])+'</b></div>').join('');
   el('fSetup').value=t.setup||'';el('fTier').value=t.tier||'';el('fProbability').value=t.probability==null?'':t.probability;el('fCr').value=t.cr_value==null?'':t.cr_value;el('fPlan').value=t.plan_ok||'';el('fOutcome').value=t.outcome_override||'';el('fMistake').value=t.mistake||'';document.querySelectorAll('[data-mistake]').forEach(b=>b.classList.toggle('on',b.dataset.mistake===(t.mistake||'')));el('fExcluded').checked=!!t.excluded_from_stats;el('fExclusionReason').value=t.exclusion_reason||'';el('fExclusionReason').disabled=!el('fExcluded').checked;el('fNotes').value=t.notes||'';
   el('tradeModal').classList.remove('hide');
