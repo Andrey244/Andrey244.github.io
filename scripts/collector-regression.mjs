@@ -47,6 +47,9 @@ ok(pyproject.includes('MetaTrader5==5.0.6180'),'MetaTrader5 version is not pinne
 ok(pyproject.includes('cryptography==50.0.1'),'cryptography version is not pinned');
 ok(pyproject.includes('pywin32==312'),'pywin32 service dependency is not pinned');
 ok(service.includes('TradingJournalCollectorService'),'Windows service class missing');
+ok(service.includes('serviceClassString=('),'Windows service registration must provide an explicit importable class path');
+ok(service.includes('"trading_journal_collector.service."'),'Windows service class path must use the installed package module');
+ok(service.includes('"TradingJournalCollectorService"'),'Windows service class path must name the collector service class');
 ok(service.includes('ControlPlaneError'),'service must back off while node registration is pending');
 ok(service.includes('registration.json'),'service must emit non-secret registration bundle');
 ok(serviceConfig.includes('FORBIDDEN_KEY_PARTS'),'service config secret denylist missing');
