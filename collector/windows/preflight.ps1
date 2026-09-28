@@ -112,13 +112,21 @@ Add-Check -Name "publishable_key_shape" -Passed $publishableShapeOk -Detail "Pub
 
 if (-not $SkipNetwork -and $uriOk -and $publishableShapeOk) {
     try {
-        $headers = @{ apikey = $PublishableKey; Accept = "application/openapi+json" }
-        $response = Invoke-WebRequest -Uri ($SupabaseUrl.TrimEnd('/') + "/rest/v1/") -Headers $headers -Method Get -TimeoutSec 20 -UseBasicParsing
-        Add-Check -Name "supabase_network" -Passed ($response.StatusCode -eq 200) -Detail ("REST endpoint HTTP " + $response.StatusCode)
+        # Do not probe the PostgREST OpenAPI root here: hosted Supabase now requires
+        # a secret API key for that endpoint. The collector must use only a public
+        # publishable key, so validate it against the journal's read-only public RPC.
+        $headers = @{
+            apikey = $PublishableKey
+            Accept = "application/json"
+            "Content-Type" = "application/json"
+        }
+        $body = '{"p_email":"collector-preflight@invalid.local"}'
+        $response = Invoke-WebRequest -Uri ($SupabaseUrl.TrimEnd('/') + "/rest/v1/rpc/signup_wait_seconds") -Headers $headers -Method Post -Body $body -TimeoutSec 20 -UseBasicParsing
+        Add-Check -Name "supabase_network" -Passed ($response.StatusCode -eq 200) -Detail ("Publishable-key Data API probe HTTP " + $response.StatusCode)
     } catch {
         $status = $null
         if ($_.Exception.Response) { $status = [int]$_.Exception.Response.StatusCode }
-        Add-Check -Name "supabase_network" -Passed $false -Detail ("Supabase REST connectivity failed" + $(if($status){" HTTP " + $status}else{""}))
+        Add-Check -Name "supabase_network" -Passed $false -Detail ("Supabase publishable-key Data API probe failed" + $(if($status){" HTTP " + $status}else{""}))
     }
 } elseif ($SkipNetwork) {
     $results.Add([pscustomobject]@{
