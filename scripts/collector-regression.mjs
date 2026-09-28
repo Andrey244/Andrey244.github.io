@@ -85,6 +85,10 @@ ok(installer.includes('Set-DirectoryAcl -Path $Root -ServiceRights "RX"'),'colle
 ok(installer.includes('Set-DirectoryAcl -Path $IdentityDir -ServiceRights "M"'),'collector identity directory write ACL missing');
 ok(installer.includes('Set-DirectoryAcl -Path $Mt4WorkRoot -ServiceRights "M"'),'collector MT4 work directory write ACL missing');
 ok(installer.includes('Set-DirectoryAcl -Path $StateDir -ServiceRights "M"'),'collector state directory write ACL missing');
+ok(installer.includes('$RegistrationPath = Join-Path $StateDir "registration.json"'),'installer runtime proof must target registration bundle');
+ok(installer.includes('$serviceReady = $false'),'installer must track post-start runtime proof');
+ok(installer.includes('$finalState = Get-Service -Name $ServiceName'),'installer must verify actual Windows service state after start');
+ok(installer.includes('Collector service failed runtime proof'),'installer must fail instead of claiming success when service/registration is not ready');
 ok(service.includes('default_config_path().parent / "state"'),'registration bundle must live in dedicated writable state directory');
 ok(!installer.toLowerCase().includes('--password'),'installer must not pass a reusable Windows account password');
 ok(crypto.includes('RSA_KEY_BITS = 3072'),'collector RSA key size changed');
