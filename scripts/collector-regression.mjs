@@ -70,6 +70,11 @@ ok(installer.includes('preflight.ps1'),'Windows installer must invoke fail-close
 ok(installer.includes('HKLM:\\SOFTWARE\\Python\\PythonCore\\3.12\\InstallPath'),'Windows installer must discover machine-wide Python 3.12');
 ok(installer.includes('Invoke-Checked $MachinePython.exe @("-m", "venv", $VenvDir)'),'Windows installer must build the service venv from machine-wide Python');
 ok(!installer.includes('Invoke-Checked "py.exe" @("-3.12", "-m", "venv", $VenvDir)'),'Windows installer must not build service venv from ambiguous per-user py launcher');
+ok(installer.includes('function Prepare-PythonServiceRuntime'),'Windows installer must prepare native DLLs for the pywin32 service host');
+ok(installer.includes('("python" + $versionTag + ".dll")'),'Windows service runtime must include the matching Python DLL beside pythonservice.exe');
+ok(installer.includes('("pywintypes" + $versionTag + ".dll")'),'Windows service runtime must include pywintypes beside pythonservice.exe');
+ok(installer.includes('("pythoncom" + $versionTag + ".dll")'),'Windows service runtime must include pythoncom beside pythonservice.exe');
+ok(installer.includes('Prepare-PythonServiceRuntime -Python $Python -VenvDir $VenvDir -MachinePythonExe $MachinePython.exe'),'Windows installer must prepare the service runtime before service registration');
 ok(preflight.includes('python_3_12'),'Windows preflight must check Python 3.12');
 ok(preflight.includes('HKLM:\\SOFTWARE\\Python\\PythonCore\\3.12\\InstallPath'),'Windows preflight must require machine-wide Python 3.12 registration');
 ok(preflight.includes('Per-user Python under a user profile is not accepted'),'Windows preflight must reject per-user Python for service runtime');
