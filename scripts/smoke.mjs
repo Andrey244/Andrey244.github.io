@@ -34,6 +34,11 @@ ok(mt4Connector.includes('const int TJ_OP_CREDIT  = 7;'),'MT4 connector: credit 
 ok(!/(^|[^A-Z_])OP_BALANCE([^A-Z_]|$)/m.test(mt4Connector.replace('const int TJ_OP_BALANCE = 6;','')),'MT4 connector: bare OP_BALANCE would not compile');
 ok(!/(^|[^A-Z_])OP_CREDIT([^A-Z_]|$)/m.test(mt4Connector.replace('const int TJ_OP_CREDIT  = 7;','')),'MT4 connector: bare OP_CREDIT would not compile');
 ok(/^<!doctype html>/i.test(html),'index.html: missing doctype');
+const appScriptPos=html.indexOf('<script src="/app.js"></script>');
+const confirmModalPos=html.indexOf('id="confirmModal"');
+const bodyClosePos=html.lastIndexOf('</body>');
+ok(confirmModalPos>=0 && appScriptPos>confirmModalPos,'index.html: app.js must load after confirmModal/all runtime DOM');
+ok(appScriptPos<bodyClosePos,'index.html: app.js must load before closing body');
 ok(html.includes('<title>Trading Journal</title>'),'index.html: wrong/missing title');
 ok(html.includes('<script src="/vendor/supabase-2.117.1.js"></script>'),'index.html: vendored Supabase SDK missing');
 const scriptSrcs=[...html.matchAll(/<script\b[^>]*\bsrc=["']([^"']+)["'][^>]*>/gi)].map(m=>m[1]);
@@ -84,7 +89,7 @@ ok(appJs.includes("['Sign in','Войти']") && appJs.includes("['Create accoun
 ok(clientSource.includes("tx('Discard unsaved daily review changes?'"),'app.js: Daily Review guard must be localized');
 ok(clientSource.includes("tx('Direct collector is temporarily unavailable."),'app.js: dynamic direct-collector copy must be localized');
 ok(!appJs.includes("askConfirm('Discard unsaved daily review changes?')"),'app.js: hard-coded English Daily Review guard returned');
-ok(sw.includes("tj-shell-v9"),'service-worker.js: cache version not bumped for localized app.js');
+ok(sw.includes("tj-shell-v10"),'service-worker.js: cache version not bumped for DOM-order fix');
 ok(clientSource.includes('toastHost') && clientSource.includes('showToast'),'index.html: toast notification system missing');
 ok(clientSource.includes('confirmModal') && clientSource.includes('askConfirm'),'index.html: custom confirmation modal missing');
 ok(!/\balert\s*\(/.test(appJs),'app.js: native alert() returned');
