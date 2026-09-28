@@ -359,9 +359,13 @@ Phase 1 — secure collector identity + Windows service foundation complete:
 - protected collector auth token + SHA-256 registration hash;
 - exact cryptography dependency pin and Linux CI contract tests;
 - Windows CI validates real DPAPI runtime and pinned MT5 import;
+- Windows CI now also performs a real Service Control Manager acceptance: the installer must start `TradingJournalCollector`, reach `Running`, and create the non-secret `state/registration.json` bundle;
+- pywin32 service hosting is machine-wide while Collector Python dependencies stay isolated in the ProgramData venv; the registered `PythonClass` is path-qualified to the venv;
 - service-only collector-node registration RPC and non-secret Windows provisioning bundle are implemented;
 - per-service virtual identity, split ACLs and BitLocker gate are implemented;
-- still pending: run provisioning on the owned Windows host and register that real node.
+- on 2026-09-28 the prior SCM 1053/7009 failure was reproduced on a clean GitHub Windows runner and traced to `pythonservice.exe` failing with `ModuleNotFoundError: No module named 'servicemanager'`; the installer was changed to install/validate pinned machine-wide pywin32, run its elevated post-install, host SCM with machine `pythonservice.exe`, and import the Collector from the isolated venv;
+- Smoke #204 passed the real SCM start + registration-bundle acceptance on current `main`;
+- still pending: complete provisioning on the owned Windows PC test host and register that real node.
 
 Phase 2 — Supabase control plane (complete):
 - public metadata table with RLS;
@@ -395,7 +399,8 @@ Phase 4 — MT4 end-to-end (repository launcher foundation complete):
 - Linux CI tests the orchestration with a fake terminal process;
 - Windows installer requires BitLocker protection on the MT4 work volume;
 - the MT4 work root is configurable via `-Mt4WorkRoot`, so a dedicated BitLocker-protected data volume or VHDX can hold disposable worker slots while collector identity/config/state remain under ProgramData;
-- still pending: real MetaEditor EX4 compilation and live Windows/broker terminal validation.
+- the owned Windows PC test host compiled `TradeJournalExport_MT4.mq4` v0.12 to EX4 in MetaEditor with 0 errors and explicitly validated Account History = All History;
+- still pending: live Direct Collector Windows/broker-session validation using the real registered node.
 
 Phase 5 — frontend direct-connect UX (fail-closed UI implemented):
 - Connection page now exposes the shared MT4/MT5/Login/Server/Investor Password flow;
