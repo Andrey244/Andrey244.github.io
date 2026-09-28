@@ -87,7 +87,18 @@ class TradingJournalCollectorService(win32serviceutil.ServiceFramework):
 
 
 def command_line() -> int:
-    win32serviceutil.HandleCommandLine(TradingJournalCollectorService)
+    # Running this module via "python -m trading_journal_collector.service"
+    # makes the class appear to live in "__main__". pywin32 otherwise derives
+    # the persisted PythonClass value from argv[0], which is a filesystem path
+    # and is not a stable importable service class. Register an explicit module
+    # path so pythonservice.exe can import the service under SCM.
+    win32serviceutil.HandleCommandLine(
+        TradingJournalCollectorService,
+        serviceClassString=(
+            "trading_journal_collector.service."
+            "TradingJournalCollectorService"
+        ),
+    )
     return 0
 
 
