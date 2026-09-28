@@ -31,6 +31,35 @@ function Assert-Administrator {
     }
 }
 
+function Get-MachinePython312 {
+    $keys = @(
+        "HKLM:\SOFTWARE\Python\PythonCore\3.12\InstallPath",
+        "HKLM:\SOFTWARE\WOW6432Node\Python\PythonCore\3.12\InstallPath"
+    )
+
+    foreach ($key in $keys) {
+        if (-not (Test-Path -LiteralPath $key)) { continue }
+        try {
+            $item = Get-Item -LiteralPath $key -ErrorAction Stop
+            $candidate = [string]$item.GetValue("ExecutablePath")
+            if ([string]::IsNullOrWhiteSpace($candidate)) {
+                $base = [string]$item.GetValue("")
+                if (-not [string]::IsNullOrWhiteSpace($base)) {
+                    $candidate = Join-Path $base "python.exe"
+                }
+            }
+            if ([string]::IsNullOrWhiteSpace($candidate) -or -not (Test-Path -LiteralPath $candidate -PathType Leaf)) {
+                continue
+            }
+            $version = (& $candidate -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}')" 2>$null).Trim()
+            if ($version -match '^3\.12\.') {
+                return [pscustomobject]@{ exe=$candidate; version=$version }
+            }
+        } catch {}
+    }
+    return $null
+}
+
 function Invoke-Checked {
     param([string]$FilePath, [string[]]$Arguments)
     & $FilePath @Arguments
@@ -88,6 +117,11 @@ function Set-DirectoryAcl {
 
 Assert-Administrator
 
+$MachinePython = Get-MachinePython312
+if ($null -eq $MachinePython) {
+    throw "Machine-wide Python 3.12 is required for the Windows service. Install Python 3.12 for all users/machine scope and re-run the installer."
+}
+
 if ($Mt4WorkRoot) {
     if (-not [IO.Path]::IsPathRooted($Mt4WorkRoot)) {
         throw "Mt4WorkRoot must be an absolute local path."
@@ -141,7 +175,7 @@ if ($Mt4GoldenDir) {
 }
 
 if (-not (Test-Path $Python)) {
-    Invoke-Checked "py.exe" @("-3.12", "-m", "venv", $VenvDir)
+    Invoke-Checked $MachinePython.exe @("-m", "venv", $VenvDir)
 }
 
 Invoke-Checked $Python @(
