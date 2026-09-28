@@ -68,6 +68,54 @@ function Invoke-Checked {
     }
 }
 
+function Prepare-PythonServiceRuntime {
+    param(
+        [Parameter(Mandatory=$true)][string]$Python,
+        [Parameter(Mandatory=$true)][string]$VenvDir,
+        [Parameter(Mandatory=$true)][string]$MachinePythonExe
+    )
+
+    $versionTag = (& $Python -c "import sys; print(f'{sys.version_info.major}{sys.version_info.minor}')").Trim()
+    if ($versionTag -ne "312") {
+        throw "Unexpected Python service runtime version tag: $versionTag"
+    }
+
+    $machineRoot = Split-Path -Parent $MachinePythonExe
+    $pythonDll = Join-Path $machineRoot ("python" + $versionTag + ".dll")
+    if (-not (Test-Path -LiteralPath $pythonDll -PathType Leaf)) {
+        throw "Python service runtime DLL is missing: $pythonDll"
+    }
+
+    $purelib = (& $Python -c "import sysconfig; print(sysconfig.get_paths()['purelib'])").Trim()
+    $pywin32System32 = Join-Path $purelib "pywin32_system32"
+    $pywintypesDll = Join-Path $pywin32System32 ("pywintypes" + $versionTag + ".dll")
+    $pythoncomDll = Join-Path $pywin32System32 ("pythoncom" + $versionTag + ".dll")
+
+    foreach ($source in @($pythonDll, $pywintypesDll, $pythoncomDll)) {
+        if (-not (Test-Path -LiteralPath $source -PathType Leaf)) {
+            throw "Required pywin32 service runtime file is missing: $source"
+        }
+        Copy-Item -LiteralPath $source -Destination (Join-Path $VenvDir (Split-Path -Leaf $source)) -Force
+    }
+
+    foreach ($runtimeName in @("vcruntime140.dll", "vcruntime140_1.dll")) {
+        $runtimeSource = Join-Path $machineRoot $runtimeName
+        if (Test-Path -LiteralPath $runtimeSource -PathType Leaf) {
+            Copy-Item -LiteralPath $runtimeSource -Destination (Join-Path $VenvDir $runtimeName) -Force
+        }
+    }
+
+    foreach ($required in @(
+        (Join-Path $VenvDir ("python" + $versionTag + ".dll")),
+        (Join-Path $VenvDir ("pywintypes" + $versionTag + ".dll")),
+        (Join-Path $VenvDir ("pythoncom" + $versionTag + ".dll"))
+    )) {
+        if (-not (Test-Path -LiteralPath $required -PathType Leaf)) {
+            throw "Prepared service runtime file is missing: $required"
+        }
+    }
+}
+
 function Assert-BitLockerProtected {
     param([Parameter(Mandatory=$true)][string]$Path)
 
@@ -182,6 +230,11 @@ Invoke-Checked $Python @(
     "-m", "pip", "install", "--disable-pip-version-check",
     ($CollectorSource + "[windows]")
 )
+
+# pythonservice.exe is copied into the venv root by pywin32 during service
+# registration. Windows service startup does not inherit the interactive user's
+# PATH, so keep the native Python/pywin32 DLLs beside the service host.
+Prepare-PythonServiceRuntime -Python $Python -VenvDir $VenvDir -MachinePythonExe $MachinePython.exe
 
 $config = [ordered]@{
     collector_name = $CollectorName
