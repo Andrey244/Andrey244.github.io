@@ -11,7 +11,7 @@ let directCollectorKey=null,directCollectorCheckPromise=null;
 let bulkSelectMode=false,selectedTradeIds=new Set(),tradeReviewSnapshot='',dailyReviewSnapshot='';
 let journalRealtimeChannel=null,realtimeRebuildTimer=null,lastFullLoadAt=0;
 let dateRange={mode:'all',start:null,end:null,label:'All time'};
-let rangeDraft={mode:'custom',start:null,end:null,label:tx('Custom range','Свой период')},rangeViewMonth=null;
+let rangeDraft={mode:'custom',start:null,end:null,label:'Custom range'},rangeViewMonth=null;
 let rangeDrag={active:false,pointerId:null,anchor:null,last:null};
 
 const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -44,7 +44,11 @@ const STATIC_I18N=[
   ['Save daily review','Сохранить разбор дня'],['TRADE REVIEW','РАЗБОР СДЕЛКИ'],['Tier / Model','Tier / Model'],['Probability %','Вероятность %'],['Plan followed?','План соблюдён?'],
   ['Mistake / violation','Ошибка / нарушение'],['No mistake','Без ошибки'],['Bad entry','Плохой вход'],['Against bias','Против bias'],['News','Новости'],['EA error','Ошибка EA'],
   ['Overtrade','Овертрейдинг'],['Plan violation','Нарушение плана'],['Save review','Сохранить разбор'],['Strategy outcome','Исход стратегии'],['Auto','Авто'],['Other / manual','Другое / вручную'],
-  ['Review next','Разобрать следующую'],['Confirm','Подтверждение'],['Close','Закрыть'],['Discard','Отменить изменения'],['Keep editing','Продолжить редактирование']
+  ['Review next','Разобрать следующую'],['Confirm','Подтверждение'],['Close','Закрыть'],['Discard','Отменить изменения'],['Keep editing','Продолжить редактирование'],
+  ['Sign in','Войти'],['Create account','Создать аккаунт'],['New accounts get access only after owner approval.','Новые аккаунты получают доступ только после одобрения владельцем.'],['Forgot password?','Забыли пароль?'],
+  ['The account was created, but the journal owner has not approved access yet. After approval, refresh the page or click Check again.','Аккаунт создан, но владелец журнала ещё не одобрил доступ. После одобрения обнови страницу или нажми «Проверить снова».'],['Check again','Проверить снова'],['Log out','Выйти'],
+  ['Change password','Изменить пароль'],['New password','Новый пароль'],['Repeat password','Повтори пароль'],['Download data','Скачать данные'],['Save new password','Сохранить новый пароль'],
+  ['JOURNAL PERIOD','ПЕРИОД ЖУРНАЛА'],['Choose period','Выберите период'],['Today','Сегодня'],['Yesterday','Вчера'],['This week','Эта неделя'],['Last 7 days','Последние 7 дней'],['Last 30 days','Последние 30 дней'],['This month','Этот месяц'],['Custom range','Свой период'],['Apply','Применить']
 ];
 function bindStaticI18n(){
   const byText=new Map();
