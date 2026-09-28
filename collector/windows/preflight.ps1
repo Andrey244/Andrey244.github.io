@@ -6,6 +6,7 @@ param(
     [string]$PublishableKey,
     [string]$Mt5TerminalPath = "",
     [string]$Mt4GoldenDir = "",
+    [string]$Mt4WorkRoot = "",
     [switch]$Mt4AllHistoryConfirmed,
     [switch]$SkipNetwork
 )
@@ -15,7 +16,9 @@ $ErrorActionPreference = "Stop"
 
 $ServiceName = "TradingJournalCollector"
 $Root = Join-Path $env:ProgramData $ServiceName
-$Mt4WorkRoot = Join-Path $Root "mt4-work"
+if ([string]::IsNullOrWhiteSpace($Mt4WorkRoot)) {
+    $Mt4WorkRoot = Join-Path $Root "mt4-work"
+}
 $results = [System.Collections.Generic.List[object]]::new()
 $failed = $false
 
@@ -46,12 +49,17 @@ function Test-BitLockerProtected {
         return [pscustomobject]@{ passed=$false; detail="Get-BitLockerVolume is unavailable." }
     }
 
+    $rootHint = [IO.Path]::GetPathRoot($Path)
+    if ([string]::IsNullOrWhiteSpace($rootHint) -or -not (Test-Path -LiteralPath $rootHint -PathType Container)) {
+        return [pscustomobject]@{ passed=$false; detail="MT4 work volume is not mounted or accessible: $rootHint" }
+    }
+
     $probe = $Path
-    while (-not (Test-Path -LiteralPath $probe) -and $probe -ne [IO.Path]::GetPathRoot($probe)) {
+    while (-not (Test-Path -LiteralPath $probe) -and $probe -ne $rootHint) {
         $probe = Split-Path -Parent $probe
     }
     if (-not (Test-Path -LiteralPath $probe)) {
-        $probe = $env:ProgramData
+        return [pscustomobject]@{ passed=$false; detail="Cannot resolve MT4 work path on $rootHint." }
     }
 
     $resolved = (Resolve-Path -LiteralPath $probe).Path
@@ -144,6 +152,9 @@ if ($Mt5TerminalPath) {
 }
 
 if ($Mt4GoldenDir) {
+    $mt4WorkRootAbsolute = [IO.Path]::IsPathRooted($Mt4WorkRoot)
+    Add-Check -Name "mt4_work_root_absolute" -Passed $mt4WorkRootAbsolute -Detail ($(if($mt4WorkRootAbsolute){"MT4 work root is absolute: $Mt4WorkRoot"}else{"MT4 work root must be an absolute local path."}))
+
     $mt4DirOk = Test-Path -LiteralPath $Mt4GoldenDir -PathType Container
     Add-Check -Name "mt4_golden_dir" -Passed $mt4DirOk -Detail ($(if($mt4DirOk){"MT4 golden directory exists."}else{"MT4 golden directory is missing."}))
 
@@ -159,9 +170,14 @@ if ($Mt4GoldenDir) {
 
     Add-Check -Name "mt4_all_history_attestation" -Passed ([bool]$Mt4AllHistoryConfirmed) -Detail "Operator must verify MT4 Account History = All History before enabling direct MT4 sync."
 
-    $bitlocker = Test-BitLockerProtected -Path $Mt4WorkRoot
-    Add-Check -Name "mt4_bitlocker" -Passed ([bool]$bitlocker.passed) -Detail ([string]$bitlocker.detail)
+    if ($mt4WorkRootAbsolute) {
+        $bitlocker = Test-BitLockerProtected -Path $Mt4WorkRoot
+        Add-Check -Name "mt4_bitlocker" -Passed ([bool]$bitlocker.passed) -Detail ([string]$bitlocker.detail)
+    } else {
+        Add-Check -Name "mt4_bitlocker" -Passed $false -Detail "Cannot verify BitLocker until MT4 work root is an absolute local path."
+    }
 } else {
+    $results.Add([pscustomobject]@{ check="mt4_work_root_absolute"; passed=$null; detail="MT4 not requested for this install." })
     $results.Add([pscustomobject]@{ check="mt4_golden_dir"; passed=$null; detail="MT4 not requested for this install." })
     $results.Add([pscustomobject]@{ check="mt4_all_history_attestation"; passed=$null; detail="MT4 not requested for this install." })
     $results.Add([pscustomobject]@{ check="mt4_bitlocker"; passed=$null; detail="MT4 not requested for this install." })
