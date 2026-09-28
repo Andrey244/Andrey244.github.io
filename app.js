@@ -11,7 +11,7 @@ let directCollectorKey=null,directCollectorCheckPromise=null;
 let bulkSelectMode=false,selectedTradeIds=new Set(),tradeReviewSnapshot='',dailyReviewSnapshot='';
 let journalRealtimeChannel=null,realtimeRebuildTimer=null,lastFullLoadAt=0;
 let dateRange={mode:'all',start:null,end:null,label:'All time'};
-let rangeDraft={mode:'custom',start:null,end:null,label:'Свой период'},rangeViewMonth=null;
+let rangeDraft={mode:'custom',start:null,end:null,label:tx('Custom range','Свой период')},rangeViewMonth=null;
 let rangeDrag={active:false,pointerId:null,anchor:null,last:null};
 
 const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -278,7 +278,7 @@ el('signupBtn').onclick=()=>withBusyButton(el('signupBtn'),tx('Creating…','С�
   const wait=await sb.rpc('signup_wait_seconds',{p_email:email});
   if(!wait.error && Number(wait.data||0)>0){
     const sec=Number(wait.data||0),min=Math.floor(sec/60),rem=sec%60;
-    el('authMsg').textContent='Новая заявка для этого email временно заблокирована. Попробуй через '+(min?min+' мин ':'')+rem+' сек.';
+    el('authMsg').textContent=tx('A new request for this email is temporarily blocked. Try again in ','Новая заявка для этого email временно заблокирована. Попробуй через ')+(min?min+tx(' min ',' мин '):'')+rem+tx(' sec.',' сек.');
     return;
   }
 
@@ -286,13 +286,13 @@ el('signupBtn').onclick=()=>withBusyButton(el('signupBtn'),tx('Creating…','С�
   if(error){
     const msg=String(error.message||'');
     if(/email.*rate|rate.*email/i.test(msg)){
-      el('authMsg').textContent='Лимит Supabase на отправку confirmation email исчерпан. Аккаунт не создан. Для этого приватного журнала лучше отключить email confirmation в Supabase и оставить ручной Approve владельцем.';
+      el('authMsg').textContent=tx('Supabase confirmation-email limit is exhausted. The account was not created. For this private journal, keep owner approval and disable email confirmation in Supabase.','Лимит Supabase на отправку confirmation email исчерпан. Аккаунт не создан. Для этого приватного журнала лучше отключить email confirmation в Supabase и оставить ручной Approve владельцем.');
     }else{
       el('authMsg').textContent=msg;
     }
     return;
   }
-  el('authMsg').textContent='Аккаунт создан. Теперь владелец журнала должен одобрить доступ.';
+  el('authMsg').textContent=tx('Account created. The journal owner must approve access now.','Аккаунт создан. Теперь владелец журнала должен одобрить доступ.');
 });
 function bindPasswordToggle(inputId,buttonId){
   const p=el(inputId),b=el(buttonId);
@@ -301,8 +301,8 @@ function bindPasswordToggle(inputId,buttonId){
     const show=p.type==='password';
     p.type=show?'text':'password';
     b.classList.toggle('on',show);
-    b.setAttribute('aria-label',show?'Скрыть пароль':'Показать пароль');
-    b.title=show?'Скрыть пароль':'Показать пароль';
+    b.setAttribute('aria-label',show?tx('Hide password','Скрыть пароль'):tx('Show password','Показать пароль'));
+    b.title=show?tx('Hide password','Скрыть пароль'):tx('Show password','Показать пароль');
   };
 }
 bindPasswordToggle('recoveryPassword','toggleRecoveryPasswordBtn');
@@ -315,23 +315,23 @@ el('closeRecoveryModal').onclick=async()=>{
   el('recoveryModal').classList.add('hide');
   try{history.replaceState(null,'',window.location.pathname)}catch(_e){}
   await sb.auth.signOut();
-  el('authMsg').textContent='Сброс пароля отменён. Войди в аккаунт обычным способом.';
+  el('authMsg').textContent=tx('Password reset was cancelled. Sign in normally.','Сброс пароля отменён. Войди в аккаунт обычным способом.');
 };
 el('saveRecoveryPassword').onclick=async()=>{
   const p1=el('recoveryPassword').value,p2=el('recoveryPassword2').value,msg=el('recoveryMsg'),btn=el('saveRecoveryPassword');
   msg.textContent='';
-  if(p1.length<6){msg.textContent='Пароль должен быть минимум 6 символов.';return}
-  if(p1!==p2){msg.textContent='Пароли не совпадают.';return}
+  if(p1.length<6){msg.textContent=tx('Password must be at least 6 characters.','Пароль должен быть минимум 6 символов.');return}
+  if(p1!==p2){msg.textContent=tx('Passwords do not match.','Пароли не совпадают.');return}
   btn.disabled=true;
   const oldText=btn.textContent;
-  btn.textContent='Сохраняю…';
+  btn.textContent=tx('Saving…','Сохраняю…');
   const {error}=await sb.auth.updateUser({password:p1});
   if(error){
     btn.disabled=false;
     btn.textContent=oldText;
     const raw=String(error.message||'');
     msg.textContent=(error.code==='same_password'||/different from the old password/i.test(raw))
-      ?'Этот пароль уже установлен на аккаунте. Попробуй войти с ним.'
+      ?tx('This password is already set on the account. Try signing in with it.','Этот пароль уже установлен на аккаунте. Попробуй войти с ним.')
       :raw;
     return;
   }
@@ -342,7 +342,7 @@ el('saveRecoveryPassword').onclick=async()=>{
   await sb.auth.signOut();
   btn.disabled=false;
   btn.textContent=oldText;
-  el('authMsg').textContent='Пароль успешно изменён. Войди с новым паролем.';
+  el('authMsg').textContent=tx('Password changed successfully. Sign in with the new password.','Пароль успешно изменён. Войди с новым паролем.');
 };
 
 el('logoutBtn').onclick=()=>sb.auth.signOut();
@@ -356,7 +356,7 @@ el('changeLoginPasswordBtn').onclick=async()=>{
   const {error}=await sb.auth.updateUser({password:p1});
   if(error){msg.textContent=error.message;return}
   el('newLoginPassword').value='';el('newLoginPassword2').value='';
-  msg.textContent='Пароль изменён. Теперь используй его для входа с телефона.';
+  msg.textContent=tx('Password changed. You can now use it to sign in from your phone.','Пароль изменён. Теперь используй его для входа с телефона.');
 };
 el('pendingRefreshBtn').onclick=async()=>{const {data}=await sb.auth.getSession();await handleSession(data.session)};
 
@@ -789,7 +789,7 @@ function normalizedDraft(){
 function openRangeModal(){
   if(dateRange.mode==='all'){
     const today=dayKey(new Date());
-    rangeDraft={mode:'custom',start:today,end:today,label:'Свой период'};
+    rangeDraft={mode:'custom',start:today,end:today,label:tx('Custom range','Свой период')};
     rangeViewMonth=monthStart(new Date());
   }else{
     rangeDraft={...dateRange};
@@ -832,7 +832,7 @@ function renderRangePicker(){
     el('rangePreview').textContent=tx('All time','Всё время');
   }else if(r.start&&r.end){
     const days=Math.round((dateFromKey(r.end)-dateFromKey(r.start))/86400000)+1;
-    el('rangePreview').textContent=rangeLabel(r)+' · '+days+' дн.';
+    el('rangePreview').textContent=rangeLabel(r)+' · '+days+tx(' d',' дн.');
   }else{
     el('rangePreview').textContent=tx('Choose a period','Выбери период');
   }
@@ -849,7 +849,7 @@ function updateRangeDragTo(key){
   if(!rangeDrag.active||!rangeDrag.anchor||!key||key===rangeDrag.last)return;
   rangeDrag.last=key;
   const a=rangeDrag.anchor;
-  rangeDraft={mode:'custom',start:a<=key?a:key,end:a<=key?key:a,label:'Свой период'};
+  rangeDraft={mode:'custom',start:a<=key?a:key,end:a<=key?key:a,label:tx('Custom range','Свой период')};
   renderRangePicker();
 }
 function stopRangeDrag(e){
@@ -876,7 +876,7 @@ function setupRangeDragHandlers(){
     e.preventDefault();
     const key=day.dataset.rangeDay;
     rangeDrag={active:true,pointerId:e.pointerId,anchor:key,last:key};
-    rangeDraft={mode:'custom',start:key,end:key,label:'Свой период'};
+    rangeDraft={mode:'custom',start:key,end:key,label:tx('Custom range','Свой период')};
 
     try{box.setPointerCapture(e.pointerId)}catch(_e){}
     renderRangePicker();
@@ -917,12 +917,12 @@ el('applyCustomRangeBtn').onclick=()=>{
   const r=normalizedDraft();
   if(r.mode==='all')return setRange(makePresetRange('all'));
   if(!r.start||!r.end){showToast(tx('Choose a period.','Выбери период.'),'error');return;}
-  setRange({...r,label:r.mode==='custom'?'Свой период':r.label});
+  setRange({...r,label:r.mode==='custom'?tx('Custom range','Свой период'):r.label});
 };
 document.querySelectorAll('[data-range-preset]').forEach(b=>b.onclick=()=>{
   const mode=b.dataset.rangePreset;
   if(mode==='custom'){
-    rangeDraft={...normalizedDraft(),mode:'custom',label:'Свой период'};
+    rangeDraft={...normalizedDraft(),mode:'custom',label:tx('Custom range','Свой период')};
     renderRangePicker();
     return;
   }
@@ -1053,10 +1053,10 @@ function closeDecline(){
 }
 async function declineMember(mode){
   if(!declineTarget)return;
-  const email=declineTarget.email||'этот email';
+  const email=declineTarget.email||tx('this email','этот email');
   const text=mode==='block_5m'
-    ? 'Удалить заявку '+email+' и заблокировать новые заявки от этого email на 5 минут?'
-    : 'Полностью удалить pending-заявку '+email+'? Повторная регистрация будет доступна сразу.';
+    ? tx('Delete the request for ','Удалить заявку ')+email+tx(' and block new requests from this email for 5 minutes?',' и заблокировать новые заявки от этого email на 5 минут?')
+    : tx('Delete the pending request for ','Полностью удалить pending-заявку ')+email+tx('? Sign-up will be available again immediately.','? Повторная регистрация будет доступна сразу.');
   if(!(await askConfirm(text,{danger:true})))return;
 
   const {error}=await sb.rpc('decline_member',{p_user_id:declineTarget.user_id,p_mode:mode});
@@ -1165,9 +1165,9 @@ async function ensureDirectCollectorReady(force=false){
       directCollectorKey=null;
       setDirectFormEnabled(false);
       if(error?.status===503||error?.code==='collector_not_ready'){
-        setDirectCollectorUi('wait','Direct collector ещё не provisioned. Пока используй Manual Connector ниже.');
+        setDirectCollectorUi('wait',tx('Direct collector is not provisioned yet. Use the Manual Connector below for now.','Direct collector ещё не provisioned. Пока используй Manual Connector ниже.'));
       }else{
-        setDirectCollectorUi('error','Direct collector временно недоступен. Manual Connector ниже продолжает работать.');
+        setDirectCollectorUi('error',tx('Direct collector is temporarily unavailable. The Manual Connector below still works.','Direct collector временно недоступен. Manual Connector ниже продолжает работать.'));
       }
       return null;
     }finally{
@@ -1183,7 +1183,7 @@ function directStateLabel(state){
 function renderDirectConnections(){
   const host=el('directConnectionList');if(!host)return;
   const rows=(brokerConnections||[]).filter(row=>row.enabled!==false&&String(row.state||'').toUpperCase()!=='DISCONNECTED');
-  if(!rows.length){host.innerHTML='<div class="hint directFallbackNote">Direct connections появятся здесь после успешного подключения.</div>';return}
+  if(!rows.length){host.innerHTML='<div class="hint directFallbackNote">'+esc(tx('Direct connections will appear here after a successful connection.','Direct connections появятся здесь после успешного подключения.'))+'</div>';return}
   host.innerHTML=rows.map(row=>{
     const state=String(row.state||'').toLowerCase();
     const seen=row.last_sync_at?('Last sync · '+new Date(row.last_sync_at).toLocaleString()):(row.last_error_at?('Last error · '+new Date(row.last_error_at).toLocaleString()):'Waiting for collector');
@@ -1227,7 +1227,7 @@ async function disconnectDirectConnection(connectionId,button){
     try{
       await edgePost('broker-disconnect',{connection_id:connectionId});
       await refreshDirectConnections();
-      el('directConnectMsg').textContent='Direct connection отключён. Encrypted credential удалён.';
+      el('directConnectMsg').textContent=tx('Direct connection disconnected. Encrypted credential deleted.','Direct connection отключён. Encrypted credential удалён.');
     }catch(error){
       el('directConnectMsg').textContent='Disconnect failed: '+String(error?.code||error?.message||'unknown_error');
     }
@@ -1245,10 +1245,10 @@ el('directConnectForm').onsubmit=async event=>{
     passwordInput.value='';
     el('directConnectMsg').textContent='';
     try{
-      if(!/^[0-9]+$/.test(login)){el('directLogin').focus();throw new Error('Login должен содержать только цифры.')}
-      if(!server||/[\r\n]/.test(server)){el('directServer').focus();throw new Error('Укажи точное имя broker server.')}
+      if(!/^[0-9]+$/.test(login)){el('directLogin').focus();throw new Error(tx('Login must contain digits only.','Login должен содержать только цифры.'))}
+      if(!server||/[\r\n]/.test(server)){el('directServer').focus();throw new Error(tx('Enter the exact broker server name.','Укажи точное имя broker server.'))}
       const key=directCollectorKey||await ensureDirectCollectorReady(true);
-      if(!key)throw new Error('Direct collector ещё не готов. Используй Manual Connector.');
+      if(!key)throw new Error(tx('Direct collector is not ready yet. Use the Manual Connector.','Direct collector ещё не готов. Используй Manual Connector.'));
       const ciphertext=await encryptInvestorPassword(secret,key.public_key_pem);
       const result=await edgePost('broker-connect',{
         platform,
@@ -1259,13 +1259,13 @@ el('directConnectForm').onsubmit=async event=>{
       });
       el('directLogin').value='';
       el('directServer').value='';
-      el('directConnectMsg').textContent='Connection queued · '+String(result.state||'PENDING_VALIDATION')+'. Collector проверит Investor Password.';
+      el('directConnectMsg').textContent=tx('Connection queued · ','Подключение поставлено в очередь · ')+String(result.state||'PENDING_VALIDATION')+tx('. Collector will validate the Investor Password.','. Collector проверит Investor Password.');
       await refreshDirectConnections();
     }catch(error){
       if(error?.code==='collector_key_stale'){
         directCollectorKey=null;
         await ensureDirectCollectorReady(true);
-        el('directConnectMsg').textContent='Collector key обновился. Введи Investor Password ещё раз.';
+        el('directConnectMsg').textContent=tx('Collector key changed. Enter the Investor Password again.','Collector key обновился. Введи Investor Password ещё раз.');
       }else{
         el('directConnectMsg').textContent=String(error?.message||'Direct connection failed.');
       }
@@ -1573,7 +1573,7 @@ function renderMistakes(){
   const list=Object.values(groups).sort((a,b)=>a.pnl-b.pnl);
   let html='<div class="mistakeSummary"><div class="mistakeCard"><div class="metricLabel">No mistake marked</div><div class="metricValue compactMetric '+(sum(clean)>=0?'green':'red')+'">'+money(sum(clean))+'</div><div class="sub">'+clean.length+' trades</div></div><div class="mistakeCard"><div class="metricLabel">With mistake / violation</div><div class="metricValue compactMetric '+(sum(withMistake)>=0?'green':'red')+'">'+money(sum(withMistake))+'</div><div class="sub">'+withMistake.length+' trades</div></div></div>';
   if(list.length)html+='<div class="mistakeList">'+list.map(g=>'<div class="mistakeRow"><div><b>'+esc(g.label)+'</b><div class="sub">'+g.count+' trades</div></div><b class="'+(g.pnl>=0?'green':'red')+'">'+money(g.pnl)+'</b><span class="mistakeWr sub">'+(g.count?Math.round(g.wins/g.count*100):0)+'% WR</span></div>').join('')+'</div>';
-  else html+='<div class="hint">Когда начнёшь отмечать Mistake / violation в Trade Review, здесь появится влияние ошибок на результат.</div>';
+  else html+='<div class="hint">'+esc(tx('Once you start marking Mistake / violation in Trade Review, their impact on results will appear here.','Когда начнёшь отмечать Mistake / violation в Trade Review, здесь появится влияние ошибок на результат.'))+'</div>';
   el('mistakeAnalytics').innerHTML=html;
 }
 function renderWeekday(){
@@ -1728,9 +1728,7 @@ function dailyReviewState(){
 }
 async function closeDailyReview(force=false){
   if(!force&&activeReviewDate&&dailyReviewSnapshot&&dailyReviewState()!==dailyReviewSnapshot){
-    if(typeof askConfirm==='function'){
-      if(!(await askConfirm('Discard unsaved daily review changes?')))return false;
-    }else if(!(await askConfirm(tx('Discard unsaved daily review changes?','Отменить несохранённые изменения разбора дня?'),{danger:true,confirmText:tx('Discard','Отменить изменения')})))return false;
+    if(!(await askConfirm(tx('Discard unsaved daily review changes?','Отменить несохранённые изменения разбора дня?'),{danger:true,confirmText:tx('Discard','Отменить изменения')})))return false;
   }
   el('dailyModal').classList.add('hide');activeReviewDate=null;dailyReviewSnapshot='';return true;
 }

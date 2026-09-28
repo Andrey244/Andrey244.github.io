@@ -19,6 +19,7 @@ async function retry(fn, attempts=8, delayMs=15000){
 const html=await fs.readFile('index.html','utf8');
 const appJs=await fs.readFile('app.js','utf8');
 const stylesCss=await fs.readFile('styles.css','utf8');
+const sw=await fs.readFile('service-worker.js','utf8');
 const clientSource=html+'\n'+appJs;
 const supabaseVendor=await fs.readFile('vendor/supabase-2.117.1.js');
 const mt4Connector=await fs.readFile('downloads/TradeJournalConnector_MT4_v1.20.mq4','utf8');
@@ -76,6 +77,10 @@ ok(!html.includes('TradeJournalConnector_MT4_v1.17.mq4'),'index.html: stale MT4 
 ok(clientSource.includes('markSelectedGhost'),'index.html: bulk Ghost workflow missing');
 ok(clientSource.includes('closeTradeReview'),'index.html: unsaved Trade Review guard missing');
 ok(clientSource.includes('langToggleBtn') && clientSource.includes("localStorage.setItem('tj_lang'"),'index.html: RU/EN language switch missing');
+ok(clientSource.includes("tx('Discard unsaved daily review changes?'"),'app.js: Daily Review guard must be localized');
+ok(clientSource.includes("tx('Direct collector is temporarily unavailable."),'app.js: dynamic direct-collector copy must be localized');
+ok(!appJs.includes("askConfirm('Discard unsaved daily review changes?')"),'app.js: hard-coded English Daily Review guard returned');
+ok(sw.includes("tj-shell-v8"),'service-worker.js: cache version not bumped for localized app.js');
 ok(clientSource.includes('toastHost') && clientSource.includes('showToast'),'index.html: toast notification system missing');
 ok(clientSource.includes('confirmModal') && clientSource.includes('askConfirm'),'index.html: custom confirmation modal missing');
 ok(!/\balert\s*\(/.test(appJs),'app.js: native alert() returned');
