@@ -19,6 +19,9 @@ $ErrorActionPreference = "Stop"
 
 $ServiceName = "TradingJournalCollector"
 $ServiceAccount = "NT SERVICE\$ServiceName"
+$SystemSid = "S-1-5-18"
+$AdministratorsSid = "S-1-5-32-544"
+$ServiceSid = ""
 
 function Assert-Administrator {
     $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
@@ -69,13 +72,17 @@ function Set-DirectoryAcl {
         [Parameter(Mandatory=$true)][string]$ServiceRights
     )
 
+    if ([string]::IsNullOrWhiteSpace($script:ServiceSid)) {
+        throw "Service SID is not initialized."
+    }
+
     Invoke-Checked "icacls.exe" @($Path, "/inheritance:r")
     Invoke-Checked "icacls.exe" @(
         $Path,
         "/grant:r",
-        "SYSTEM:(OI)(CI)F",
-        "BUILTIN\Administrators:(OI)(CI)F",
-        ($ServiceAccount + ":(OI)(CI)" + $ServiceRights)
+        ("*" + $SystemSid + ":(OI)(CI)F"),
+        ("*" + $AdministratorsSid + ":(OI)(CI)F"),
+        ("*" + $script:ServiceSid + ":(OI)(CI)" + $ServiceRights)
     )
 }
 
@@ -170,6 +177,12 @@ Invoke-Checked $Python @(
 # password is created or passed to the service installer.
 Invoke-Checked "sc.exe" @("config", $ServiceName, "obj=", $ServiceAccount)
 
+try {
+    $script:ServiceSid = ([Security.Principal.NTAccount]$ServiceAccount).Translate([Security.Principal.SecurityIdentifier]).Value
+} catch {
+    throw "Cannot resolve Windows service SID for $ServiceAccount."
+}
+
 # Root/runtime is read+execute only for the collector identity. Mutable state is
 # limited to the three dedicated directories below.
 Set-DirectoryAcl -Path $Root -ServiceRights "RX"
@@ -181,16 +194,16 @@ Invoke-Checked "icacls.exe" @($ConfigPath, "/inheritance:r")
 Invoke-Checked "icacls.exe" @(
     $ConfigPath,
     "/grant:r",
-    "SYSTEM:F",
-    "BUILTIN\Administrators:F",
-    ($ServiceAccount + ":R")
+    ("*" + $SystemSid + ":F"),
+    ("*" + $AdministratorsSid + ":F"),
+    ("*" + $ServiceSid + ":R")
 )
 
 if ($Mt4GoldenDir) {
     Invoke-Checked "icacls.exe" @(
         (Resolve-Path $Mt4GoldenDir).Path,
         "/grant:r",
-        ($ServiceAccount + ":(OI)(CI)RX")
+        ("*" + $ServiceSid + ":(OI)(CI)RX")
     )
     if (-not $Mt4AllHistoryConfirmed) {
         Write-Warning "MT4 is installed fail-closed for history sync. Re-run with -Mt4AllHistoryConfirmed only after the golden terminal Account History is explicitly set to All History and validated."
