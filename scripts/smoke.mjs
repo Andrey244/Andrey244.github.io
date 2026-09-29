@@ -122,6 +122,9 @@ ok(stylesCss.includes(".equityChart{height:168px}"),'styles.css: Equity chart mo
 ok(!stylesCss.includes(".equityChart{height:260px"),'styles.css: oversized fixed Equity desktop height returned');
 ok(stylesCss.includes(".tradeTableWrap table{min-width:720px}"),'styles.css: tablet trade table overflow guard missing');
 ok(stylesCss.includes("max-height:92dvh"),'styles.css: modal dynamic viewport guard missing');
+ok(stylesCss.includes("padding:calc(16px + env(safe-area-inset-top,0px))"),'styles.css: modal safe-area padding missing');
+ok(stylesCss.includes(".detail{grid-template-columns:1fr}.healthGrid"),'styles.css: mobile detail cards must collapse to one column');
+ok(stylesCss.includes("left:max(9px,env(safe-area-inset-left))") && stylesCss.includes("right:max(9px,env(safe-area-inset-right))"),'styles.css: fixed mobile UI must respect horizontal safe areas');
 ok(stylesCss.includes(".reviewedBadge,.otherBadge") && stylesCss.includes("font-size:10px;font-weight:900") && !stylesCss.includes("font-size:8px;font-weight:900"),'styles.css: compact review badges must remain readable');
 ok(stylesCss.includes(".equityTipBalance.down{fill:var(--red)}"),'styles.css: falling equity balance must be red');
 ok(appJs.includes("tip.setAttribute('transform','translate('"),'app.js: Equity tooltip must follow the inspected point via SVG transform');
