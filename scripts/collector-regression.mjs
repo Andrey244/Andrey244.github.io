@@ -49,6 +49,10 @@ ok(pyproject.includes('MetaTrader5==5.0.6180'),'MetaTrader5 version is not pinne
 ok(pyproject.includes('cryptography==50.0.1'),'cryptography version is not pinned');
 ok(pyproject.includes('pywin32==312'),'pywin32 service dependency is not pinned');
 ok(service.includes('TradingJournalCollectorService'),'Windows service class missing');
+ok(service.includes('job failure: code='),'Windows service must log only safe worker failure metadata');
+ok(worker.includes('failure_observer'),'collector worker must expose a safe failure observer');
+ok(worker.includes('type(exc).__name__'),'collector worker failure observer must report exception type without exception message');
+ok(worker.includes('MT4_EXPORT_VALIDATION_ERROR'),'collector worker must distinguish MT4 export validation failures from generic worker failures');
 ok(service.includes('serviceClassString=service_class_string'),'Windows service registration must persist the resolved importable class path');
 ok(service.includes('TJ_SERVICE_CLASS_STRING'),'Windows service CLI must accept a path-qualified venv class string from the installer');
 ok(service.includes('TJ_PYTHON_SERVICE_EXE'),'Windows service CLI must accept the machine pywin32 host from the installer');
