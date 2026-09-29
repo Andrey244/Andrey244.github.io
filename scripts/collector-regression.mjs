@@ -184,6 +184,8 @@ ok(mt4py.includes('"/portable"'),'MT4 adapter portable terminal launch missing')
 ok(mt4py.includes('ExpertsTrades=false'),'MT4 startup must explicitly disable trading');
 ok(mt4py.includes('TradeJournalExport_MT4.ex4'),'MT4 adapter must require compiled exporter');
 ok(mt4py.includes('_overwrite_and_unlink'),'MT4 secret startup config cleanup missing');
+ok(mt4py.includes('["taskkill", "/PID", str(pid), "/T", "/F"]'),'MT4 cleanup must terminate the full Windows process tree');
+ok(mt4py.includes('for _ in range(60)'),'MT4 slot cleanup must tolerate transient Windows file locks');
 ok(mt4py.includes('history_all_confirmed'),'MT4 history coverage attestation gate missing');
 ok(mt4py.includes('MT4_ACCOUNT_HISTORY_ALL_NOT_CONFIRMED'),'MT4 history coverage fail-closed error missing');
 ok(main.includes('TJ_MT4_HISTORY_ALL_CONFIRMED'),'MT4 history attestation environment wiring missing');
