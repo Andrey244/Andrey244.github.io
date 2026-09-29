@@ -448,7 +448,7 @@ Codex Security is installed/enabled in ChatGPT, but its scanner actions are not 
 
 Independent CodeQL security-extended scanning is enabled for Python and JavaScript/TypeScript and fails CI on unexpected findings. One exact reviewed exception is allowed: `py/clear-text-storage-sensitive-data` in the MT4 adapter, because the official MT4 startup mechanism requires the Investor Password in a short-lived config file. The exception is scoped by rule+path and retains BitLocker, service-account ACL, disposable-slot, overwrite/unlink and full-slot cleanup mitigations.
 
-### D. Direct Investor Password collector — WINDOWS SCM ACCEPTANCE COMPLETE / REAL BROKER TERMINAL ACCEPTANCE PENDING
+### D. Direct Investor Password collector — WINDOWS SCM + LIVE MT4 ACCEPTANCE COMPLETE / MT5 + NEGATIVE MATRIX PENDING
 Source of truth: `docs/INVESTOR_COLLECTOR_V1.md`.
 
 Implemented:
@@ -464,7 +464,7 @@ Implemented:
 - ProgramData root is read/execute for the service; mutable identity/state/MT4 work directories have separate write ACLs;
 - MT4 install path requires verifiable BitLocker protection for the disposable work volume and supports a dedicated absolute `-Mt4WorkRoot` on an external BitLocker-protected data volume/VHDX; collector identity/config/state remain under ProgramData;
 - MT4 sync fails closed unless All History was explicitly operator-confirmed;
-- MT4 exporter v0.12 and manual connector v1.20 separate explicit `closed_by_sl` evidence from price-proximity diagnostics;
+- MT4 exporter v0.14 and manual connector v1.20 separate explicit `closed_by_sl` evidence from price-proximity diagnostics; v0.14 also purges disposable saved-account cache files and waits for both terminal connection and account/server identity before export;
 - MT5 defaults to non-portable mode and repairs initial-window exit boundaries using `history_deals_get(position=...)`; it fails closed if prior entry history cannot be recovered;
 - SYNC cursor advances to the exact collected `sync_until_ms`, never report time;
 - ingest/report require the current job `attempt` and an unexpired lease; ingest holds a job row lock while canonical ingest runs;
@@ -479,14 +479,15 @@ Live PC collector checkpoint (2026-09-29):
 - its real registration bundle has been registered in production Supabase as the enabled primary collector;
 - a real post-registration heartbeat was observed immediately, and the active-key service returns this collector as ready;
 - do not register a duplicate node on continuation unless intentionally rotating/reprovisioning it;
-- the MT4 disposable-work VHDX must currently be mounted and BitLocker-unlocked after a reboot before MT4 Direct Collector use.
+- the MT4 disposable-work VHDX must currently be mounted and BitLocker-unlocked after a reboot before MT4 Direct Collector use;
+- live MT4 broker validation PASSED on the PC test host for account `252031119` / server `Alpari-Pro.ECN-Demo`: the existing encrypted credential job reached `VALIDATE=SUCCEEDED`, connection state `CONNECTED`, and the automatically queued first `SYNC` also reached `SUCCEEDED` with `last_sync_at` populated;
+- the live path exposed and fixed three production blockers before passing: ambiguous `collector_lease_job_service` output-column references, PostgreSQL wrapped Base64 payloads, and MT4 disposable/startup timing issues (process-tree cleanup, saved account cache override, connection/identity readiness).
 
-Still pending before real Investor Password production use:
-- run live broker-session validation through the registered primary collector, starting with MT4 on the PC test host;
+Still pending before full Direct Collector production acceptance:
 - reproduce the validated collector setup on the VPS after PC acceptance is complete;
 - install/validate real MT5 terminal under the Windows service identity;
-- the PC test host has already compiled `TradeJournalExport_MT4.mq4` v0.12 to EX4 in MetaEditor with 0 errors and has explicitly set/validated MT4 Account History = All History;
-- run the complete MT4 and MT5 acceptance matrix: correct/wrong password, wrong server, master-password rejection, account/server mismatch, historical import coverage, retry/idempotency, reconnect, disconnect credential deletion and multi-account isolation.
+- the PC test host has compiled `TradeJournalExport_MT4.mq4` v0.14 to EX4 in MetaEditor with 0 errors and explicitly validated MT4 Account History = All History;
+- MT4 correct Investor Password + initial history sync is now proven live; still run the remaining negative/recovery MT4 matrix plus the full MT5 matrix: wrong password, wrong server, master-password rejection, account/server mismatch, historical import coverage, retry/idempotency, reconnect, disconnect credential deletion and multi-account isolation.
 
 Do not provision a fake node just to enable the UI. The current fail-closed state is intentional until a real primary collector is online.
 
