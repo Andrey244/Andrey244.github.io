@@ -43,6 +43,31 @@ def safe_error_code(exc: Exception) -> str:
     if isinstance(exc, ControlPlaneError):
         return "CONTROL_PLANE_ERROR"
     if isinstance(exc, ExportValidationError):
+        message = str(exc)
+        if message == "MT4 exporter timed out":
+            return "MT4_EXPORT_TIMEOUT"
+        if message == "MT4 terminal exited before exporter status":
+            return "MT4_TERMINAL_EXITED_BEFORE_STATUS"
+        if message == "MT4 exporter reports terminal disconnected":
+            return "MT4_TERMINAL_DISCONNECTED"
+        if message == "MT4 exporter did not report account/server":
+            return "MT4_STATUS_IDENTITY_MISSING"
+        if message == "invalid MT4 exporter status":
+            return "MT4_STATUS_INVALID"
+        if message == "invalid MT4 exporter status object":
+            return "MT4_STATUS_OBJECT_INVALID"
+        if message == "MT4 exporter output file is missing":
+            return "MT4_OUTPUT_MISSING"
+        if message == "MT4 disposable slot cleanup failed":
+            return "MT4_SLOT_CLEANUP_FAILED"
+        if message.startswith("MT4 exporter failed: OUTPUT_OPEN_FAILED_"):
+            return "MT4_OUTPUT_OPEN_FAILED"
+        if message.startswith("MT4 exporter failed:"):
+            return "MT4_EXPORTER_FAILED"
+        if message.startswith("invalid MT4 JSONL at line "):
+            return "MT4_JSONL_INVALID"
+        if message.startswith("MT4 JSONL line "):
+            return "MT4_JSONL_INVALID"
         return "MT4_EXPORT_VALIDATION_ERROR"
     if isinstance(exc, PermissionError):
         return "FILE_PERMISSION_ERROR"
