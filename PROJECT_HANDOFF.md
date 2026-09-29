@@ -409,6 +409,28 @@ Remaining P2 cleanup is intentionally not urgent:
 - inline-style cleanup;
 - optional URL/deep-link SPA navigation.
 
+### A4. Full UI/UX density + responsive audit — 2026-09-29
+Triggered by a follow-up Equity screenshot after the stale-shell fix. The new SVG tooltip was correct, but the desktop chart still looked oversized because Equity had a fixed 260px desktop height and 210px mobile height.
+
+Audit guidance used: latest Emil Kowalski Design Engineering skill + UI/UX Pro Max skill/quick-reference. TinyFish was intentionally not used per user preference.
+
+Implemented:
+- Equity is now a compact responsive chart using `height:clamp(184px,18vw,210px)`, 184px at tablet width and 168px on small mobile;
+- Equity panel/title/meta spacing and tooltip geometry were tightened without changing data semantics;
+- empty Equity state is vertically centered rather than relying on fixed 100px padding;
+- tablet Trades view now gets controlled horizontal table scrolling with a preserved minimum table width, and sticky headers are disabled where they would conflict with that scroll container;
+- normal desktop review/ghost/SL/badge text was lifted from 8–9px to 10px where practical; intentionally compact mobile calendar metadata remains smaller;
+- numerical dashboard/trade/calendar values now use tabular numerals for steadier scanning/alignment;
+- modal max-height uses `dvh` with `vh` fallback and modal padding respects all safe-area insets;
+- small-screen detail grids collapse to one column;
+- fixed mobile navigation and sheet respect horizontal safe-area insets;
+- dynamic RU/EN aria labels were added for calendar navigation, trade filters/search and mobile navigation controls;
+- PWA shell bumped to `tj-shell-v13` / `20260929-ui-audit-1` so the audited UI cannot be masked by the older shell cache.
+
+Existing checks confirmed and preserved: strict CSP/no runtime inline styles, visible focus states, reduced-motion behavior, coarse-pointer 44px controls, SVG icons, safe-area-aware wrap/mobile bottom spacing, semantic profit/loss/BUY/SELL colors, and current RLS/data/auth boundaries.
+
+Rollback branch: `rollback/pre-full-ui-ux-density-audit-2026-09-29`.
+
 ### A3. PWA shell cache regression — 2026-09-29
 A follow-up user screenshot proved that the browser was still rendering the old Equity implementation even after the corrected code had deployed. Root cause was the service worker shell policy, not the chart data:
 - `service-worker.js` was still on `tj-shell-v11`;
