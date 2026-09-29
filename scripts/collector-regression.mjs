@@ -184,6 +184,8 @@ ok(mt4py.includes('"/portable"'),'MT4 adapter portable terminal launch missing')
 ok(mt4py.includes('ExpertsTrades=false'),'MT4 startup must explicitly disable trading');
 ok(mt4py.includes('TradeJournalExport_MT4.ex4'),'MT4 adapter must require compiled exporter');
 ok(mt4py.includes('_overwrite_and_unlink'),'MT4 secret startup config cleanup missing');
+ok(mt4py.includes('_purge_saved_account_cache'),'MT4 disposable slot must purge copied saved-account credential caches');
+ok(mt4py.includes('("accounts.ini", "server.ini")'),'MT4 disposable cache purge must target saved account credential files');
 ok(mt4py.includes('["taskkill", "/PID", str(pid), "/T", "/F"]'),'MT4 cleanup must terminate the full Windows process tree');
 ok(mt4py.includes('for _ in range(60)'),'MT4 slot cleanup must tolerate transient Windows file locks');
 ok(mt4py.includes('history_all_confirmed'),'MT4 history coverage attestation gate missing');
@@ -221,7 +223,9 @@ ok(mt4py.includes('ExpertsDllImport=false'),'MT4 startup: DLL import must be dis
 
 ok(mt4mql.includes('ACCOUNT_TRADE_ALLOWED'),'MT4 exporter: account trade permission gate missing');
 ok(mt4mql.includes('TERMINAL_CONNECTED'),'MT4 exporter: terminal connection gate missing');
-ok(mt4mql.includes('#property version   "0.12"'),'MT4 exporter version must reflect SL evidence hardening');
+ok(mt4mql.includes('#property version   "0.13"'),'MT4 exporter version must reflect startup authentication hardening');
+ok(mt4mql.includes('ConnectWaitSeconds = 45'),'MT4 exporter must allow bounded terminal-connect wait');
+ok(mt4mql.includes('WaitForConnection()'),'MT4 exporter must wait for terminal connection before emitting DISCONNECTED');
 ok(mt4mql.includes('closed_by_sl'),'MT4 exporter: SL evidence missing');
 ok(mt4mql.includes('sl_proximity'),'MT4 exporter: SL proximity diagnostic missing');
 ok(!mt4mql.includes('close_px <= sl + tol) closed_by_sl'),'MT4 exporter must not infer LOSS from BUY close-price proximity');
