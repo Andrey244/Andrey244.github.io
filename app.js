@@ -1930,7 +1930,12 @@ el('confirmCancelBtn').onclick=()=>closeConfirm(false);
 el('confirmOkBtn').onclick=()=>closeConfirm(true);
 
 if('serviceWorker' in navigator){
-  window.addEventListener('load',()=>navigator.serviceWorker.register('/service-worker.js').catch(()=>{}));
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker
+      .register('/service-worker.js',{updateViaCache:'none'})
+      .then(reg=>reg.update())
+      .catch(()=>{});
+  });
 }
 bindStaticI18n();
 applyLanguage();
