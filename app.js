@@ -196,10 +196,15 @@ function formatSourceDateTime(ts,source,options){
   if(!Number.isFinite(d.getTime()))return '—';
   return d.toLocaleString(uiLocale(),Object.assign({timeZone:sourceTimeZone(source)},options||{}));
 }
-function tradeDayKey(t){return sourceDayKey(t.closedAt,t.source)}
+function tradeDayKey(t){
+  const d=new Date(t.closedAt);
+  return String(t.source||'').toUpperCase()==='MT4'?utcDayKey(d):dayKey(d);
+}
 function eventDayKey(e){
   const ts=e.close_time||e.event_time||e.received_at;
-  return sourceDayKey(ts,e.source);
+  if(!ts)return null;
+  const d=new Date(ts);
+  return String(e.source||'').toUpperCase()==='MT4'?utcDayKey(d):dayKey(d);
 }
 function dateFromKey(k){const [y,m,d]=String(k).split('-').map(Number);return new Date(y,m-1,d,12,0,0)}
 function shiftKey(k,days){const d=dateFromKey(k);d.setDate(d.getDate()+days);return dayKey(d)}
