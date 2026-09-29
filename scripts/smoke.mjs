@@ -111,9 +111,13 @@ ok(clientSource.includes('accountScopeStatic'),'index.html: single-account stati
 ok(clientSource.includes('One idea. One logical trade.'),'index.html: header microcopy regression');
 ok(clientSource.includes('set_member_role'),'index.html: role assignment workflow missing');
 ok(clientSource.includes('canManageAccess'),'index.html: admin access gate missing');
-ok(stylesCss.includes(".eqBalance.up") && stylesCss.includes(".eqBalance.down"),'styles.css: directional equity balance colors missing');
-ok(stylesCss.includes(".eqBalance.down{color:var(--red)}"),'styles.css: falling equity balance must be red');
-ok(clientSource.includes("valueEl.innerHTML='<span>Equity</span> <span class=\"eqBalance"),'index.html: Equity label/balance color split missing');
+ok(stylesCss.includes(".equityTipBalance.up") && stylesCss.includes(".equityTipBalance.down"),'styles.css: directional equity balance colors missing');
+ok(stylesCss.includes(".equityTipBalance.down{fill:var(--red)}"),'styles.css: falling equity balance must be red');
+ok(appJs.includes("tip.setAttribute('transform','translate('"),'app.js: Equity tooltip must follow the inspected point via SVG transform');
+ok(appJs.includes("const W=Math.max(320,Math.round(chart.getBoundingClientRect().width||1000))"),'app.js: Equity SVG viewport must match the rendered chart width');
+ok(appJs.includes("tradeNumber:item.kind==='trade'?tradeNumber:null"),'app.js: Equity trade numbering must ignore cash-flow points');
+ok(!stylesCss.includes(".equityTooltip{right:12px;top:12px"),'styles.css: stale fixed-corner Equity tooltip override returned');
+ok(appJs.includes("d.toLocaleString(uiLocale(),"),'app.js: Equity tooltip date must follow the journal RU/EN locale');
 ok(clientSource.includes('memberTableHead') && clientSource.includes('memberActionPlaceholder'),'index.html: Access auto-layout/typography markers missing');
 ok(clientSource.includes('authHeader') && clientSource.includes('authForm') && clientSource.includes('authActions'),'index.html: auth page layout markers missing');
 ok(clientSource.includes('toggleRecoveryPasswordBtn') && clientSource.includes('toggleRecoveryPassword2Btn'),'index.html: recovery password visibility controls missing');
@@ -131,6 +135,10 @@ ok(clientSource.includes('<button type="button" class="day clickable '),'index.h
 ok(clientSource.includes('tradeOpenBtn') && clientSource.includes('data-open-trade'),'index.html: trade row keyboard open control missing');
 ok(clientSource.includes('for="fSetup"') && clientSource.includes('for="dWorked"'),'index.html: review form labels missing');
 ok(clientSource.includes("chart.onkeydown=e=>"),'index.html: Equity keyboard inspection missing');
+ok(appJs.includes("equityTooltipA11y") && appJs.includes("aria-live=\"polite\""),'app.js: Equity keyboard inspection must retain an accessible live status');
+ok(appJs.includes("new Date(t.closedAt).toLocaleString(uiLocale())"),'app.js: Trades timestamps must follow journal locale');
+ok(appJs.includes("monthDate.toLocaleDateString(uiLocale()"),'app.js: Calendar month label must follow journal locale');
+ok(appJs.includes("new Date(row.last_sync_at).toLocaleString(uiLocale())"),'app.js: Direct connection timestamps must follow journal locale');
 
 const mt5Section=appJs.slice(appJs.indexOf('function groupMT5'),appJs.indexOf('function summarizeMT4'));
 const mt4Section=appJs.slice(appJs.indexOf('function groupMT4'),appJs.indexOf('function stabilizeTradeIds'));
