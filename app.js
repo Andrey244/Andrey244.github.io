@@ -185,15 +185,21 @@ async function withBusyButton(btn,busyText,task){
 }
 function dayKey(d){return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Tashkent',year:'numeric',month:'2-digit',day:'2-digit'}).format(d)}
 function utcDayKey(d){return new Intl.DateTimeFormat('en-CA',{timeZone:'UTC',year:'numeric',month:'2-digit',day:'2-digit'}).format(d)}
-function tradeDayKey(t){
-  const d=new Date(t.closedAt);
-  return String(t.source||'').toUpperCase()==='MT4'?utcDayKey(d):dayKey(d);
+function sourceTimeZone(source){return String(source||'').toUpperCase()==='MT4'?'UTC':'Asia/Tashkent'}
+function sourceDayKey(ts,source){
+  if(!ts)return null;
+  return new Intl.DateTimeFormat('en-CA',{timeZone:sourceTimeZone(source),year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(ts));
 }
+function formatSourceDateTime(ts,source,options){
+  if(!ts)return '—';
+  const d=new Date(ts);
+  if(!Number.isFinite(d.getTime()))return '—';
+  return d.toLocaleString(uiLocale(),Object.assign({timeZone:sourceTimeZone(source)},options||{}));
+}
+function tradeDayKey(t){return sourceDayKey(t.closedAt,t.source)}
 function eventDayKey(e){
   const ts=e.close_time||e.event_time||e.received_at;
-  if(!ts)return null;
-  const d=new Date(ts);
-  return String(e.source||'').toUpperCase()==='MT4'?utcDayKey(d):dayKey(d);
+  return sourceDayKey(ts,e.source);
 }
 function dateFromKey(k){const [y,m,d]=String(k).split('-').map(Number);return new Date(y,m-1,d,12,0,0)}
 function shiftKey(k,days){const d=dateFromKey(k);d.setDate(d.getDate()+days);return dayKey(d)}
@@ -1631,8 +1637,8 @@ function renderEquity(){
       spokenMeta=dateRange.mode==='all'?tx('Starting balance','Стартовый баланс'):tx('Balance at period start','Баланс на начало периода');
       metaEl.textContent=spokenMeta;
     }else{
-      const d=new Date(p.time||p.trade?.closedAt);
-      dateEl.textContent=d.toLocaleString(uiLocale(),{
+      const source=p.kind==='trade'?p.trade?.source:p.cash?.source;
+      dateEl.textContent=formatSourceDateTime(p.time||p.trade?.closedAt,source,{
         year:'numeric',month:'short',day:'2-digit',hour:'2-digit',minute:'2-digit'
       });
 
@@ -1816,7 +1822,7 @@ function renderTrades(){
   el('tradeRows').innerHTML=rows.length?rows.map(t=>{
     const selected=selectedTradeIds.has(t.id);
     const check=bulkSelectMode?'<td class="bulkCheck"><input type="checkbox" '+(selected?'checked':'')+' tabindex="-1" aria-label="'+esc(tx('Select trade','Выбрать сделку'))+'"></td>':'';
-    return '<tr class="tradeRow '+(t.excluded_from_stats?'ghostRow ':'')+(selected?'bulkSelected':'')+'" data-id="'+esc(t.id)+'">'+check+'<td class="tradeDate">'+new Date(t.closedAt).toLocaleString(uiLocale())+'</td><td class="tradeSymbol"><button type="button" class="tradeOpenBtn" data-open-trade="'+esc(t.id)+'" aria-label="'+esc(tx('Open','Открыть'))+' '+esc(t.symbol)+' '+esc(t.side)+' '+esc(tx('trade','сделку'))+'">'+esc(t.symbol)+'</button>'+(t.excluded_from_stats?'<span class="ghostBadge">GHOST</span>':'')+(isTradeReviewed(t)?'<span class="reviewedBadge">'+esc(tx('REVIEWED','РАЗОБРАНО'))+'</span>':'')+'</td><td class="tradeSide"><span class="pill">'+esc(t.side)+'</span></td><td class="tradePnl '+(t.pnl>=0?'green':'red')+'">'+money(t.pnl)+'</td><td class="tradeOrders">'+t.orderCount+(isStrategyLoss(t)?'<span class="slBadge">SL</span>':'')+'</td><td class="tradeSetup">'+esc(t.setup||t.strategy||'')+'</td></tr>';
+    return '<tr class="tradeRow '+(t.excluded_from_stats?'ghostRow ':'')+(selected?'bulkSelected':'')+'" data-id="'+esc(t.id)+'">'+check+'<td class="tradeDate">'+esc(formatSourceDateTime(t.closedAt,t.source))+'</td><td class="tradeSymbol"><button type="button" class="tradeOpenBtn" data-open-trade="'+esc(t.id)+'" aria-label="'+esc(tx('Open','Открыть'))+' '+esc(t.symbol)+' '+esc(t.side)+' '+esc(tx('trade','сделку'))+'">'+esc(t.symbol)+'</button>'+(t.excluded_from_stats?'<span class="ghostBadge">GHOST</span>':'')+(isTradeReviewed(t)?'<span class="reviewedBadge">'+esc(tx('REVIEWED','РАЗОБРАНО'))+'</span>':'')+'</td><td class="tradeSide"><span class="pill">'+esc(t.side)+'</span></td><td class="tradePnl '+(t.pnl>=0?'green':'red')+'">'+money(t.pnl)+'</td><td class="tradeOrders">'+t.orderCount+(isStrategyLoss(t)?'<span class="slBadge">SL</span>':'')+'</td><td class="tradeSetup">'+esc(t.setup||t.strategy||'')+'</td></tr>';
   }).join(''):'<tr><td colspan="'+emptyCols+'" class="empty">'+esc(tradeEmptyMessage({q,result,ghost,side,source,review}))+'</td></tr>';
 
   document.querySelectorAll('#tradeRows tr[data-id]').forEach(r=>r.onclick=e=>{
@@ -1904,7 +1910,7 @@ async function closeTradeReview(force=false){
 function openTrade(id){
   const t=scopedTrades.find(x=>x.id===id)||allTrades.find(x=>x.id===id);if(!t)return;activeTrade=t;
   el('modalTitle').textContent=t.symbol+' '+t.side+' · '+money(t.pnl)+(t.excluded_from_stats?' · GHOST':'');
-  const details=[[tx('Source','Источник'),t.source],[tx('Account','Счёт'),t.account+(t.server?' · '+t.server:'')],[tx('Opened','Открыта'),new Date(t.openedAt).toLocaleString(uiLocale())],[tx('Closed','Закрыта'),new Date(t.closedAt).toLocaleString(uiLocale())],[tx('Orders','Ордера'),t.orderCount],[tx('Result','Результат'),outcomeLabel(t)],[tx('Entries / exits','Входы / выходы'),t.entries+' / '+t.exits],[tx('Strategy','Стратегия'),t.strategy]];
+  const details=[[tx('Source','Источник'),t.source],[tx('Account','Счёт'),t.account+(t.server?' · '+t.server:'')],[tx('Opened','Открыта'),formatSourceDateTime(t.openedAt,t.source)],[tx('Closed','Закрыта'),formatSourceDateTime(t.closedAt,t.source)],[tx('Orders','Ордера'),t.orderCount],[tx('Result','Результат'),outcomeLabel(t)],[tx('Entries / exits','Входы / выходы'),t.entries+' / '+t.exits],[tx('Strategy','Стратегия'),t.strategy]];
   el('tradeDetails').innerHTML=details.map(x=>'<div class="kv"><small>'+esc(x[0])+'</small><b>'+esc(x[1])+'</b></div>').join('');
   el('fSetup').value=t.setup||'';el('fTier').value=t.tier||'';el('fProbability').value=t.probability==null?'':t.probability;el('fCr').value=t.cr_value==null?'':t.cr_value;el('fPlan').value=t.plan_ok||'';el('fOutcome').value=t.outcome_override||'';el('fMistake').value=t.mistake||'';document.querySelectorAll('[data-mistake]').forEach(b=>b.classList.toggle('on',b.dataset.mistake===(t.mistake||'')));el('fExcluded').checked=!!t.excluded_from_stats;el('fExclusionReason').value=t.exclusion_reason||'';el('fExclusionReason').disabled=!el('fExcluded').checked;el('fNotes').value=t.notes||'';
   el('tradeModal').classList.remove('hide');
