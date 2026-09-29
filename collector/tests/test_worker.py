@@ -14,7 +14,7 @@ if str(SRC) not in sys.path:
 from trading_journal_collector.api import CollectorApi
 from trading_journal_collector.errors import ExportValidationError, HistoryCoverageError, WriteCapableCredentialError
 from trading_journal_collector.models import CollectorJob, NormalizedEvent, Platform
-from trading_journal_collector.worker import CollectorWorker
+from trading_journal_collector.worker import CollectorWorker, safe_error_code
 
 
 class FakeTransport:
@@ -231,6 +231,26 @@ class WorkerTests(unittest.TestCase):
             api.reports[0][1:],
             (job(key_id="other-key").attempt, False, "INVALID_JOB_PAYLOAD", None),
         )
+
+    def test_mt4_export_validation_subcodes_are_safe_and_specific(self):
+        cases = {
+            "MT4 exporter timed out": "MT4_EXPORT_TIMEOUT",
+            "MT4 terminal exited before exporter status": "MT4_TERMINAL_EXITED_BEFORE_STATUS",
+            "MT4 exporter reports terminal disconnected": "MT4_TERMINAL_DISCONNECTED",
+            "MT4 exporter did not report account/server": "MT4_STATUS_IDENTITY_MISSING",
+            "invalid MT4 exporter status": "MT4_STATUS_INVALID",
+            "invalid MT4 exporter status object": "MT4_STATUS_OBJECT_INVALID",
+            "MT4 exporter output file is missing": "MT4_OUTPUT_MISSING",
+            "MT4 disposable slot cleanup failed": "MT4_SLOT_CLEANUP_FAILED",
+            "MT4 exporter failed: OUTPUT_OPEN_FAILED_5004": "MT4_OUTPUT_OPEN_FAILED",
+            "MT4 exporter failed: SOMETHING_ELSE": "MT4_EXPORTER_FAILED",
+            "invalid MT4 JSONL at line 2": "MT4_JSONL_INVALID",
+            "MT4 JSONL line 3 has wrong source": "MT4_JSONL_INVALID",
+            "unexpected private detail": "MT4_EXPORT_VALIDATION_ERROR",
+        }
+        for message, expected in cases.items():
+            with self.subTest(message=message):
+                self.assertEqual(safe_error_code(ExportValidationError(message)), expected)
 
     def test_failure_observer_receives_safe_code_and_exception_type(self):
         seen = []
