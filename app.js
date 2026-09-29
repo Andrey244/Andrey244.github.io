@@ -1246,7 +1246,7 @@ function directStateLabel(state){
 function renderDirectConnections(){
   const host=el('directConnectionList');if(!host)return;
   const rows=(brokerConnections||[]).filter(row=>row.enabled!==false&&String(row.state||'').toUpperCase()!=='DISCONNECTED');
-  if(!rows.length){host.innerHTML='<div class="hint directFallbackNote">'+esc(tx('Direct connections will appear here after a successful connection.','Direct connections появятся здесь после успешного подключения.'))+'</div>';return}
+  if(!rows.length){host.innerHTML='<div class="hint directFallbackNote">'+esc(tx('Direct connections will appear here after a successful connection.','Прямые подключения появятся здесь после успешного подключения.'))+'</div>';return}
   host.innerHTML=rows.map(row=>{
     const state=String(row.state||'').toLowerCase();
     const seen=row.last_sync_at?(tx('Last sync','Последняя синхронизация')+' · '+new Date(row.last_sync_at).toLocaleString(uiLocale())):(row.last_error_at?(tx('Last error','Последняя ошибка')+' · '+new Date(row.last_error_at).toLocaleString(uiLocale())):tx('Waiting for collector','Ожидание collector'));
@@ -1677,14 +1677,15 @@ function renderMistakes(){
   const groups={};
   withMistake.forEach(t=>{const label=String(t.mistake).trim(),key=label.toLowerCase();if(!groups[key])groups[key]={label,count:0,pnl:0,wins:0};const g=groups[key];g.count++;g.pnl+=Number(t.pnl||0);if(isStrategyWin(t))g.wins++});
   const list=Object.values(groups).sort((a,b)=>a.pnl-b.pnl);
-  let html='<div class="mistakeSummary"><div class="mistakeCard"><div class="metricLabel">No mistake marked</div><div class="metricValue compactMetric '+(sum(clean)>=0?'green':'red')+'">'+money(sum(clean))+'</div><div class="sub">'+clean.length+' trades</div></div><div class="mistakeCard"><div class="metricLabel">With mistake / violation</div><div class="metricValue compactMetric '+(sum(withMistake)>=0?'green':'red')+'">'+money(sum(withMistake))+'</div><div class="sub">'+withMistake.length+' trades</div></div></div>';
+  let html='<div class="mistakeSummary"><div class="mistakeCard"><div class="metricLabel">'+esc(tx('No mistake marked','Без отмеченной ошибки'))+'</div><div class="metricValue compactMetric '+(sum(clean)>=0?'green':'red')+'">'+money(sum(clean))+'</div><div class="sub">'+clean.length+' '+esc(tx('trades','сделок'))+'</div></div><div class="mistakeCard"><div class="metricLabel">'+esc(tx('With mistake / violation','С ошибкой / нарушением'))+'</div><div class="metricValue compactMetric '+(sum(withMistake)>=0?'green':'red')+'">'+money(sum(withMistake))+'</div><div class="sub">'+withMistake.length+' '+esc(tx('trades','сделок'))+'</div></div></div>';
   if(list.length)html+='<div class="mistakeList">'+list.map(g=>'<div class="mistakeRow"><div><b>'+esc(g.label)+'</b><div class="sub">'+g.count+' trades</div></div><b class="'+(g.pnl>=0?'green':'red')+'">'+money(g.pnl)+'</b><span class="mistakeWr sub">'+(g.count?Math.round(g.wins/g.count*100):0)+'% WR</span></div>').join('')+'</div>';
   else html+='<div class="hint">'+esc(tx('Once you start marking Mistake / violation in Trade Review, their impact on results will appear here.','Когда начнёшь отмечать Mistake / violation в Trade Review, здесь появится влияние ошибок на результат.'))+'</div>';
   el('mistakeAnalytics').innerHTML=html;
 }
 function renderWeekday(){
   const a=model.weekday.filter(x=>x.name!=='Sun'&&x.name!=='Sat'),mx=Math.max(1,...a.map(x=>Math.abs(x.value)));
-  el('weekday').innerHTML=a.map(x=>{const pct=(Math.abs(x.value)/mx*100).toFixed(2);return '<div class="rowbar"><div>'+x.name+'</div><svg class="weekdayTrack" viewBox="0 0 100 18" preserveAspectRatio="none" aria-hidden="true"><rect class="weekdayTrackBg" x="0" y="0" width="100" height="18" rx="6"></rect><rect class="weekdayTrackFill" x="0" y="0" width="'+pct+'" height="18" rx="6"></rect></svg><div class="rowValue '+(x.value>=0?'green':'red')+'">'+money(x.value)+'</div></div>'}).join('');
+  const weekdayLabels={Mon:tx('Mon','Пн'),Tue:tx('Tue','Вт'),Wed:tx('Wed','Ср'),Thu:tx('Thu','Чт'),Fri:tx('Fri','Пт')};
+  el('weekday').innerHTML=a.map(x=>{const pct=(Math.abs(x.value)/mx*100).toFixed(2);return '<div class="rowbar"><div>'+esc(weekdayLabels[x.name]||x.name)+'</div><svg class="weekdayTrack" viewBox="0 0 100 18" preserveAspectRatio="none" aria-hidden="true"><rect class="weekdayTrackBg" x="0" y="0" width="100" height="18" rx="6"></rect><rect class="weekdayTrackFill" x="0" y="0" width="'+pct+'" height="18" rx="6"></rect></svg><div class="rowValue '+(x.value>=0?'green':'red')+'">'+money(x.value)+'</div></div>'}).join('');
 }
 function renderSymbols(){el('symbols').innerHTML=model.symbols.length?model.symbols.map(s=>'<div class="sym"><b>'+esc(s.symbol)+'</b><div class="metricValue compactMetric '+(s.pnl>=0?'green':'red')+'">'+money(s.pnl)+'</div><div class="sub">'+s.trades+' '+esc(tx('trades','сделок'))+' · '+s.wr.toFixed(0)+'% WR · '+s.days+'d</div></div>').join(''):'<div class="empty">'+esc(tx('No trades yet','Сделок пока нет'))+'</div>'}
 function renderCalendar(){
@@ -1693,9 +1694,10 @@ function renderCalendar(){
   const map={};model.daily.forEach(d=>map[d.date]=d);
   const monthRows=model.daily.filter(d=>d.date.startsWith(ym+'-'));
   const mpnl=monthRows.reduce((s,d)=>s+d.pnl,0),mtr=monthRows.reduce((s,d)=>s+d.trades,0),mw=monthRows.reduce((s,d)=>s+d.wins,0),ml=monthRows.reduce((s,d)=>s+d.losses,0);
-  el('calendarSummary').innerHTML='<span class="calChip pnl '+(mpnl>0?'pos':mpnl<0?'neg':'')+'">'+money(mpnl)+'</span><span class="calChip">'+mtr+' trades</span><span class="calChip">'+((mw+ml)?(mw/(mw+ml)*100).toFixed(0):'—')+'% WR</span>';
+  el('calendarSummary').innerHTML='<span class="calChip pnl '+(mpnl>0?'pos':mpnl<0?'neg':'')+'">'+money(mpnl)+'</span><span class="calChip">'+mtr+' '+esc(tx('trades','сделок'))+'</span><span class="calChip">'+((mw+ml)?(mw/(mw+ml)*100).toFixed(0):'—')+'% WR</span>';
 
-  let html=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(x=>'<div class="dow">'+x+'</div>').join('')+'<div class="dow weekHead">WEEK</div>';
+  const dowLabels=currentLang==='ru'?['Вс','Пн','Вт','Ср','Чт','Пт','Сб']:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  let html=dowLabels.map(x=>'<div class="dow">'+x+'</div>').join('')+'<div class="dow weekHead">'+esc(tx('WEEK','НЕДЕЛЯ'))+'</div>';
   const first=new Date(y,m,1).getDay(),days=new Date(y,m+1,0).getDate(),cells=Math.ceil((first+days)/7)*7;
   let weekPnl=0,weekTrades=0;
   for(let i=0;i<cells;i++){
@@ -1703,9 +1705,10 @@ function renderCalendar(){
     if(d>=1&&d<=days){
       const k=ym+'-'+String(d).padStart(2,'0'),x=map[k],review=dailyReviewMap[k];
       if(x){weekPnl+=x.pnl;weekTrades+=x.trades}
-      const title=x?(money(x.pnl)+' · '+(x.wr==null?'—':x.wr.toFixed(0)+'% WR')+' · '+x.trades+' trades'):'No counted trades';
+      const title=x?(money(x.pnl)+' · '+(x.wr==null?'—':x.wr.toFixed(0)+'% WR')+' · '+x.trades+' '+tx('trades','сделок')):tx('No counted trades','Нет учитываемых сделок');
       const todayClass=k===dayKey(new Date())?' today':'';
-      html+='<button type="button" class="day clickable '+(x?(x.pnl>=0?'pos':'neg'):'')+todayClass+'" data-review-date="'+k+'" title="'+esc(title)+'" aria-label="'+esc(k+' · '+title+(review?' · Daily review saved':''))+'"><div class="dnum">'+d+(review?'<span class="reviewDot" title="Daily review saved" aria-hidden="true"></span>':'')+'</div>'+(x?'<div class="dpnl '+(x.pnl>=0?'green':'red')+'">'+money(x.pnl)+'</div><div class="dmeta">'+(x.wr==null?'—':x.wr.toFixed(0)+'%')+' · '+x.trades+' trades</div>':'')+'</button>';
+      const reviewSaved=tx('Daily review saved','Разбор дня сохранён');
+      html+='<button type="button" class="day clickable '+(x?(x.pnl>=0?'pos':'neg'):'')+todayClass+'" data-review-date="'+k+'" title="'+esc(title)+'" aria-label="'+esc(k+' · '+title+(review?' · '+reviewSaved:''))+'"><div class="dnum">'+d+(review?'<span class="reviewDot" title="'+esc(reviewSaved)+'" aria-hidden="true"></span>':'')+'</div>'+(x?'<div class="dpnl '+(x.pnl>=0?'green':'red')+'">'+money(x.pnl)+'</div><div class="dmeta">'+(x.wr==null?'—':x.wr.toFixed(0)+'%')+' · '+x.trades+' '+esc(tx('trades','сделок'))+'</div>':'')+'</button>';
     }else{
       html+='<div class="day"></div>';
     }
@@ -1729,15 +1732,15 @@ function tradeEmptyMessage({q,result,ghost,side,source,review}){
   if(result==='other')return tx('No Other trades in this period.','Нет сделок Other за этот период.');
   if(review==='reviewed')return tx('No reviewed trades in this period.','Нет разобранных сделок за этот период.');
   if(review==='unreviewed')return tx('No unreviewed trades in this period.','Нет неразобранных сделок за этот период.');
-  if(side)return 'No '+side+' trades in this period.';
-  if(source)return 'No '+source+' trades in this period.';
+  if(side)return tx('No ','Нет сделок ')+side+tx(' trades in this period.',' за этот период.');
+  if(source)return tx('No ','Нет сделок ')+source+tx(' trades in this period.',' за этот период.');
   return dateRange.mode==='all'?tx('No trades yet.','Сделок пока нет.'):tx('No trades in the selected period.','Нет сделок в выбранном периоде.');
 }
 function updateBulkGhostBar(){
   el('bulkGhostBar').classList.toggle('hide',!bulkSelectMode);
   el('bulkHead').classList.toggle('hide',!bulkSelectMode);
   el('bulkSelectBtn').classList.toggle('on',bulkSelectMode);
-  el('bulkGhostCount').textContent=selectedTradeIds.size+' selected';
+  el('bulkGhostCount').textContent=selectedTradeIds.size+' '+tx('selected','выбрано');
   el('bulkGhostBtn').disabled=selectedTradeIds.size===0;
 }
 function setBulkSelectMode(on){
@@ -1787,8 +1790,8 @@ function renderTrades(){
   const emptyCols=bulkSelectMode?7:6;
   el('tradeRows').innerHTML=rows.length?rows.map(t=>{
     const selected=selectedTradeIds.has(t.id);
-    const check=bulkSelectMode?'<td class="bulkCheck"><input type="checkbox" '+(selected?'checked':'')+' tabindex="-1" aria-label="Select trade"></td>':'';
-    return '<tr class="tradeRow '+(t.excluded_from_stats?'ghostRow ':'')+(selected?'bulkSelected':'')+'" data-id="'+esc(t.id)+'">'+check+'<td class="tradeDate">'+new Date(t.closedAt).toLocaleString(uiLocale())+'</td><td class="tradeSymbol"><button type="button" class="tradeOpenBtn" data-open-trade="'+esc(t.id)+'" aria-label="'+esc(tx('Open','Открыть'))+' '+esc(t.symbol)+' '+esc(t.side)+' '+esc(tx('trade','сделку'))+'" >'+esc(t.symbol)+'</button>'+(t.excluded_from_stats?'<span class="ghostBadge">GHOST</span>':'')+(isTradeReviewed(t)?'<span class="reviewedBadge">'+esc(tx('REVIEWED','РАЗОБРАНО'))+'</span>':'')+'</td><td class="tradeSide"><span class="pill">'+esc(t.side)+'</span></td><td class="tradePnl '+(t.pnl>=0?'green':'red')+'">'+money(t.pnl)+'</td><td class="tradeOrders">'+t.orderCount+(isStrategyLoss(t)?'<span class="slBadge">SL</span>':'')+'</td><td class="tradeSetup">'+esc(t.setup||t.strategy||'')+'</td></tr>';
+    const check=bulkSelectMode?'<td class="bulkCheck"><input type="checkbox" '+(selected?'checked':'')+' tabindex="-1" aria-label="'+esc(tx('Select trade','Выбрать сделку'))+'"></td>':'';
+    return '<tr class="tradeRow '+(t.excluded_from_stats?'ghostRow ':'')+(selected?'bulkSelected':'')+'" data-id="'+esc(t.id)+'">'+check+'<td class="tradeDate">'+new Date(t.closedAt).toLocaleString(uiLocale())+'</td><td class="tradeSymbol"><button type="button" class="tradeOpenBtn" data-open-trade="'+esc(t.id)+'" aria-label="'+esc(tx('Open','Открыть'))+' '+esc(t.symbol)+' '+esc(t.side)+' '+esc(tx('trade','сделку'))+'">'+esc(t.symbol)+'</button>'+(t.excluded_from_stats?'<span class="ghostBadge">GHOST</span>':'')+(isTradeReviewed(t)?'<span class="reviewedBadge">'+esc(tx('REVIEWED','РАЗОБРАНО'))+'</span>':'')+'</td><td class="tradeSide"><span class="pill">'+esc(t.side)+'</span></td><td class="tradePnl '+(t.pnl>=0?'green':'red')+'">'+money(t.pnl)+'</td><td class="tradeOrders">'+t.orderCount+(isStrategyLoss(t)?'<span class="slBadge">SL</span>':'')+'</td><td class="tradeSetup">'+esc(t.setup||t.strategy||'')+'</td></tr>';
   }).join(''):'<tr><td colspan="'+emptyCols+'" class="empty">'+esc(tradeEmptyMessage({q,result,ghost,side,source,review}))+'</td></tr>';
 
   document.querySelectorAll('#tradeRows tr[data-id]').forEach(r=>r.onclick=e=>{
