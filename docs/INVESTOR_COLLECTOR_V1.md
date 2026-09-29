@@ -365,7 +365,7 @@ Phase 1 — secure collector identity + Windows service foundation complete:
 - per-service virtual identity, split ACLs and BitLocker gate are implemented;
 - on 2026-09-28 the prior SCM 1053/7009 failure was reproduced on a clean GitHub Windows runner and traced to `pythonservice.exe` failing with `ModuleNotFoundError: No module named 'servicemanager'`; the installer was changed to install/validate pinned machine-wide pywin32, run its elevated post-install, host SCM with machine `pythonservice.exe`, and import the Collector from the isolated venv;
 - Smoke #204 passed the real SCM start + registration-bundle acceptance on current `main`;
-- still pending: complete provisioning on the owned Windows PC test host and register that real node.
+- owned Windows PC provisioning is complete; the real primary collector node is registered and heartbeating.
 
 Phase 2 — Supabase control plane (complete):
 - public metadata table with RLS;
@@ -392,15 +392,17 @@ Phase 4 — MT4 end-to-end (repository launcher foundation complete):
 - disposable isolated terminal slot is cloned from a broker-compatible golden template;
 - startup config contains login/Investor Password/server, forces ExpertsTrades=false, opens a configurable bootstrap symbol and runs the one-shot exporter;
 - terminal launches with /portable from a writable non-system worker directory;
-- exporter v0.12 consumes an exact since-ms cursor and emits JSONL/status inside MQL4/Files;
+- exporter v0.14 consumes an exact since-ms cursor and emits JSONL/status inside MQL4/Files; it waits for terminal connection plus account/server identity and the disposable worker purges copied saved-account cache files before startup;
 - history sync fails closed unless Account History = All History has been explicitly operator-confirmed;
 - explicit SL evidence controls closed_by_sl; 30-point price proximity is diagnostic only;
 - launcher validates connected account/server/read-only state, overwrites/unlinks the credential config after exporter status, terminates the terminal and destroys the slot;
 - Linux CI tests the orchestration with a fake terminal process;
 - Windows installer requires BitLocker protection on the MT4 work volume;
 - the MT4 work root is configurable via `-Mt4WorkRoot`, so a dedicated BitLocker-protected data volume or VHDX can hold disposable worker slots while collector identity/config/state remain under ProgramData;
-- the owned Windows PC test host compiled `TradeJournalExport_MT4.mq4` v0.12 to EX4 in MetaEditor with 0 errors and explicitly validated Account History = All History;
-- still pending: live Direct Collector Windows/broker-session validation using the real registered node.
+- the owned Windows PC test host compiled `TradeJournalExport_MT4.mq4` v0.14 to EX4 in MetaEditor with 0 errors and explicitly validated Account History = All History;
+- live MT4 Direct Collector validation has now passed on the owned PC test host: encrypted credential validation reached `CONNECTED`, `VALIDATE` succeeded, and the automatically queued initial `SYNC` succeeded with `last_sync_at` populated;
+- during live acceptance the project fixed production-only issues in job leasing/Base64 canonicalization and MT4 disposable/startup timing before the successful run;
+- still pending: the MT4 negative/recovery acceptance cases, VPS reproduction, and the full MT5 live acceptance matrix.
 
 Phase 5 — frontend direct-connect UX (fail-closed UI implemented):
 - Connection page now exposes the shared MT4/MT5/Login/Server/Investor Password flow;
@@ -417,7 +419,7 @@ Phase 6 — multi-account hardening:
 - secret deletion;
 - operational diagnostics.
 
-The architecture is dual-platform from day one even though real broker-terminal acceptance is still staged. Production readiness is fail-closed until a real primary collector heartbeat is fresh.
+The architecture is dual-platform from day one. Real MT4 broker-terminal acceptance is now proven for the happy path on the PC test host; MT4 negative/recovery cases and live MT5 acceptance are still staged. Production readiness remains fail-closed on a fresh primary collector heartbeat.
 
 ## v1 acceptance tests
 
