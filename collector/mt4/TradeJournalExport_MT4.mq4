@@ -1,5 +1,5 @@
 #property strict
-#property version   "0.13"
+#property version   "0.14"
 #property description "One-shot read-only MT4 history exporter for Trading Journal Collector."
 #property description "It never opens, modifies or closes trades."
 
@@ -11,6 +11,7 @@ input string StatusFile = "tj_status.json";
 input string CursorFile = "tj_since_ms.txt";
 input int InitialSyncDays = 730;
 input int ConnectWaitSeconds = 45;
+input int IdentityWaitSeconds = 45;
 input bool PrintDebug = true;
 
 void OnStart()
@@ -26,6 +27,17 @@ void OnStart()
    if(!connected)
    {
       WriteStatus(false, trade_allowed, account, server, 0, -1, "TERMINAL_DISCONNECTED");
+      return;
+   }
+
+   bool identity_ready = WaitForSessionIdentity();
+   trade_allowed = (bool)AccountInfoInteger(ACCOUNT_TRADE_ALLOWED);
+   account = IntegerToString(AccountNumber());
+   server = AccountServer();
+
+   if(!identity_ready)
+   {
+      WriteStatus(true, trade_allowed, account, server, 0, -1, "IDENTITY_NOT_READY");
       return;
    }
 
@@ -92,6 +104,27 @@ bool WaitForConnection()
    return (bool)TerminalInfoInteger(TERMINAL_CONNECTED);
 }
 
+bool WaitForSessionIdentity()
+{
+   int timeout_ms = MathMax(0, IdentityWaitSeconds) * 1000;
+   int waited_ms = 0;
+
+   while(waited_ms < timeout_ms)
+   {
+      if((bool)TerminalInfoInteger(TERMINAL_CONNECTED) &&
+         AccountNumber() > 0 &&
+         StringLen(AccountServer()) > 0)
+         return true;
+
+      Sleep(250);
+      waited_ms += 250;
+   }
+
+   return ((bool)TerminalInfoInteger(TERMINAL_CONNECTED) &&
+           AccountNumber() > 0 &&
+           StringLen(AccountServer()) > 0);
+}
+
 long ReadSinceMs()
 {
    int handle = FileOpen(CursorFile, FILE_READ|FILE_TXT|FILE_ANSI);
@@ -145,7 +178,7 @@ string OrderToJson()
    j += "\"event_id\":\"" + IntegerToString(OrderTicket()) + "\",";
    j += "\"order_id\":\"" + IntegerToString(OrderTicket()) + "\",";
    j += "\"event_time_ms\":" + DoubleToString((double)event_ms,0) + ",";
-   j += "\"collector_version\":\"0.13\",";
+   j += "\"collector_version\":\"0.14\",";
 
    if(is_cash)
    {
