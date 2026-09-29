@@ -409,6 +409,21 @@ Remaining P2 cleanup is intentionally not urgent:
 - inline-style cleanup;
 - optional URL/deep-link SPA navigation.
 
+### A3. PWA shell cache regression — 2026-09-29
+A follow-up user screenshot proved that the browser was still rendering the old Equity implementation even after the corrected code had deployed. Root cause was the service worker shell policy, not the chart data:
+- `service-worker.js` was still on `tj-shell-v11`;
+- `app.js` and `styles.css` were served cache-first forever once present in the cache;
+- the previous Equity fix changed those files but did not change the service worker cache version or asset URLs, so existing clients could remain pinned to stale UI indefinitely.
+
+Repair:
+- bump shell cache to `tj-shell-v12`;
+- version mutable shell URLs with `?v=20260929-equity-cache-fix-1` in both `index.html` and the service-worker precache;
+- serve `/app.js` and `/styles.css` network-first with `cache:'no-store'`, cache fallback only for offline use;
+- register the worker with `updateViaCache:'none'` and explicitly call `registration.update()`;
+- add Smoke assertions that reject a return to cache-first mutable shell delivery.
+
+Rollback branch: `rollback/pre-pwa-cache-equity-fix-2026-09-29`.
+
 ### A2. Equity Curve + dynamic UI regression repair — 2026-09-29
 A user screenshot exposed a real regression introduced during the external-CSS / CSP hardening pass: the old Equity tooltip had used runtime `style.left/top`, but CSP correctly removed inline-style mutation and a fallback CSS rule accidentally pinned the tooltip to the chart's top-right corner. The crosshair/dot still tracked the inspected point, so tooltip and point visibly diverged.
 
