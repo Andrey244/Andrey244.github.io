@@ -27,7 +27,9 @@ def env_bool(name: str, default: bool = False) -> bool:
     return raw.strip().casefold() in {"1", "true", "yes", "on"}
 
 
-def build_worker() -> CollectorWorker:
+def build_worker(
+    failure_observer=None,
+) -> CollectorWorker:
     if sys.platform != "win32":
         raise RuntimeError("production collector must run on the owned Windows host")
 
@@ -70,6 +72,7 @@ def build_worker() -> CollectorWorker:
         initial_sync_days=int(os.environ.get("TJ_INITIAL_SYNC_DAYS", "730")),
         overlap_seconds=int(os.environ.get("TJ_SYNC_OVERLAP_SECONDS", "120")),
         batch_size=int(os.environ.get("TJ_INGEST_BATCH_SIZE", "100")),
+        failure_observer=failure_observer,
     )
 
 
