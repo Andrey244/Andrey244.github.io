@@ -1,5 +1,5 @@
 #property strict
-#property version   "0.12"
+#property version   "0.13"
 #property description "One-shot read-only MT4 history exporter for Trading Journal Collector."
 #property description "It never opens, modifies or closes trades."
 
@@ -10,6 +10,7 @@ input string OutputFile = "tj_export.jsonl";
 input string StatusFile = "tj_status.json";
 input string CursorFile = "tj_since_ms.txt";
 input int InitialSyncDays = 730;
+input int ConnectWaitSeconds = 45;
 input bool PrintDebug = true;
 
 void OnStart()
@@ -17,7 +18,7 @@ void OnStart()
    FileDelete(OutputFile);
    FileDelete(StatusFile);
 
-   bool connected = (bool)TerminalInfoInteger(TERMINAL_CONNECTED);
+   bool connected = WaitForConnection();
    bool trade_allowed = (bool)AccountInfoInteger(ACCOUNT_TRADE_ALLOWED);
    string account = IntegerToString(AccountNumber());
    string server = AccountServer();
@@ -77,6 +78,20 @@ void OnStart()
             " MT4 history rows from terminal history total=", total, ". READ-ONLY.");
 }
 
+bool WaitForConnection()
+{
+   int timeout_ms = MathMax(0, ConnectWaitSeconds) * 1000;
+   int waited_ms = 0;
+
+   while(!(bool)TerminalInfoInteger(TERMINAL_CONNECTED) && waited_ms < timeout_ms)
+   {
+      Sleep(250);
+      waited_ms += 250;
+   }
+
+   return (bool)TerminalInfoInteger(TERMINAL_CONNECTED);
+}
+
 long ReadSinceMs()
 {
    int handle = FileOpen(CursorFile, FILE_READ|FILE_TXT|FILE_ANSI);
@@ -130,7 +145,7 @@ string OrderToJson()
    j += "\"event_id\":\"" + IntegerToString(OrderTicket()) + "\",";
    j += "\"order_id\":\"" + IntegerToString(OrderTicket()) + "\",";
    j += "\"event_time_ms\":" + DoubleToString((double)event_ms,0) + ",";
-   j += "\"collector_version\":\"0.12\",";
+   j += "\"collector_version\":\"0.13\",";
 
    if(is_cash)
    {
