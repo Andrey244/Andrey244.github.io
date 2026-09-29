@@ -474,11 +474,18 @@ Implemented:
 
 Windows/VPS preflight is implemented at `collector/windows/preflight.ps1` and is mandatory from the installer. It fails closed on Windows/admin/machine-wide Python/network/terminal/MT4 EX4/All-History/BitLocker prerequisites before runtime state is created. On 2026-09-28 a real SCM failure was traced in CI to pywin32 `pythonservice.exe` failing to import `servicemanager` from a venv-local host. The accepted architecture now installs/validates pinned pywin32 in machine Python, runs its elevated post-install, hosts SCM with the machine `pythonservice.exe`, and points `PythonClass` at the isolated Collector venv. Smoke #204 proved this path under real Windows SCM.
 
+Live PC collector checkpoint (2026-09-29):
+- the owned Windows PC test host has the real `TradingJournalCollector` service installed, `Running` and `Automatic`;
+- its real registration bundle has been registered in production Supabase as the enabled primary collector;
+- a real post-registration heartbeat was observed immediately, and the active-key service returns this collector as ready;
+- do not register a duplicate node on continuation unless intentionally rotating/reprovisioning it;
+- the MT4 disposable-work VHDX must currently be mounted and BitLocker-unlocked after a reboot before MT4 Direct Collector use.
+
 Still pending before real Investor Password production use:
-- complete the final service install/provision on the owned Windows PC test host, then later reproduce the validated setup on the VPS;
-- register the real `registration.json` node;
+- run live broker-session validation through the registered primary collector, starting with MT4 on the PC test host;
+- reproduce the validated collector setup on the VPS after PC acceptance is complete;
 - install/validate real MT5 terminal under the Windows service identity;
-- the PC test host has already compiled `TradeJournalExport_MT4.mq4` v0.12 to EX4 in MetaEditor with 0 errors and has explicitly set/validated MT4 Account History = All History; real Direct Collector broker-session validation is still pending;
+- the PC test host has already compiled `TradeJournalExport_MT4.mq4` v0.12 to EX4 in MetaEditor with 0 errors and has explicitly set/validated MT4 Account History = All History;
 - run the complete MT4 and MT5 acceptance matrix: correct/wrong password, wrong server, master-password rejection, account/server mismatch, historical import coverage, retry/idempotency, reconnect, disconnect credential deletion and multi-account isolation.
 
 Do not provision a fake node just to enable the UI. The current fail-closed state is intentional until a real primary collector is online.
