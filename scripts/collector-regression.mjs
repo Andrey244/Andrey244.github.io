@@ -223,9 +223,11 @@ ok(mt4py.includes('ExpertsDllImport=false'),'MT4 startup: DLL import must be dis
 
 ok(mt4mql.includes('ACCOUNT_TRADE_ALLOWED'),'MT4 exporter: account trade permission gate missing');
 ok(mt4mql.includes('TERMINAL_CONNECTED'),'MT4 exporter: terminal connection gate missing');
-ok(mt4mql.includes('#property version   "0.13"'),'MT4 exporter version must reflect startup authentication hardening');
+ok(mt4mql.includes('#property version   "0.14"'),'MT4 exporter version must reflect startup authentication hardening');
 ok(mt4mql.includes('ConnectWaitSeconds = 45'),'MT4 exporter must allow bounded terminal-connect wait');
+ok(mt4mql.includes('IdentityWaitSeconds = 45'),'MT4 exporter must allow bounded account identity wait');
 ok(mt4mql.includes('WaitForConnection()'),'MT4 exporter must wait for terminal connection before emitting DISCONNECTED');
+ok(mt4mql.includes('WaitForSessionIdentity()'),'MT4 exporter must wait for account/server identity before exporting');
 ok(mt4mql.includes('closed_by_sl'),'MT4 exporter: SL evidence missing');
 ok(mt4mql.includes('sl_proximity'),'MT4 exporter: SL proximity diagnostic missing');
 ok(!mt4mql.includes('close_px <= sl + tol) closed_by_sl'),'MT4 exporter must not infer LOSS from BUY close-price proximity');
