@@ -12,6 +12,7 @@ from trading_journal_collector.errors import (
     AdapterUnavailableError,
     ConnectionProbeError,
     ControlPlaneError,
+    ExportValidationError,
     HistoryCoverageError,
     WriteCapableCredentialError,
 )
@@ -41,6 +42,14 @@ def safe_error_code(exc: Exception) -> str:
         return "BROKER_CONNECTION_FAILED"
     if isinstance(exc, ControlPlaneError):
         return "CONTROL_PLANE_ERROR"
+    if isinstance(exc, ExportValidationError):
+        return "MT4_EXPORT_VALIDATION_ERROR"
+    if isinstance(exc, PermissionError):
+        return "FILE_PERMISSION_ERROR"
+    if isinstance(exc, FileNotFoundError):
+        return "FILE_NOT_FOUND"
+    if isinstance(exc, OSError):
+        return "OS_ERROR"
     if isinstance(exc, (ValueError, binascii.Error)):
         return "INVALID_JOB_PAYLOAD"
     return "WORKER_ERROR"
@@ -57,6 +66,7 @@ class CollectorWorker:
         overlap_seconds: int = DEFAULT_OVERLAP_SECONDS,
         batch_size: int = DEFAULT_BATCH_SIZE,
         now_ms: Callable[[], int] | None = None,
+        failure_observer: Callable[[str, str], None] | None = None,
     ) -> None:
         if initial_sync_days < 1:
             raise ValueError("initial_sync_days must be positive")
@@ -71,6 +81,7 @@ class CollectorWorker:
         self.overlap_seconds = overlap_seconds
         self.batch_size = batch_size
         self._now_ms = now_ms or (lambda: int(time.time() * 1000))
+        self._failure_observer = failure_observer
 
     def run_once(self) -> bool:
         job = self.api.next_job()
@@ -142,12 +153,18 @@ class CollectorWorker:
                 sync_until_ms=sync_until_ms,
             )
         except Exception as exc:
+            error_code = safe_error_code(exc)
+            if self._failure_observer is not None:
+                try:
+                    self._failure_observer(error_code, type(exc).__name__)
+                except Exception:
+                    pass
             try:
                 self.api.report_job(
                     job.job_id,
                     job.attempt,
                     success=False,
-                    error_code=safe_error_code(exc),
+                    error_code=error_code,
                 )
             except Exception:
                 # The job lease will expire and be retried server-side.
