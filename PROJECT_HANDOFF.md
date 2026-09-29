@@ -409,6 +409,19 @@ Remaining P2 cleanup is intentionally not urgent:
 - inline-style cleanup;
 - optional URL/deep-link SPA navigation.
 
+### A6. MT4 Calendar ↔ Trades date consistency — 2026-09-29
+A user screenshot exposed a real timezone/display mismatch: MT4 trades were bucketed into Calendar/Daily Review using the preserved MT4 broker-day rule (`utcDayKey`), while the Trades table and trade modal formatted `closedAt/openedAt` through browser-local `toLocaleString()`. On a Tashkent browser this shifted late MT4 broker-time trades by +5 hours, so a 2026-09-28 broker-day close could display as 2026-09-29 00:xx in Trades.
+
+Repair:
+- added one source-aware timezone mapping: MT4 display/bucketing uses UTC-shaped broker wall-clock semantics; other sources continue to use Asia/Tashkent;
+- centralized source-aware day-key and datetime formatting;
+- Trades Date, trade modal Opened/Closed, and Equity tooltip timestamps now use the same source-aware semantics as Calendar;
+- direct-collector heartbeat/sync timestamps remain browser/UI-local because those are system timestamps, not broker trade timestamps;
+- PWA shell bumped to `tj-shell-v15` / `20260929-trade-time-sync-1` to force the corrected app into existing clients;
+- Smoke rejects any return to browser-local MT4 trade formatting.
+
+Rollback branch: `rollback/pre-trade-date-timezone-sync-current-2026-09-29`.
+
 ### A5. Equity tooltip auto-width + chart height correction — 2026-09-29
 Follow-up user clarification: the reported "auto-layout" problem was the tooltip card itself, not the Equity chart height. The tooltip used a fixed 220px width, leaving a large empty tail for short date/value/meta strings. The preceding audit had also made the chart too short relative to the user's preferred dashboard density.
 
