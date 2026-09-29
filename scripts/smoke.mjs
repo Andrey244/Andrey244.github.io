@@ -34,7 +34,7 @@ ok(mt4Connector.includes('const int TJ_OP_CREDIT  = 7;'),'MT4 connector: credit 
 ok(!/(^|[^A-Z_])OP_BALANCE([^A-Z_]|$)/m.test(mt4Connector.replace('const int TJ_OP_BALANCE = 6;','')),'MT4 connector: bare OP_BALANCE would not compile');
 ok(!/(^|[^A-Z_])OP_CREDIT([^A-Z_]|$)/m.test(mt4Connector.replace('const int TJ_OP_CREDIT  = 7;','')),'MT4 connector: bare OP_CREDIT would not compile');
 ok(/^<!doctype html>/i.test(html),'index.html: missing doctype');
-const appScriptPos=html.indexOf('<script src="/app.js?v=20260929-equity-tooltip-fit-1"></script>');
+const appScriptPos=html.indexOf('<script src="/app.js?v=20260929-trade-time-sync-1"></script>');
 const confirmModalPos=html.indexOf('id="confirmModal"');
 const bodyClosePos=html.lastIndexOf('</body>');
 ok(confirmModalPos>=0 && appScriptPos>confirmModalPos,'index.html: app.js must load after confirmModal/all runtime DOM');
@@ -55,14 +55,14 @@ ok(crypto.createHash('sha256').update(supabaseVendor).digest('hex')==='dff1e545f
 ok(html.includes('Content-Security-Policy'),'index.html: CSP meta missing');
 ok(html.includes("script-src 'self';"),'index.html: CSP script-src must be self-only');
 ok(html.includes("script-src-attr 'none'"),'index.html: inline script attributes must be blocked');
-ok(html.includes('<link rel="stylesheet" href="/styles.css?v=20260929-equity-tooltip-fit-1">'),'index.html: versioned external stylesheet missing');
+ok(html.includes('<link rel="stylesheet" href="/styles.css?v=20260929-trade-time-sync-1">'),'index.html: versioned external stylesheet missing');
 ok(html.includes("style-src 'self'; style-src-attr 'none';"),'index.html: stylesheet CSP must be self-only and block style attributes');
 ok(!/<style[\s>]/i.test(html),'index.html: inline style block returned');
 ok(!/\sstyle=["']/i.test(html),'index.html: inline style attribute returned');
 ok(!/\.style\.[A-Za-z]/.test(appJs),'app.js: runtime inline style mutation returned');
 ok(!/style=["']/.test(appJs),'app.js: generated inline style attribute returned');
 ok(stylesCss.includes('.equityHoverLine.on') && stylesCss.includes('.weekdayTrackFill'),'styles.css: extracted dynamic visual rules missing');
-ok(html.includes('<script src="/app.js?v=20260929-equity-tooltip-fit-1"></script>'),'index.html: versioned external app.js missing');
+ok(html.includes('<script src="/app.js?v=20260929-trade-time-sync-1"></script>'),'index.html: versioned external app.js missing');
 ok(html.includes('id="directConnectForm"'),'Direct broker connection form missing');
 ok(html.includes('id="directInvestorPassword"') && html.includes('id="directInvestorPassword" class="input" type="password"'),'Direct Investor Password field missing');
 ok(html.includes('id="directInvestorPassword"') && html.includes('placeholder="Read-only password" disabled'),'Direct secret field must ship disabled until collector readiness');
@@ -93,8 +93,8 @@ ok(appJs.includes("['Sign in','Войти']") && appJs.includes("['Create accoun
 ok(clientSource.includes("tx('Discard unsaved daily review changes?'"),'app.js: Daily Review guard must be localized');
 ok(clientSource.includes("tx('Direct collector is temporarily unavailable."),'app.js: dynamic direct-collector copy must be localized');
 ok(!appJs.includes("askConfirm('Discard unsaved daily review changes?')"),'app.js: hard-coded English Daily Review guard returned');
-ok(sw.includes("tj-shell-v14"),'service-worker.js: cache version not bumped for cache-safe shell delivery');
-ok(sw.includes("ASSET_VERSION='20260929-equity-tooltip-fit-1'"),'service-worker.js: shell asset version missing');
+ok(sw.includes("tj-shell-v15"),'service-worker.js: cache version not bumped for cache-safe shell delivery');
+ok(sw.includes("ASSET_VERSION='20260929-trade-time-sync-1'"),'service-worker.js: shell asset version missing');
 ok(sw.includes("if(url.pathname==='/app.js'||url.pathname==='/styles.css')"),'service-worker.js: mutable shell assets must bypass cache-first');
 ok(sw.includes("fetch(req,{cache:'no-store'})"),'service-worker.js: mutable shell assets must revalidate from network');
 ok(appJs.includes("register('/service-worker.js',{updateViaCache:'none'})"),'app.js: service worker registration must bypass HTTP cache');
@@ -153,7 +153,10 @@ ok(clientSource.includes('tradeOpenBtn') && clientSource.includes('data-open-tra
 ok(clientSource.includes('for="fSetup"') && clientSource.includes('for="dWorked"'),'index.html: review form labels missing');
 ok(clientSource.includes("chart.onkeydown=e=>"),'index.html: Equity keyboard inspection missing');
 ok(appJs.includes("equityTooltipA11y") && appJs.includes("aria-live=\"polite\""),'app.js: Equity keyboard inspection must retain an accessible live status');
-ok(appJs.includes("new Date(t.closedAt).toLocaleString(uiLocale())"),'app.js: Trades timestamps must follow journal locale');
+ok(appJs.includes("sourceTimeZone(source){return String(source||'').toUpperCase()==='MT4'?'UTC':'Asia/Tashkent'"),'app.js: source timezone mapping missing');
+ok(appJs.includes("formatSourceDateTime(t.closedAt,t.source)"),'app.js: Trades timestamps must use source-aware broker-day formatting');
+ok(appJs.includes("formatSourceDateTime(t.openedAt,t.source)") && appJs.includes("formatSourceDateTime(t.closedAt,t.source)"),'app.js: trade modal timestamps must use source-aware formatting');
+ok(!appJs.includes("new Date(t.closedAt).toLocaleString(uiLocale())"),'app.js: browser-local trade timestamp regression returned');
 ok(appJs.includes("monthDate.toLocaleDateString(uiLocale()"),'app.js: Calendar month label must follow journal locale');
 ok(appJs.includes("new Date(row.last_sync_at).toLocaleString(uiLocale())"),'app.js: Direct connection timestamps must follow journal locale');
 
