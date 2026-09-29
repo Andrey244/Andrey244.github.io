@@ -1576,7 +1576,7 @@ function renderEquity(){
     )
   );
 
-  const tipW=Math.min(220,Math.max(180,W-16)),tipH=58;
+  const tipMinW=150,tipMaxW=Math.min(260,W-16),tipH=58;
   chart.innerHTML=
     '<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" aria-hidden="true" focusable="false">'+
       '<defs><linearGradient id="eqFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#21df8c" stop-opacity=".24"/><stop offset="100%" stop-color="#21df8c" stop-opacity=".01"/></linearGradient></defs>'+
@@ -1586,7 +1586,7 @@ function renderEquity(){
       '<circle class="equityHoverDot" cx="0" cy="0" r="5" vector-effect="non-scaling-stroke"></circle>'+
       '<rect class="equityHitArea" x="0" y="0" width="'+W+'" height="'+H+'" fill="transparent"></rect>'+
       '<g class="equitySvgTooltip" aria-hidden="true">'+
-        '<rect class="equityTipBg" width="'+tipW+'" height="'+tipH+'" rx="10" ry="10"></rect>'+
+        '<rect class="equityTipBg" width="'+tipMinW+'" height="'+tipH+'" rx="10" ry="10"></rect>'+
         '<text class="equityTipDate" x="10" y="14"></text>'+
         '<text class="equityTipValue" x="10" y="32"><tspan class="equityTipLabel"></tspan><tspan class="equityTipBalance" dx="5"></tspan></text>'+
         '<text class="equityTipMeta" x="10" y="49"></text>'+
@@ -1600,6 +1600,7 @@ function renderEquity(){
   const dot=chart.querySelector('.equityHoverDot');
   const tip=chart.querySelector('.equitySvgTooltip');
   const dateEl=tip.querySelector('.equityTipDate');
+  const valueEl=tip.querySelector('.equityTipValue');
   const labelEl=tip.querySelector('.equityTipLabel');
   const balanceEl=tip.querySelector('.equityTipBalance');
   const metaEl=tip.querySelector('.equityTipMeta');
@@ -1617,12 +1618,6 @@ function renderEquity(){
     dot.setAttribute('cx',cx);
     dot.setAttribute('cy',cy);
     dot.classList.add('on');
-
-    let tipX=Math.max(8,Math.min(W-tipW-8,cx-tipW/2));
-    let tipY=cy-tipH-10;
-    if(tipY<8)tipY=Math.min(H-tipH-8,cy+10);
-    tip.setAttribute('transform','translate('+tipX.toFixed(2)+' '+tipY.toFixed(2)+')');
-    tip.classList.add('on');
 
     const prevPoint=idx>0?points[idx-1]:null;
     const balanceClass=!prevPoint?'':p.equity>prevPoint.equity?'up':p.equity<prevPoint.equity?'down':'';
@@ -1656,6 +1651,19 @@ function renderEquity(){
         spokenMeta='#'+p.tradeNumber+' '+symbol+' '+side+' '+tx('Trade','Сделка')+' '+money(tradePnl);
       }
     }
+
+    const measuredW=Math.ceil(Math.max(
+      dateEl.getComputedTextLength(),
+      valueEl.getComputedTextLength(),
+      metaEl.getComputedTextLength()
+    )+20);
+    const tipW=Math.max(tipMinW,Math.min(tipMaxW,measuredW));
+    tip.querySelector('.equityTipBg').setAttribute('width',tipW);
+    let tipX=Math.max(8,Math.min(W-tipW-8,cx-tipW/2));
+    let tipY=cy-tipH-10;
+    if(tipY<8)tipY=Math.min(H-tipH-8,cy+10);
+    tip.setAttribute('transform','translate('+tipX.toFixed(2)+' '+tipY.toFixed(2)+')');
+    tip.classList.add('on');
 
     if(announce){
       a11yEl.textContent=dateEl.textContent+'. '+tx('Equity','Капитал')+' '+balanceMoney(p.equity)+'. '+spokenMeta;
