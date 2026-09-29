@@ -1552,7 +1552,7 @@ function renderEquity(){
   const pad=Math.max(1,(max-min)*0.08);
   const chartMin=min-pad,chartMax=max+pad,span=Math.max(1,chartMax-chartMin);
   const W=Math.max(320,Math.round(chart.getBoundingClientRect().width||1000));
-  const H=Math.max(210,Math.round(chart.getBoundingClientRect().height||260));
+  const H=Math.max(160,Math.round(chart.getBoundingClientRect().height||270));
   const px=22,py=18,plotW=W-px*2,plotH=H-py*2;
   const X=i=>px+(i/(vals.length-1||1))*plotW;
   const Y=v=>py+(chartMax-v)/span*plotH;
