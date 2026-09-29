@@ -409,6 +409,23 @@ Remaining P2 cleanup is intentionally not urgent:
 - inline-style cleanup;
 - optional URL/deep-link SPA navigation.
 
+### A2. Equity Curve + dynamic UI regression repair — 2026-09-29
+A user screenshot exposed a real regression introduced during the external-CSS / CSP hardening pass: the old Equity tooltip had used runtime `style.left/top`, but CSP correctly removed inline-style mutation and a fallback CSS rule accidentally pinned the tooltip to the chart's top-right corner. The crosshair/dot still tracked the inspected point, so tooltip and point visibly diverged.
+
+Fixed on current main:
+- Equity tooltip is now rendered as an SVG group and positioned with SVG `transform` attributes, preserving strict `style-src-attr 'none'` and the no-`.style.*` runtime rule;
+- chart SVG viewport is sized from the rendered chart dimensions and re-renders on Insights activation / debounced resize;
+- tooltip is clamped inside the chart at both edges;
+- keyboard inspection keeps a separate screen-reader live status;
+- cash-flow points no longer shift the displayed logical trade number;
+- Equity Start / Current / Peak / counted-trades / tooltip copy is RU/EN-aware;
+- Equity tooltip date now uses the journal locale instead of the browser OS locale;
+- the audit also corrected dynamic locale drift in sync status, direct-connection timestamps/state labels, calendar labels/dates, Trades timestamps, Daily Review date and several Insights/selection strings.
+
+Regression coverage now explicitly rejects the stale fixed-corner tooltip override and requires point-following SVG tooltip geometry + journal-locale dates.
+
+Browser note: TinyFish was intentionally not used per user preference. Live authenticated browser validation remains to be done with Playwright when available; CI/static regression and Pages deployment are the required automated gates for this pass.
+
 ### B. Browser QA — CURRENT DEPLOYED AUTH SURFACE VERIFIED
 A fresh live-browser regression was run against deployed HEAD `dc9b1560f5fabe7fcc33167e886ad3ce00460899` on 2026-09-28 after the RU/EN completion commit:
 - Russian default auth UI passed;
