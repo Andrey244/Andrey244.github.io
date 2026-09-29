@@ -82,6 +82,21 @@ class Mt4LauncherTests(unittest.TestCase):
         self.assertEqual(rmtree.call_count, 3)
         self.assertEqual(sleep.call_count, 2)
 
+    def test_purge_saved_account_cache_removes_only_disposable_credential_files(self):
+        with tempfile.TemporaryDirectory() as root:
+            slot = Path(root)
+            config = slot / "config"
+            config.mkdir()
+            (config / "accounts.ini").write_text("saved-account", encoding="utf-8")
+            (config / "server.ini").write_text("saved-server", encoding="utf-8")
+            (config / "Alpari-Pro.ECN-Demo.srv").write_text("srv", encoding="utf-8")
+
+            Mt4Adapter._purge_saved_account_cache(slot)
+
+            self.assertFalse((config / "accounts.ini").exists())
+            self.assertFalse((config / "server.ini").exists())
+            self.assertTrue((config / "Alpari-Pro.ECN-Demo.srv").exists())
+
     def test_disposable_slot_exports_and_cleans_secret_config(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
