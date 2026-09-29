@@ -64,6 +64,9 @@ jobs:
           $tokens=$null; $errors=$null
           [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path 'collector/windows/preflight.ps1'),[ref]$tokens,[ref]$errors) | Out-Null
           if($errors.Count){ throw ($errors | Out-String) }
+          $tokens=$null; $errors=$null
+          [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path 'collector/windows/update-service.ps1'),[ref]$tokens,[ref]$errors) | Out-Null
+          if($errors.Count){ throw ($errors | Out-String) }
       - name: Run Windows DPAPI integration test
         env:
           PYTHONPATH: collector/src
@@ -104,6 +107,30 @@ jobs:
             throw 'Collector registration.json was not created under real SCM startup.'
           }
           Write-Host 'Real Windows SCM collector acceptance passed.'
+
+      - name: Run in-place collector update acceptance
+        shell: pwsh
+        run: |
+          $registration = 'C:\ProgramData\TradingJournalCollector\state\registration.json'
+          $config = 'C:\ProgramData\TradingJournalCollector\collector.json'
+          $beforeRegistration = (Get-FileHash $registration -Algorithm SHA256).Hash
+          $beforeConfig = (Get-FileHash $config -Algorithm SHA256).Hash
+
+          & '.\collector\windows\update-service.ps1' -CollectorSource '.\collector'
+
+          $svc = Get-Service TradingJournalCollector
+          if ($svc.Status -ne 'Running') {
+            throw "Collector service is not Running after in-place update: $($svc.Status)"
+          }
+          $afterRegistration = (Get-FileHash $registration -Algorithm SHA256).Hash
+          $afterConfig = (Get-FileHash $config -Algorithm SHA256).Hash
+          if ($beforeRegistration -ne $afterRegistration) {
+            throw 'In-place update changed collector registration/identity state.'
+          }
+          if ($beforeConfig -ne $afterConfig) {
+            throw 'In-place update changed collector config.'
+          }
+          Write-Host 'In-place collector update acceptance passed.'
 
       - name: Cleanup Windows SCM collector acceptance
         if: always()
