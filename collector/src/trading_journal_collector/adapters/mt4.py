@@ -240,6 +240,14 @@ class Mt4Adapter:
 
         try:
             shutil.copytree(self.golden_terminal_dir, slot, dirs_exist_ok=True)
+
+            # Never allow copied golden-terminal credential caches to override
+            # the short-lived Investor Password startup config. MT4 documents
+            # that saved account data can cause Password/Server startup values
+            # to be ignored. Remove only disposable-slot credential caches;
+            # broker .srv files and the golden template remain untouched.
+            self._purge_saved_account_cache(slot)
+
             files_dir = slot / "MQL4" / "Files"
             files_dir.mkdir(parents=True, exist_ok=True)
             output_path = files_dir / self.OUTPUT_FILE
@@ -338,6 +346,12 @@ class Mt4Adapter:
             if process is not None:
                 self._stop_process(process)
             self._remove_slot(slot)
+
+    @classmethod
+    def _purge_saved_account_cache(cls, slot: Path) -> None:
+        config_dir = slot / "config"
+        for name in ("accounts.ini", "server.ini"):
+            cls._overwrite_and_unlink(config_dir / name)
 
     @staticmethod
     def _overwrite_and_unlink(path: Path) -> None:
