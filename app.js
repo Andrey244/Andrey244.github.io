@@ -111,6 +111,23 @@ function applyLanguage(){
     : '“Delete request” lets the person sign up again immediately (useful for a mistyped email).<br>“Block 5 minutes” prevents this email from creating a new request for 5 minutes.';
   const clearPeriod=el('clearPeriodBtn');
   if(clearPeriod){clearPeriod.title=tx('Clear period','Сбросить период');clearPeriod.setAttribute('aria-label',tx('Clear period','Сбросить период'))}
+  const ariaPairs={
+    prevMonth:['Previous month','Предыдущий месяц'],
+    nextMonth:['Next month','Следующий месяц'],
+    rangePrevMonth:['Previous month','Предыдущий месяц'],
+    rangeNextMonth:['Next month','Следующий месяц'],
+    search:['Search trades','Поиск сделок'],
+    sideFilter:['Trade side','Сторона сделки'],
+    sourceFilter:['Trade source','Источник сделки'],
+    resultFilter:['Trade result','Результат сделки'],
+    reviewFilter:['Review status','Статус разбора'],
+    ghostFilter:['Ghost trade filter','Фильтр Ghost-сделок'],
+    mobileReviewBtn:['Daily review','Разбор дня'],
+    mobileMoreBtn:['More','Ещё']
+  };
+  Object.entries(ariaPairs).forEach(([id,[en,ru]])=>{const n=el(id);if(n)n.setAttribute('aria-label',tx(en,ru))});
+  document.querySelectorAll('[data-mobile-view="insights"]').forEach(n=>n.setAttribute('aria-label',tx('Insights','Аналитика')));
+  document.querySelectorAll('[data-mobile-view="trades"]').forEach(n=>n.setAttribute('aria-label',tx('Trades','Сделки')));
   const placeholderPairs={
     directLogin:['Broker account login','Логин брокерского счёта'],
     directServer:['Exact broker server','Точное имя broker server'],
