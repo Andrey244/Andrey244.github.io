@@ -186,10 +186,6 @@ async function withBusyButton(btn,busyText,task){
 function dayKey(d){return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Tashkent',year:'numeric',month:'2-digit',day:'2-digit'}).format(d)}
 function utcDayKey(d){return new Intl.DateTimeFormat('en-CA',{timeZone:'UTC',year:'numeric',month:'2-digit',day:'2-digit'}).format(d)}
 function sourceTimeZone(source){return String(source||'').toUpperCase()==='MT4'?'UTC':'Asia/Tashkent'}
-function sourceDayKey(ts,source){
-  if(!ts)return null;
-  return new Intl.DateTimeFormat('en-CA',{timeZone:sourceTimeZone(source),year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(ts));
-}
 function formatSourceDateTime(ts,source,options){
   if(!ts)return '—';
   const d=new Date(ts);
