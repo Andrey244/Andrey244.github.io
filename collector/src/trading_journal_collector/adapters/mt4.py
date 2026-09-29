@@ -359,6 +359,21 @@ class Mt4Adapter:
     @staticmethod
     def _stop_process(process: ProcessLike) -> None:
         try:
+            pid = getattr(process, "pid", None)
+            if os.name == "nt" and isinstance(pid, int) and pid > 0:
+                try:
+                    subprocess.run(
+                        ["taskkill", "/PID", str(pid), "/T", "/F"],
+                        stdin=subprocess.DEVNULL,
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL,
+                        timeout=15,
+                        check=False,
+                        creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+                    )
+                except Exception:
+                    pass
+
             if process.poll() is not None:
                 return
             process.terminate()
@@ -376,7 +391,10 @@ class Mt4Adapter:
     @staticmethod
     def _remove_slot(slot: Path) -> None:
         last_error: OSError | None = None
-        for _ in range(10):
+        # MT4 and Windows Defender may briefly retain handles after the terminal
+        # exits. Retry long enough for handles to drain instead of turning a
+        # successful broker validation into a cleanup failure.
+        for _ in range(60):
             try:
                 shutil.rmtree(slot)
                 return
@@ -384,6 +402,6 @@ class Mt4Adapter:
                 return
             except OSError as exc:
                 last_error = exc
-                time.sleep(0.2)
+                time.sleep(0.5)
         if last_error is not None:
             raise ExportValidationError("MT4 disposable slot cleanup failed") from last_error
