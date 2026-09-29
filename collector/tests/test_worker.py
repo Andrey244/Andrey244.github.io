@@ -12,7 +12,7 @@ if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 from trading_journal_collector.api import CollectorApi
-from trading_journal_collector.errors import HistoryCoverageError, WriteCapableCredentialError
+from trading_journal_collector.errors import ExportValidationError, HistoryCoverageError, WriteCapableCredentialError
 from trading_journal_collector.models import CollectorJob, NormalizedEvent, Platform
 from trading_journal_collector.worker import CollectorWorker
 
@@ -230,6 +230,23 @@ class WorkerTests(unittest.TestCase):
         self.assertEqual(
             api.reports[0][1:],
             (job(key_id="other-key").attempt, False, "INVALID_JOB_PAYLOAD", None),
+        )
+
+    def test_failure_observer_receives_safe_code_and_exception_type(self):
+        seen = []
+        adapter = FakeHistoryAdapter(error=ExportValidationError("details must not leak"))
+        api = FakeApi(job(job_type="VALIDATE"))
+        worker = CollectorWorker(
+            api=api,
+            identity=FakeIdentity(),
+            adapters={Platform.MT5:adapter},
+            failure_observer=lambda code, exc_type: seen.append((code, exc_type)),
+        )
+        worker.run_once()
+        self.assertEqual(seen, [("MT4_EXPORT_VALIDATION_ERROR", "ExportValidationError")])
+        self.assertEqual(
+            api.reports[0][1:],
+            (job(job_type="VALIDATE").attempt, False, "MT4_EXPORT_VALIDATION_ERROR", None),
         )
 
 
