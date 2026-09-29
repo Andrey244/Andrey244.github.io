@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 
 function ok(cond,msg){ if(!cond) throw new Error(msg); }
 
-const [arch, pyproject, mt5, mt4py, mt4mql, crypto, dpapi, identity, serviceSql, cursorSql, registerSql, strictLeaseSql, unifiedIngestSql, leaseFixSql, leaseBase64Sql, edgeShared, brokerKey, brokerConnect, brokerDisconnect, collectorNext, collectorReport, collectorIngest, api, worker, main, provision, service, serviceConfig, installer, preflight, manualMt4] = await Promise.all([
+const [arch, pyproject, mt5, mt4py, mt4mql, crypto, dpapi, identity, serviceSql, cursorSql, registerSql, strictLeaseSql, unifiedIngestSql, leaseFixSql, leaseBase64Sql, edgeShared, brokerKey, brokerConnect, brokerDisconnect, collectorNext, collectorReport, collectorIngest, api, worker, main, provision, service, serviceConfig, installer, updater, preflight, manualMt4] = await Promise.all([
   fs.readFile('docs/INVESTOR_COLLECTOR_V1.md','utf8'),
   fs.readFile('collector/pyproject.toml','utf8'),
   fs.readFile('collector/src/trading_journal_collector/adapters/mt5.py','utf8'),
@@ -32,6 +32,7 @@ const [arch, pyproject, mt5, mt4py, mt4mql, crypto, dpapi, identity, serviceSql,
   fs.readFile('collector/src/trading_journal_collector/service.py','utf8'),
   fs.readFile('collector/src/trading_journal_collector/service_config.py','utf8'),
   fs.readFile('collector/windows/install-service.ps1','utf8'),
+  fs.readFile('collector/windows/update-service.ps1','utf8'),
   fs.readFile('collector/windows/preflight.ps1','utf8'),
   fs.readFile('downloads/TradeJournalConnector_MT4_v1.18.mq4','utf8'),
 ]);
@@ -86,6 +87,11 @@ ok(installer.includes('$ServiceClassString = $VenvPurelib + "\\trading_journal_c
 ok(installer.includes('$env:TJ_PYTHON_SERVICE_EXE = $MachineServiceHost.exe'),'Windows installer must register SCM with the machine pythonservice host');
 ok(installer.includes('$env:TJ_SERVICE_CLASS_STRING = $ServiceClassString'),'Windows installer must register the venv-qualified Collector class');
 ok(!installer.includes('function Prepare-PythonServiceRuntime'),'stale venv-embedded pythonservice host preparation must not return');
+ok(updater.includes('pip wheel'),'in-place updater must build a wheel before touching the live service');
+ok(updater.includes('--force-reinstall'),'in-place updater must replace the installed Collector package deterministically');
+ok(updater.includes('Identity/config/state preserved.'),'in-place updater must preserve runtime identity/config/state');
+ok(updater.includes('attempting package rollback'),'in-place updater must attempt automatic package rollback on failure');
+ok(updater.includes('Service status: Running'),'in-place updater must prove the Windows service returned to Running');
 ok(preflight.includes('python_3_12'),'Windows preflight must check Python 3.12');
 ok(preflight.includes('HKLM:\\SOFTWARE\\Python\\PythonCore\\3.12\\InstallPath'),'Windows preflight must require machine-wide Python 3.12 registration');
 ok(preflight.includes('Per-user Python under a user profile is not accepted'),'Windows preflight must reject per-user Python for service runtime');
