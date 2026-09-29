@@ -408,10 +408,12 @@ function hideEquityTooltip(){
   if(!chart)return;
   const line=chart.querySelector('.equityHoverLine');
   const dot=chart.querySelector('.equityHoverDot');
-  const tip=chart.querySelector('.equityTooltip');
+  const tip=chart.querySelector('.equitySvgTooltip');
+  const a11y=chart.querySelector('.equityTooltipA11y');
   if(line)line.classList.remove('on');
   if(dot)dot.classList.remove('on');
   if(tip)tip.classList.remove('on');
+  if(a11y)a11y.textContent='';
 }
 function switchView(view){
   hideEquityTooltip();
@@ -422,6 +424,7 @@ function switchView(view){
   el('mobileMoreSheet').classList.add('hide');
   if(view==='access'&&canManageAccess())loadMembers();
   if(view==='connection')ensureDirectCollectorReady();
+  if(view==='insights')requestAnimationFrame(renderEquity);
 }
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>switchView(t.dataset.view));
 document.querySelectorAll('[data-mobile-view]').forEach(t=>t.onclick=()=>switchView(t.dataset.mobileView));
@@ -435,6 +438,15 @@ document.addEventListener('pointerdown',e=>{
   if(chart&&!chart.contains(e.target))hideEquityTooltip();
 },true);
 window.addEventListener('blur',hideEquityTooltip);
+let equityResizeTimer=null;
+window.addEventListener('resize',()=>{
+  if(equityResizeTimer)clearTimeout(equityResizeTimer);
+  equityResizeTimer=setTimeout(()=>{
+    equityResizeTimer=null;
+    const insights=el('insights');
+    if(membership?.approved&&insights&&!insights.classList.contains('hide'))renderEquity();
+  },120);
+});
 
 async function fetchAll(table){
   const orderMap={
@@ -694,9 +706,9 @@ async function loadData({silent=false}={}){
     if(optional[4].status==='fulfilled')brokerConnections=optional[4].value||[];
     rebuildJournalData();
     lastFullLoadAt=Date.now();
-    el('sync').textContent=(degraded.length?'Synced · partial':'Synced · live')+' · '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    el('sync').textContent=(degraded.length?tx('Synced · partial','Синхронизировано · частично'):tx('Synced · live','Синхронизировано · live'))+' · '+new Date().toLocaleTimeString(uiLocale(),{hour:'2-digit',minute:'2-digit'});
   }catch(e){
-    el('sync').textContent='Sync error';
+    el('sync').textContent=tx('Sync error','Ошибка синхронизации');
     if(typeof showToast==='function')showToast(String(e?.message||e),'error');
   }finally{
     if(!silent)setDataLoading(false);
@@ -714,7 +726,7 @@ function scheduleRealtimeRebuild(){
   realtimeRebuildTimer=setTimeout(()=>{
     realtimeRebuildTimer=null;
     rebuildJournalData();
-    el('sync').textContent='Synced · live · '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    el('sync').textContent=tx('Synced · live','Синхронизировано · live')+' · '+new Date().toLocaleTimeString(uiLocale(),{hour:'2-digit',minute:'2-digit'});
   },350);
 }
 function startJournalRealtime(userId){
@@ -1221,7 +1233,15 @@ async function ensureDirectCollectorReady(force=false){
 }
 function directStateLabel(state){
   const value=String(state||'').toUpperCase();
-  return ({PENDING_VALIDATION:'Pending validation',VALIDATING:'Validating',CONNECTED:'Connected',DEGRADED:'Degraded',ERROR:'Error',DISCONNECTED:'Disconnected'})[value]||value||'Unknown';
+  const labels={
+    PENDING_VALIDATION:tx('Pending validation','Ожидает проверки'),
+    VALIDATING:tx('Validating','Проверка'),
+    CONNECTED:tx('Connected','Подключено'),
+    DEGRADED:tx('Degraded','Есть проблемы'),
+    ERROR:tx('Error','Ошибка'),
+    DISCONNECTED:tx('Disconnected','Отключено')
+  };
+  return labels[value]||value||tx('Unknown','Неизвестно');
 }
 function renderDirectConnections(){
   const host=el('directConnectionList');if(!host)return;
@@ -1229,9 +1249,9 @@ function renderDirectConnections(){
   if(!rows.length){host.innerHTML='<div class="hint directFallbackNote">'+esc(tx('Direct connections will appear here after a successful connection.','Direct connections появятся здесь после успешного подключения.'))+'</div>';return}
   host.innerHTML=rows.map(row=>{
     const state=String(row.state||'').toLowerCase();
-    const seen=row.last_sync_at?('Last sync · '+new Date(row.last_sync_at).toLocaleString()):(row.last_error_at?('Last error · '+new Date(row.last_error_at).toLocaleString()):'Waiting for collector');
+    const seen=row.last_sync_at?(tx('Last sync','Последняя синхронизация')+' · '+new Date(row.last_sync_at).toLocaleString(uiLocale())):(row.last_error_at?(tx('Last error','Последняя ошибка')+' · '+new Date(row.last_error_at).toLocaleString(uiLocale())):tx('Waiting for collector','Ожидание collector'));
     const err=row.last_error_code?(' · '+String(row.last_error_code)):'';
-    return '<div class="directConnectionRow"><div class="directConnectionMeta"><b>'+esc(String(row.platform||'')+' · '+String(row.login||'')+' · '+String(row.server||''))+'</b><span>'+esc(seen+err)+'</span></div><div class="directConnectionState '+esc(state)+'">'+esc(directStateLabel(row.state))+'</div><button class="btn" type="button" data-direct-disconnect="'+esc(row.id)+'">Disconnect</button></div>';
+    return '<div class="directConnectionRow"><div class="directConnectionMeta"><b>'+esc(String(row.platform||'')+' · '+String(row.login||'')+' · '+String(row.server||''))+'</b><span>'+esc(seen+err)+'</span></div><div class="directConnectionState '+esc(state)+'">'+esc(directStateLabel(row.state))+'</div><button class="btn" type="button" data-direct-disconnect="'+esc(row.id)+'">'+esc(tx('Disconnect','Отключить'))+'</button></div>';
   }).join('');
   host.querySelectorAll('[data-direct-disconnect]').forEach(btn=>btn.onclick=()=>disconnectDirectConnection(btn.dataset.directDisconnect,btn));
 }
@@ -1481,31 +1501,42 @@ function equityScopeContext(){
 
 function renderEquity(){
   const trades=model.trades.slice().sort((a,b)=>new Date(a.closedAt)-new Date(b.closedAt));
+  const chart=el('equityChart');
   if(!trades.length){
-    const chart=el('equityChart');
     el('equityMeta').innerHTML='';
     chart.innerHTML='<div class="empty emptyChart">'+esc(tx('No counted trades yet','Пока нет учитываемых сделок'))+'</div>';
-    chart.tabIndex=-1;chart.setAttribute('role','status');chart.setAttribute('aria-label','No counted trades yet');
+    chart.tabIndex=-1;chart.setAttribute('role','status');chart.setAttribute('aria-label',tx('No counted trades yet','Пока нет учитываемых сделок'));
     return;
   }
 
   const ctx=equityScopeContext();
-  let eq=ctx.base,peak=ctx.base;
+  let eq=ctx.base,peak=ctx.base,tradeNumber=0;
   const timeline=trades.map(t=>({kind:'trade',time:t.closedAt,amount:Number(t.pnl||0),trade:t}))
     .concat(ctx.periodCashFlows)
     .sort((a,b)=>new Date(a.time)-new Date(b.time));
-  const points=[{equity:ctx.base,trade:null,kind:'start'}];
+  const points=[{equity:ctx.base,trade:null,kind:'start',tradeNumber:null}];
   timeline.forEach(item=>{
     eq+=Number(item.amount||0);
     peak=Math.max(peak,eq);
-    points.push({equity:eq,trade:item.trade||null,kind:item.kind,cash:item.event||null,amount:item.amount,time:item.time});
+    if(item.kind==='trade')tradeNumber++;
+    points.push({
+      equity:eq,
+      trade:item.trade||null,
+      kind:item.kind,
+      cash:item.event||null,
+      amount:item.amount,
+      time:item.time,
+      tradeNumber:item.kind==='trade'?tradeNumber:null
+    });
   });
 
   const vals=points.map(p=>p.equity);
   const min=Math.min(...vals),max=Math.max(...vals);
   const pad=Math.max(1,(max-min)*0.08);
   const chartMin=min-pad,chartMax=max+pad,span=Math.max(1,chartMax-chartMin);
-  const W=1000,H=260,px=22,py=18,plotW=W-px*2,plotH=H-py*2;
+  const W=Math.max(320,Math.round(chart.getBoundingClientRect().width||1000));
+  const H=Math.max(210,Math.round(chart.getBoundingClientRect().height||260));
+  const px=22,py=18,plotW=W-px*2,plotH=H-py*2;
   const X=i=>px+(i/(vals.length-1||1))*plotW;
   const Y=v=>py+(chartMax-v)/span*plotH;
   const path=vals.map((v,i)=>(i?'L':'M')+X(i).toFixed(2)+' '+Y(v).toFixed(2)).join(' ');
@@ -1513,15 +1544,22 @@ function renderEquity(){
   const area=path+' L '+X(vals.length-1).toFixed(2)+' '+floorY+' L '+X(0).toFixed(2)+' '+floorY+' Z';
 
   el('equityMeta').innerHTML=
-    '<span class="equityChip">Start <b>'+balanceMoney(ctx.base)+'</b></span>'+
-    '<span class="equityChip">Current <b>'+balanceMoney(eq)+'</b></span>'+
-    '<span class="equityChip">Peak <b>'+balanceMoney(peak)+'</b></span>'+
-    '<span class="equityChip">'+trades.length+' counted trades</span>'+
-    (!ctx.configured?'<span class="equityChip amber">Set starting balance in Accounts</span>':'');
+    '<span class="equityChip">'+esc(tx('Start','Старт'))+' <b>'+balanceMoney(ctx.base)+'</b></span>'+
+    '<span class="equityChip">'+esc(tx('Current','Текущий'))+' <b>'+balanceMoney(eq)+'</b></span>'+
+    '<span class="equityChip">'+esc(tx('Peak','Пик'))+' <b>'+balanceMoney(peak)+'</b></span>'+
+    '<span class="equityChip">'+trades.length+' '+esc(tx('counted trades','учитываемых сделок'))+'</span>'+
+    (!ctx.configured?'<span class="equityChip amber">'+esc(tx('Set starting balance in Accounts','Задай стартовый баланс в Счетах'))+'</span>':'');
 
-  const chart=el('equityChart');
   chart.tabIndex=0;chart.setAttribute('role','group');
-  chart.setAttribute('aria-label','Equity curve. Start '+balanceMoney(ctx.base)+', current '+balanceMoney(eq)+'. Use left and right arrow keys to inspect points.');
+  chart.setAttribute(
+    'aria-label',
+    tx(
+      'Equity curve. Start '+balanceMoney(ctx.base)+', current '+balanceMoney(eq)+'. Use left and right arrow keys to inspect points.',
+      'Кривая капитала. Старт '+balanceMoney(ctx.base)+', текущий '+balanceMoney(eq)+'. Используй стрелки влево и вправо для просмотра точек.'
+    )
+  );
+
+  const tipW=Math.min(248,Math.max(190,W-16)),tipH=64;
   chart.innerHTML=
     '<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" aria-hidden="true" focusable="false">'+
       '<defs><linearGradient id="eqFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#21df8c" stop-opacity=".24"/><stop offset="100%" stop-color="#21df8c" stop-opacity=".01"/></linearGradient></defs>'+
@@ -1530,19 +1568,27 @@ function renderEquity(){
       '<line class="equityHoverLine" x1="0" y1="'+py+'" x2="0" y2="'+(H-py)+'"></line>'+
       '<circle class="equityHoverDot" cx="0" cy="0" r="5" vector-effect="non-scaling-stroke"></circle>'+
       '<rect class="equityHitArea" x="0" y="0" width="'+W+'" height="'+H+'" fill="transparent"></rect>'+
+      '<g class="equitySvgTooltip" aria-hidden="true">'+
+        '<rect class="equityTipBg" width="'+tipW+'" height="'+tipH+'" rx="10" ry="10"></rect>'+
+        '<text class="equityTipDate" x="10" y="15"></text>'+
+        '<text class="equityTipValue" x="10" y="35"><tspan class="equityTipLabel"></tspan><tspan class="equityTipBalance" dx="5"></tspan></text>'+
+        '<text class="equityTipMeta" x="10" y="54"></text>'+
+      '</g>'+
     '</svg>'+
-    '<div class="equityTooltip" role="status"><div class="eqDate"></div><div class="eqValue"></div><div class="eqMeta"></div></div>';
+    '<div class="srOnly equityTooltipA11y" role="status" aria-live="polite" aria-atomic="true"></div>';
 
   const svg=chart.querySelector('svg');
   const hit=chart.querySelector('.equityHitArea');
   const line=chart.querySelector('.equityHoverLine');
   const dot=chart.querySelector('.equityHoverDot');
-  const tip=chart.querySelector('.equityTooltip');
-  const dateEl=tip.querySelector('.eqDate');
-  const valueEl=tip.querySelector('.eqValue');
-  const metaEl=tip.querySelector('.eqMeta');
+  const tip=chart.querySelector('.equitySvgTooltip');
+  const dateEl=tip.querySelector('.equityTipDate');
+  const labelEl=tip.querySelector('.equityTipLabel');
+  const balanceEl=tip.querySelector('.equityTipBalance');
+  const metaEl=tip.querySelector('.equityTipMeta');
+  const a11yEl=chart.querySelector('.equityTooltipA11y');
 
-  function showPoint(clientX){
+  function showPoint(clientX,{announce=false}={}){
     const rect=svg.getBoundingClientRect();
     if(!rect.width)return;
     const vx=(clientX-rect.left)/rect.width*W;
@@ -1555,48 +1601,65 @@ function renderEquity(){
     dot.setAttribute('cy',cy);
     dot.classList.add('on');
 
+    let tipX=Math.max(8,Math.min(W-tipW-8,cx-tipW/2));
+    let tipY=cy-tipH-10;
+    if(tipY<8)tipY=Math.min(H-tipH-8,cy+10);
+    tip.setAttribute('transform','translate('+tipX.toFixed(2)+' '+tipY.toFixed(2)+')');
     tip.classList.add('on');
 
     const prevPoint=idx>0?points[idx-1]:null;
-    const balanceClass=!prevPoint?'':p.equity>prevPoint.equity?' up':p.equity<prevPoint.equity?' down':'';
-    valueEl.className='eqValue';
-    valueEl.innerHTML='<span>Equity</span> <span class="eqBalance'+balanceClass+'">'+esc(balanceMoney(p.equity))+'</span>';
+    const balanceClass=!prevPoint?'':p.equity>prevPoint.equity?'up':p.equity<prevPoint.equity?'down':'';
+    labelEl.textContent=tx('Equity','Капитал');
+    balanceEl.setAttribute('class','equityTipBalance'+(balanceClass?' '+balanceClass:''));
+    balanceEl.textContent=balanceMoney(p.equity);
 
+    let spokenMeta='';
     if(p.kind==='start'){
-      dateEl.textContent='Start';
-      metaEl.textContent=dateRange.mode==='all'?'Starting balance':'Balance at period start';
-      return;
+      dateEl.textContent=tx('Start','Старт');
+      spokenMeta=dateRange.mode==='all'?tx('Starting balance','Стартовый баланс'):tx('Balance at period start','Баланс на начало периода');
+      metaEl.textContent=spokenMeta;
+    }else{
+      const d=new Date(p.time||p.trade?.closedAt);
+      dateEl.textContent=d.toLocaleString(uiLocale(),{
+        year:'numeric',month:'short',day:'2-digit',hour:'2-digit',minute:'2-digit'
+      });
+
+      if(p.kind==='cash'){
+        const amount=Number(p.amount||0);
+        const label=amount>=0?tx('Deposit / credit','Пополнение / кредит'):tx('Withdrawal / adjustment','Вывод / корректировка');
+        metaEl.innerHTML=esc(label)+' · <tspan class="equityTipPnl '+(amount>=0?'win':'loss')+'">'+esc(money(amount))+'</tspan>';
+        spokenMeta=label+' '+money(amount);
+      }else{
+        const tradePnl=Number(p.trade.pnl||0);
+        const side=String(p.trade.side||'').toUpperCase();
+        const sideClass=side==='BUY'?'buy':side==='SELL'?'sell':'';
+        const pnlClass=tradePnl>0?'win':tradePnl<0?'loss':'flat';
+        const symbol=String(p.trade.symbol||'');
+        metaEl.innerHTML='#'+esc(p.tradeNumber)+' · '+esc(symbol)+' <tspan class="equityTipSide '+sideClass+'">'+esc(side)+'</tspan> · '+esc(tx('Trade','Сделка'))+' <tspan class="equityTipPnl '+pnlClass+'">'+esc(money(tradePnl))+'</tspan>';
+        spokenMeta='#'+p.tradeNumber+' '+symbol+' '+side+' '+tx('Trade','Сделка')+' '+money(tradePnl);
+      }
     }
 
-    const d=new Date(p.time||p.trade?.closedAt);
-    dateEl.textContent=d.toLocaleString([],{
-      year:'numeric',month:'short',day:'2-digit',hour:'2-digit',minute:'2-digit'
-    });
-
-    if(p.kind==='cash'){
-      const amount=Number(p.amount||0),label=amount>=0?'Deposit / credit':'Withdrawal / adjustment';
-      metaEl.innerHTML=esc(label)+' · <span class="eqTradePnl '+(amount>=0?'win':'loss')+'">'+esc(money(amount))+'</span>';
-      return;
+    if(announce){
+      a11yEl.textContent=dateEl.textContent+'. '+tx('Equity','Капитал')+' '+balanceMoney(p.equity)+'. '+spokenMeta;
     }
-
-    const tradePnl=Number(p.trade.pnl||0);
-    const side=String(p.trade.side||'').toUpperCase();
-    const sideClass=side==='BUY'?'buy':side==='SELL'?'sell':'';
-    const pnlClass=tradePnl>0?'win':tradePnl<0?'loss':'flat';
-    metaEl.innerHTML='#'+idx+' · '+esc(p.trade.symbol)+' <span class="eqSide '+sideClass+'">'+esc(side)+'</span> · Trade <span class="eqTradePnl '+pnlClass+'">'+esc(money(tradePnl))+'</span>';
   }
 
   function hidePoint(){
     line.classList.remove('on');
     dot.classList.remove('on');
     tip.classList.remove('on');
+    a11yEl.textContent='';
   }
 
   hit.addEventListener('pointermove',e=>showPoint(e.clientX));
   hit.addEventListener('pointerdown',e=>showPoint(e.clientX));
   hit.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse')hidePoint()});
   let keyboardIdx=points.length-1;
-  const showKeyboardPoint=()=>{const rect=svg.getBoundingClientRect();if(rect.width)showPoint(rect.left+(X(keyboardIdx)/W)*rect.width)};
+  const showKeyboardPoint=()=>{
+    const rect=svg.getBoundingClientRect();
+    if(rect.width)showPoint(rect.left+(X(keyboardIdx)/W)*rect.width,{announce:true});
+  };
   chart.onfocus=showKeyboardPoint;
   chart.onkeydown=e=>{
     if(!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;
@@ -1626,7 +1689,7 @@ function renderWeekday(){
 function renderSymbols(){el('symbols').innerHTML=model.symbols.length?model.symbols.map(s=>'<div class="sym"><b>'+esc(s.symbol)+'</b><div class="metricValue compactMetric '+(s.pnl>=0?'green':'red')+'">'+money(s.pnl)+'</div><div class="sub">'+s.trades+' '+esc(tx('trades','сделок'))+' · '+s.wr.toFixed(0)+'% WR · '+s.days+'d</div></div>').join(''):'<div class="empty">'+esc(tx('No trades yet','Сделок пока нет'))+'</div>'}
 function renderCalendar(){
   const y=monthDate.getFullYear(),m=monthDate.getMonth(),ym=y+'-'+String(m+1).padStart(2,'0');
-  el('monthLabel').textContent=monthDate.toLocaleDateString(undefined,{month:'long',year:'numeric'});
+  el('monthLabel').textContent=monthDate.toLocaleDateString(uiLocale(),{month:'long',year:'numeric'});
   const map={};model.daily.forEach(d=>map[d.date]=d);
   const monthRows=model.daily.filter(d=>d.date.startsWith(ym+'-'));
   const mpnl=monthRows.reduce((s,d)=>s+d.pnl,0),mtr=monthRows.reduce((s,d)=>s+d.trades,0),mw=monthRows.reduce((s,d)=>s+d.wins,0),ml=monthRows.reduce((s,d)=>s+d.losses,0);
@@ -1725,7 +1788,7 @@ function renderTrades(){
   el('tradeRows').innerHTML=rows.length?rows.map(t=>{
     const selected=selectedTradeIds.has(t.id);
     const check=bulkSelectMode?'<td class="bulkCheck"><input type="checkbox" '+(selected?'checked':'')+' tabindex="-1" aria-label="Select trade"></td>':'';
-    return '<tr class="tradeRow '+(t.excluded_from_stats?'ghostRow ':'')+(selected?'bulkSelected':'')+'" data-id="'+esc(t.id)+'">'+check+'<td class="tradeDate">'+new Date(t.closedAt).toLocaleString()+'</td><td class="tradeSymbol"><button type="button" class="tradeOpenBtn" data-open-trade="'+esc(t.id)+'" aria-label="Open '+esc(t.symbol)+' '+esc(t.side)+' trade">'+esc(t.symbol)+'</button>'+(t.excluded_from_stats?'<span class="ghostBadge">GHOST</span>':'')+(isTradeReviewed(t)?'<span class="reviewedBadge">'+esc(tx('REVIEWED','РАЗОБРАНО'))+'</span>':'')+'</td><td class="tradeSide"><span class="pill">'+esc(t.side)+'</span></td><td class="tradePnl '+(t.pnl>=0?'green':'red')+'">'+money(t.pnl)+'</td><td class="tradeOrders">'+t.orderCount+(isStrategyLoss(t)?'<span class="slBadge">SL</span>':'')+'</td><td class="tradeSetup">'+esc(t.setup||t.strategy||'')+'</td></tr>';
+    return '<tr class="tradeRow '+(t.excluded_from_stats?'ghostRow ':'')+(selected?'bulkSelected':'')+'" data-id="'+esc(t.id)+'">'+check+'<td class="tradeDate">'+new Date(t.closedAt).toLocaleString(uiLocale())+'</td><td class="tradeSymbol"><button type="button" class="tradeOpenBtn" data-open-trade="'+esc(t.id)+'" aria-label="'+esc(tx('Open','Открыть'))+' '+esc(t.symbol)+' '+esc(t.side)+' '+esc(tx('trade','сделку'))+'" >'+esc(t.symbol)+'</button>'+(t.excluded_from_stats?'<span class="ghostBadge">GHOST</span>':'')+(isTradeReviewed(t)?'<span class="reviewedBadge">'+esc(tx('REVIEWED','РАЗОБРАНО'))+'</span>':'')+'</td><td class="tradeSide"><span class="pill">'+esc(t.side)+'</span></td><td class="tradePnl '+(t.pnl>=0?'green':'red')+'">'+money(t.pnl)+'</td><td class="tradeOrders">'+t.orderCount+(isStrategyLoss(t)?'<span class="slBadge">SL</span>':'')+'</td><td class="tradeSetup">'+esc(t.setup||t.strategy||'')+'</td></tr>';
   }).join(''):'<tr><td colspan="'+emptyCols+'" class="empty">'+esc(tradeEmptyMessage({q,result,ghost,side,source,review}))+'</td></tr>';
 
   document.querySelectorAll('#tradeRows tr[data-id]').forEach(r=>r.onclick=e=>{
@@ -1755,7 +1818,7 @@ function openDailyReview(date){
   const dayTrades=model.trades.filter(t=>tradeDayKey(t)===date);
   const pnl=dayTrades.reduce((s,t)=>s+t.pnl,0),wins=dayTrades.filter(isStrategyWin).length,losses=dayTrades.filter(isStrategyLoss).length,other=dayTrades.filter(isStrategyOther).length;
   const wr=(wins+losses)?wins/(wins+losses)*100:0;
-  el('dailyTitle').textContent=new Date(date+'T12:00:00').toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'});
+  el('dailyTitle').textContent=new Date(date+'T12:00:00').toLocaleDateString(uiLocale(),{year:'numeric',month:'long',day:'numeric'});
   const stats=[['P&L',money(pnl)],[tx('Logical Trades','Логические сделки'),dayTrades.length],[tx('Win Rate','Винрейт'),wr.toFixed(1)+'%'],[tx('Worked / SL / Other','Worked / SL / Другое'),wins+' / '+losses+' / '+other]];
   el('dailyStats').innerHTML=stats.map(x=>'<div class="kv"><small>'+esc(x[0])+'</small><b>'+esc(x[1])+'</b></div>').join('');
   const r=dailyReviewMap[date]||{};
