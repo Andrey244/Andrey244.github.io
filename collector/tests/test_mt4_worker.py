@@ -4,6 +4,7 @@ import json
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -18,6 +19,7 @@ from trading_journal_collector.models import CredentialLease
 
 class FakeProcess:
     def __init__(self):
+        self.pid = 4321
         self.returncode = None
         self.terminated = False
         self.killed = False
@@ -54,6 +56,31 @@ class Mt4LauncherTests(unittest.TestCase):
                 since_ms=1_699_999_000_000,
                 until_ms=1_700_001_000_000,
             )
+
+    def test_stop_process_kills_windows_process_tree(self):
+        proc = FakeProcess()
+        with patch("trading_journal_collector.adapters.mt4.os.name", "nt"), \
+             patch("trading_journal_collector.adapters.mt4.subprocess.run") as run:
+            Mt4Adapter._stop_process(proc)
+
+        run.assert_called_once()
+        args = run.call_args.args[0]
+        self.assertEqual(args[:4], ["taskkill", "/PID", "4321", "/T"])
+        self.assertIn("/F", args)
+
+    def test_remove_slot_retries_transient_windows_file_locks(self):
+        slot = Path("slot")
+        transient = OSError("sharing violation")
+        with patch(
+            "trading_journal_collector.adapters.mt4.shutil.rmtree",
+            side_effect=[transient, transient, None],
+        ) as rmtree, patch(
+            "trading_journal_collector.adapters.mt4.time.sleep"
+        ) as sleep:
+            Mt4Adapter._remove_slot(slot)
+
+        self.assertEqual(rmtree.call_count, 3)
+        self.assertEqual(sleep.call_count, 2)
 
     def test_disposable_slot_exports_and_cleans_secret_config(self):
         with tempfile.TemporaryDirectory() as td:
