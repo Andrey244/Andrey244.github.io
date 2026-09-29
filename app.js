@@ -1559,7 +1559,7 @@ function renderEquity(){
     )
   );
 
-  const tipW=Math.min(248,Math.max(190,W-16)),tipH=64;
+  const tipW=Math.min(220,Math.max(180,W-16)),tipH=58;
   chart.innerHTML=
     '<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" aria-hidden="true" focusable="false">'+
       '<defs><linearGradient id="eqFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#21df8c" stop-opacity=".24"/><stop offset="100%" stop-color="#21df8c" stop-opacity=".01"/></linearGradient></defs>'+
@@ -1570,9 +1570,9 @@ function renderEquity(){
       '<rect class="equityHitArea" x="0" y="0" width="'+W+'" height="'+H+'" fill="transparent"></rect>'+
       '<g class="equitySvgTooltip" aria-hidden="true">'+
         '<rect class="equityTipBg" width="'+tipW+'" height="'+tipH+'" rx="10" ry="10"></rect>'+
-        '<text class="equityTipDate" x="10" y="15"></text>'+
-        '<text class="equityTipValue" x="10" y="35"><tspan class="equityTipLabel"></tspan><tspan class="equityTipBalance" dx="5"></tspan></text>'+
-        '<text class="equityTipMeta" x="10" y="54"></text>'+
+        '<text class="equityTipDate" x="10" y="14"></text>'+
+        '<text class="equityTipValue" x="10" y="32"><tspan class="equityTipLabel"></tspan><tspan class="equityTipBalance" dx="5"></tspan></text>'+
+        '<text class="equityTipMeta" x="10" y="49"></text>'+
       '</g>'+
     '</svg>'+
     '<div class="srOnly equityTooltipA11y" role="status" aria-live="polite" aria-atomic="true"></div>';
