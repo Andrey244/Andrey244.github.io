@@ -1,5 +1,5 @@
-const CACHE='tj-shell-v12';
-const ASSET_VERSION='20260929-equity-cache-fix-1';
+const CACHE='tj-shell-v13';
+const ASSET_VERSION='20260929-ui-audit-1';
 const VERSIONED_STYLES='/styles.css?v='+ASSET_VERSION;
 const VERSIONED_APP='/app.js?v='+ASSET_VERSION;
 const SHELL=['/','/index.html',VERSIONED_STYLES,VERSIONED_APP,'/vendor/supabase-2.117.1.js','/manifest.webmanifest','/app-icon.svg'];
