@@ -22,6 +22,12 @@ DISPLAY_NAME = "Trading Journal Collector"
 DESCRIPTION = "Read-only MT4/MT5 Investor Password collector for Trading Journal."
 
 
+def _log_job_failure(error_code: str, exception_type: str) -> None:
+    servicemanager.LogErrorMsg(
+        f"{SERVICE_NAME} job failure: code={error_code} type={exception_type}"
+    )
+
+
 def _write_registration_bundle(config: dict, worker):
     registration = worker.identity.ensure()
     payload = registration_payload(
@@ -58,7 +64,7 @@ class TradingJournalCollectorService(win32serviceutil.ServiceFramework):
         servicemanager.LogInfoMsg(f"{SERVICE_NAME} starting")
         try:
             config = apply_service_config(default_config_path())
-            worker = build_worker()
+            worker = build_worker(failure_observer=_log_job_failure)
             registration_path = _write_registration_bundle(config, worker)
             servicemanager.LogInfoMsg(
                 f"{SERVICE_NAME} registration bundle ready at {registration_path}"
