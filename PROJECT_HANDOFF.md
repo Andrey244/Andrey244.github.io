@@ -409,6 +409,18 @@ Remaining P2 cleanup is intentionally not urgent:
 - inline-style cleanup;
 - optional URL/deep-link SPA navigation.
 
+### A5. Equity tooltip auto-width + chart height correction — 2026-09-29
+Follow-up user clarification: the reported "auto-layout" problem was the tooltip card itself, not the Equity chart height. The tooltip used a fixed 220px width, leaving a large empty tail for short date/value/meta strings. The preceding audit had also made the chart too short relative to the user's preferred dashboard density.
+
+Corrected:
+- tooltip width is now measured from the rendered SVG date/value/meta text via `getComputedTextLength()`, then clamped to 150–260px;
+- tooltip background and point-relative positioning use the measured width, eliminating unnecessary right-side whitespace while still fitting longer RU/EN content;
+- desktop Equity chart restored slightly above the old size to 270px; tablet 230px; small mobile 200px;
+- SVG viewport height now follows the rendered chart instead of imposing a 210px minimum;
+- PWA shell bumped to `tj-shell-v14` / `20260929-equity-tooltip-fit-1`.
+
+Rollback branch: `rollback/pre-equity-tooltip-autowidth-2026-09-29`.
+
 ### A4. Full UI/UX density + responsive audit — 2026-09-29
 Triggered by a follow-up Equity screenshot after the stale-shell fix. The new SVG tooltip was correct, but the desktop chart still looked oversized because Equity had a fixed 260px desktop height and 210px mobile height.
 
