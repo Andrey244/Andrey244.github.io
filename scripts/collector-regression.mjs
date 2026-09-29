@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 
 function ok(cond,msg){ if(!cond) throw new Error(msg); }
 
-const [arch, pyproject, mt5, mt4py, mt4mql, crypto, dpapi, identity, serviceSql, cursorSql, registerSql, strictLeaseSql, unifiedIngestSql, edgeShared, brokerKey, brokerConnect, brokerDisconnect, collectorNext, collectorReport, collectorIngest, api, worker, main, provision, service, serviceConfig, installer, preflight, manualMt4] = await Promise.all([
+const [arch, pyproject, mt5, mt4py, mt4mql, crypto, dpapi, identity, serviceSql, cursorSql, registerSql, strictLeaseSql, unifiedIngestSql, leaseFixSql, edgeShared, brokerKey, brokerConnect, brokerDisconnect, collectorNext, collectorReport, collectorIngest, api, worker, main, provision, service, serviceConfig, installer, preflight, manualMt4] = await Promise.all([
   fs.readFile('docs/INVESTOR_COLLECTOR_V1.md','utf8'),
   fs.readFile('collector/pyproject.toml','utf8'),
   fs.readFile('collector/src/trading_journal_collector/adapters/mt5.py','utf8'),
@@ -16,6 +16,7 @@ const [arch, pyproject, mt5, mt4py, mt4mql, crypto, dpapi, identity, serviceSql,
   fs.readFile('supabase/migrations/20260925201608_investor_collector_node_registration_v1.sql','utf8'),
   fs.readFile('supabase/migrations/20260926121712_collector_strict_lease_expiry_v1.sql','utf8'),
   fs.readFile('supabase/migrations/20260926125551_unify_manual_and_collector_ingest_v1.sql','utf8'),
+  fs.readFile('supabase/migrations/20260929072059_fix_collector_lease_output_column_ambiguity.sql','utf8'),
   fs.readFile('supabase/functions/broker-key/shared.ts','utf8'),
   fs.readFile('supabase/functions/broker-key/index.ts','utf8'),
   fs.readFile('supabase/functions/broker-connect/index.ts','utf8'),
@@ -146,6 +147,11 @@ ok(collectorReport.includes('p_attempt: attempt'),'collector report attempt fenc
 ok(collectorIngest.includes('p_attempt: attempt'),'collector ingest attempt fence missing');
 ok(strictLeaseSql.includes('j.lease_until >= now()'),'collector lease expiry must be enforced on ingest/report');
 ok(strictLeaseSql.includes('for update of j'),'collector ingest lease fence must hold a row lock');
+ok(leaseFixSql.includes('update collector_private.collector_jobs as j'),'collector lease function must alias target rows to avoid PL/pgSQL output-column ambiguity');
+ok(leaseFixSql.includes("where j.status='LEASED'"),'collector lease expiry status predicate must be table-qualified');
+ok(leaseFixSql.includes('and j.lease_until < now()'),'collector lease expiry timestamp predicate must be table-qualified');
+ok(leaseFixSql.includes('and j.attempt < 6'),'collector lease retry predicate must be table-qualified');
+ok(leaseFixSql.includes('attempt=j.attempt+1'),'collector lease attempt increment must be table-qualified');
 ok(unifiedIngestSql.includes('collector_private.canonical_ingest_mt_event'),'canonical ingest helper migration missing');
 ok((unifiedIngestSql.match(/collector_private\.canonical_ingest_mt_event\(/g)||[]).length>=3,'manual and collector ingest must share canonical helper');
 ok(unifiedIngestSql.includes('revoke all on function collector_private.canonical_ingest_mt_event'),'canonical ingest helper must not be directly executable by API roles');
