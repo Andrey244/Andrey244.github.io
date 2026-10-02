@@ -1,5 +1,5 @@
-const CACHE='tj-shell-v15';
-const ASSET_VERSION='20260929-trade-time-sync-1';
+const CACHE='tj-shell-v16';
+const ASSET_VERSION='20261002-account-lifecycle-1';
 const VERSIONED_STYLES='/styles.css?v='+ASSET_VERSION;
 const VERSIONED_APP='/app.js?v='+ASSET_VERSION;
 const SHELL=['/','/index.html',VERSIONED_STYLES,VERSIONED_APP,'/vendor/supabase-2.117.1.js','/manifest.webmanifest','/app-icon.svg'];
