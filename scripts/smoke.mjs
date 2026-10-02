@@ -23,6 +23,8 @@ const sw=await fs.readFile('service-worker.js','utf8');
 const clientSource=html+'\n'+appJs;
 const supabaseVendor=await fs.readFile('vendor/supabase-2.117.1.js');
 const mt4Connector=await fs.readFile('downloads/TradeJournalConnector_MT4_v1.20.mq4','utf8');
+const accountDeleteFn=await fs.readFile('supabase/functions/account-data-delete/index.ts','utf8');
+const accountDeleteMigration=await fs.readFile('supabase/migrations/20261002083700_account_lifecycle_delete_service.sql','utf8');
 ok(mt4Connector.includes('#property version   "1.20"'),'MT4 connector: wrong version');
 ok(mt4Connector.includes('LAST_HISTORY_TOTAL'),'MT4 connector: history-change request gate missing');
 ok(mt4Connector.includes('total == LAST_HISTORY_TOTAL'),'MT4 connector: unchanged-history skip missing');
@@ -34,7 +36,7 @@ ok(mt4Connector.includes('const int TJ_OP_CREDIT  = 7;'),'MT4 connector: credit 
 ok(!/(^|[^A-Z_])OP_BALANCE([^A-Z_]|$)/m.test(mt4Connector.replace('const int TJ_OP_BALANCE = 6;','')),'MT4 connector: bare OP_BALANCE would not compile');
 ok(!/(^|[^A-Z_])OP_CREDIT([^A-Z_]|$)/m.test(mt4Connector.replace('const int TJ_OP_CREDIT  = 7;','')),'MT4 connector: bare OP_CREDIT would not compile');
 ok(/^<!doctype html>/i.test(html),'index.html: missing doctype');
-const appScriptPos=html.indexOf('<script src="/app.js?v=20260929-trade-time-sync-1"></script>');
+const appScriptPos=html.indexOf('<script src="/app.js?v=20261002-account-lifecycle-1"></script>');
 const confirmModalPos=html.indexOf('id="confirmModal"');
 const bodyClosePos=html.lastIndexOf('</body>');
 ok(confirmModalPos>=0 && appScriptPos>confirmModalPos,'index.html: app.js must load after confirmModal/all runtime DOM');
@@ -55,20 +57,29 @@ ok(crypto.createHash('sha256').update(supabaseVendor).digest('hex')==='dff1e545f
 ok(html.includes('Content-Security-Policy'),'index.html: CSP meta missing');
 ok(html.includes("script-src 'self';"),'index.html: CSP script-src must be self-only');
 ok(html.includes("script-src-attr 'none'"),'index.html: inline script attributes must be blocked');
-ok(html.includes('<link rel="stylesheet" href="/styles.css?v=20260929-trade-time-sync-1">'),'index.html: versioned external stylesheet missing');
+ok(html.includes('<link rel="stylesheet" href="/styles.css?v=20261002-account-lifecycle-1">'),'index.html: versioned external stylesheet missing');
 ok(html.includes("style-src 'self'; style-src-attr 'none';"),'index.html: stylesheet CSP must be self-only and block style attributes');
 ok(!/<style[\s>]/i.test(html),'index.html: inline style block returned');
 ok(!/\sstyle=["']/i.test(html),'index.html: inline style attribute returned');
 ok(!/\.style\.[A-Za-z]/.test(appJs),'app.js: runtime inline style mutation returned');
 ok(!/style=["']/.test(appJs),'app.js: generated inline style attribute returned');
 ok(stylesCss.includes('.equityHoverLine.on') && stylesCss.includes('.weekdayTrackFill'),'styles.css: extracted dynamic visual rules missing');
-ok(html.includes('<script src="/app.js?v=20260929-trade-time-sync-1"></script>'),'index.html: versioned external app.js missing');
+ok(html.includes('<script src="/app.js?v=20261002-account-lifecycle-1"></script>'),'index.html: versioned external app.js missing');
 ok(html.includes('id="directConnectForm"'),'Direct broker connection form missing');
 ok(html.includes('id="directInvestorPassword"') && html.includes('id="directInvestorPassword" class="input" type="password"'),'Direct Investor Password field missing');
 ok(html.includes('id="directInvestorPassword"') && html.includes('placeholder="Read-only password" disabled'),'Direct secret field must ship disabled until collector readiness');
 ok(clientSource.includes("edgePost('broker-key'"),'Direct collector readiness check missing');
 ok(clientSource.includes("edgePost('broker-connect'"),'Direct broker connect Edge Function integration missing');
 ok(clientSource.includes("edgePost('broker-disconnect'"),'Direct broker disconnect Edge Function integration missing');
+ok(clientSource.includes("edgePost('account-data-delete'"),'Account data delete Edge Function integration missing');
+ok(appJs.includes("accountCatalog=Object.values(map)") && appJs.includes("detectedAccounts=accountCatalog.filter(a=>a.enabled!==false)"),'Archived account must be excluded from Insights scope');
+ok(appJs.includes("activeRawEvents=rawEvents.filter(e=>activeKeys.has(accountKey(e)))"),'Archived raw events must be excluded from active analytics');
+ok(appJs.includes("Archive this account? It will disappear from Insights and All accounts"),'Account archive confirmation missing');
+ok(appJs.includes("a.enabled!==false") && appJs.includes("enabled,") ,'Account Save must preserve archive state');
+ok(accountDeleteFn.includes("requireApprovedUser(req)"),'account-data-delete: approved-user authorization missing');
+ok(accountDeleteFn.includes('rpc("account_delete_data_service"'),'account-data-delete: service RPC missing');
+ok(accountDeleteMigration.includes("security definer") && accountDeleteMigration.includes("account_not_archived"),'account delete service must be guarded and atomic');
+ok(accountDeleteMigration.includes("revoke all on function public.account_delete_data_service") && accountDeleteMigration.includes("grant execute on function public.account_delete_data_service") && accountDeleteMigration.includes("to service_role"),'account delete service execute boundary missing');
 ok(clientSource.includes("crypto.subtle.importKey('spki'"),'WebCrypto SPKI import missing');
 ok(clientSource.includes("name:'RSA-OAEP',hash:'SHA-256'"),'RSA-OAEP/SHA-256 browser encryption missing');
 ok(clientSource.includes('plaintext.fill(0)'),'Direct secret encoded buffer zeroization missing');
@@ -93,8 +104,8 @@ ok(appJs.includes("['Sign in','Войти']") && appJs.includes("['Create accoun
 ok(clientSource.includes("tx('Discard unsaved daily review changes?'"),'app.js: Daily Review guard must be localized');
 ok(clientSource.includes("tx('Direct collector is temporarily unavailable."),'app.js: dynamic direct-collector copy must be localized');
 ok(!appJs.includes("askConfirm('Discard unsaved daily review changes?')"),'app.js: hard-coded English Daily Review guard returned');
-ok(sw.includes("tj-shell-v15"),'service-worker.js: cache version not bumped for cache-safe shell delivery');
-ok(sw.includes("ASSET_VERSION='20260929-trade-time-sync-1'"),'service-worker.js: shell asset version missing');
+ok(sw.includes("tj-shell-v16"),'service-worker.js: cache version not bumped for cache-safe shell delivery');
+ok(sw.includes("ASSET_VERSION='20261002-account-lifecycle-1'"),'service-worker.js: shell asset version missing');
 ok(sw.includes("if(url.pathname==='/app.js'||url.pathname==='/styles.css')"),'service-worker.js: mutable shell assets must bypass cache-first');
 ok(sw.includes("fetch(req,{cache:'no-store'})"),'service-worker.js: mutable shell assets must revalidate from network');
 ok(appJs.includes("register('/service-worker.js',{updateViaCache:'none'})"),'app.js: service worker registration must bypass HTTP cache');
@@ -126,6 +137,7 @@ ok(stylesCss.includes("padding:calc(16px + env(safe-area-inset-top,0px))"),'styl
 ok(stylesCss.includes(".detail{grid-template-columns:1fr}.healthGrid"),'styles.css: mobile detail cards must collapse to one column');
 ok(stylesCss.includes("left:max(9px,env(safe-area-inset-left))") && stylesCss.includes("right:max(9px,env(safe-area-inset-right))"),'styles.css: fixed mobile UI must respect horizontal safe areas');
 ok(stylesCss.includes(".reviewedBadge,.otherBadge") && stylesCss.includes("font-size:10px;font-weight:900") && !stylesCss.includes("font-size:8px;font-weight:900"),'styles.css: compact review badges must remain readable');
+ok(stylesCss.includes(".accountRow.archivedAccount") && stylesCss.includes(".accountActions"),'styles.css: account lifecycle states/actions styling missing');
 ok(stylesCss.includes(".equityTipBalance.down{fill:var(--red)}"),'styles.css: falling equity balance must be red');
 ok(appJs.includes("tip.setAttribute('transform','translate('"),'app.js: Equity tooltip must follow the inspected point via SVG transform');
 ok(appJs.includes("const tipMinW=150,tipMaxW=Math.min(260,W-16),tipH=58"),'app.js: Equity tooltip size bounds regression');
@@ -230,7 +242,7 @@ const serviceRpcProbe=await fetch(SUPABASE+'/rest/v1/rpc/collector_active_public
 ok(!serviceRpcProbe.ok,'anonymous service-only collector RPC was unexpectedly executable');
 
 const functionPublicHeaders={apikey:LEGACY_ANON,'content-type':'application/json'};
-for(const fn of ['broker-key','broker-connect','broker-disconnect']){
+for(const fn of ['broker-key','broker-connect','broker-disconnect','account-data-delete']){
   const r=await fetch(SUPABASE+'/functions/v1/'+fn,{
     method:'POST',
     headers:functionPublicHeaders,
