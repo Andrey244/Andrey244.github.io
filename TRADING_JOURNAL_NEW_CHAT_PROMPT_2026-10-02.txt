@@ -1,0 +1,90 @@
+CONTINUE THE TRADING JOURNAL PROJECT. DO NOT RESTART IT.
+
+This is NOT ASTRA / EURUSD CR Shadow. Never mix their code, DB, files, checkpoints, prompts, strategy state, or runtime state.
+
+First:
+1. Fetch latest `main` of `Andrey244/Andrey244.github.io`.
+2. Read `PROJECT_HANDOFF.md`.
+3. Read `AGENTS.md`.
+4. Read `TRADING_JOURNAL_HANDOFF_2026-10-02_FULL_BACKUP.md`.
+5. For ANY Supabase work, read `skills://plugins/supabase/supabase/skill.md` first.
+6. Compare latest main/backend state to the backup checkpoint and continue from the newer verified state.
+7. DO NOT reapply already-merged patches.
+8. Before any material patch create a NEW rollback branch from fresh main.
+9. After material changes require fresh Smoke + CodeQL SUCCESS; user-visible changes also require Pages SUCCESS.
+10. Never claim browser/backend completion unless current source + CI/backend/live state proves it.
+11. Keep tool batches small and progress checkpoints concise.
+
+Checkpoint before handoff docs:
+- main code checkpoint: `3d9e251eee859030201949b5720a2df0b652c980`
+- Smoke #286 SUCCESS — run 36991355528
+- CodeQL #129 SUCCESS — run 36989213326
+- Pages #280 SUCCESS — run 36989212719
+- rollback: `rollback/pre-account-lifecycle-actions-2026-10-02`
+- PWA: `tj-shell-v16`, assets `20261002-account-lifecycle-1`
+
+LATEST IMPLEMENTED FEATURE:
+Account lifecycle is now split correctly:
+- Disconnect = stop connection/remove encrypted credential, KEEP history.
+- Archive = `account_settings.enabled=false`; KEEP history but remove account from Insights/All accounts/Trades/Calendar/Equity/Data Health active scope.
+- Restore = return archived account to analytics.
+- Delete data = destructive exact `source + account + server` deletion, only after archive; blocked if direct connection is active or matching connector heartbeat is fresh.
+
+Production backend is already deployed:
+- migration `20261002091621 account_lifecycle_delete_service`
+- Edge Function `account-data-delete` ACTIVE v1
+- service RPC is service-role-only; no client DELETE grant was added to raw_events.
+
+IMMEDIATE NEXT TASK:
+Do NOT code this feature again.
+Live-verify it on the user's authenticated deployed UI.
+
+Prior screenshot test account:
+- label: `test test`
+- MT4 login/account: `252031119`
+- server: `Alpari-Pro.ECN-Demo`
+- 4 raw events at the time of screenshot.
+
+Expected first validation:
+1. Accounts page shows Archive.
+2. Archive `test test`.
+3. It stays in Accounts marked Archived with Restore + Delete data.
+4. It disappears from Insights account selector and All accounts analytics/statistics.
+5. It must also be absent from active Trades/Calendar/Equity/Data Health.
+6. DO NOT automatically press Delete data. Only do the destructive action if the user explicitly wants the test history permanently removed.
+7. If user deletes it, verify exact-account raw events/notes/settings/status are removed and other account data + shared daily_reviews remain untouched.
+
+Also preserve/verify recent fixes:
+- MT4 Calendar and Trades must show the same broker date via MT4 source-aware UTC-shaped broker wall-clock semantics.
+- Equity tooltip auto-sizes to text (150–260px) without empty right tail.
+- Equity chart height is desktop 270px / tablet 230px / mobile 200px.
+
+TinyFish:
+- do NOT use/show TinyFish by default; user said its window lags badly and clutters the UI.
+- if TinyFish has limits/problems, skip it.
+- use user screenshots for live authenticated UI verification instead.
+- never falsely claim browser verification.
+
+Preserve:
+- grouping v2.3
+- explicit TG precedence
+- source+account+server isolation
+- MT4 overlap-lifetime grouping
+- MT5 exposure grouping
+- stable Logical Trade ID + legacy compatibility
+- MT4 broker-day via utcDayKey
+- Ghost semantics
+- Strategy Outcome is NOT P&L-derived
+- tri-state Worked/SL/Other
+- RLS Owner/Admin/Member boundaries
+- USD-only current assumption
+- no multi-currency now
+- no large raw-events/backend rewrite now
+- no MFA/password-policy redesign
+- all direct-collector security/integrity gates
+- never provision fake collector nodes
+- never ask for Investor Password in chat
+
+User runtime preference:
+- test collector/runtime on PC first; final location is VPS.
+- MT4 connectors are v1.20.
