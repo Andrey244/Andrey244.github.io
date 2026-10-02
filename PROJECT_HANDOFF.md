@@ -409,6 +409,30 @@ Remaining P2 cleanup is intentionally not urgent:
 - inline-style cleanup;
 - optional URL/deep-link SPA navigation.
 
+### A7. Account lifecycle: Archive / Restore / Delete data — 2026-10-02
+A user screenshot exposed a lifecycle mismatch: `Connection → Disconnect` correctly deleted the encrypted Investor Password and stopped direct sync, but the account remained in `Accounts` and the `Insights` account selector because analytics discovered accounts directly from historical `raw_events`. The existing `account_settings.enabled` field was not respected by analytics and Save always forced it back to `true`.
+
+Implemented without changing Disconnect semantics:
+- `Disconnect` remains connection-only: it stops sync and removes the encrypted credential; it never deletes journal history.
+- `Archive` sets `account_settings.enabled=false`; the account remains visible in Accounts management but is removed from Insights, All accounts, Trades, Calendar, Equity, Data Health and active raw-event export/statistics.
+- `Restore` sets the same account back to `enabled=true` and returns it to analytics.
+- Accounts management keeps a full `accountCatalog`; analytics uses only enabled `detectedAccounts` and `activeRawEvents`.
+- Save now preserves the current archive state instead of implicitly restoring an archived account.
+- `Delete data` is shown only for archived accounts and requires the custom danger confirmation flow.
+- Permanent deletion is refused if the exact Direct Collector connection is still active or if a matching manual connector heartbeat is less than 10 minutes old.
+- The browser sends only the exact `source + account + server` identity and current stable/legacy logical trade IDs to a new authenticated Edge Function, `account-data-delete`.
+- Production DB migration `account_lifecycle_delete_service` adds service-role-only `public.account_delete_data_service(...)`. It is SECURITY DEFINER with explicit approved-user and exact-account checks; EXECUTE is revoked from PUBLIC/anon/authenticated and granted only to service_role.
+- The delete transaction removes only that account's `raw_events`, matching current/legacy `trade_notes`, `account_settings` and `connector_status`. Shared `daily_reviews` are intentionally preserved because they are day-level and can cover multiple accounts. Disconnected `broker_connections` history is also preserved.
+- Edge Function `account-data-delete` production version 1 is ACTIVE and uses the same checked-in approved-user runtime authorization pattern as the Direct Collector browser functions.
+- PWA shell bumped to `tj-shell-v16` / `20261002-account-lifecycle-1`.
+
+Security / integrity notes:
+- no DELETE grant or client RLS policy was added to `raw_events`; destructive raw-history deletion remains behind the service-only RPC + authenticated Edge Function path;
+- Owner/Admin/Member access boundaries, Ghost semantics, grouping v2.3 and direct-collector integrity gates are unchanged;
+- Supabase security advisors after deployment did not flag the new service function; existing project advisor findings remain pre-existing.
+
+Rollback branch: `rollback/pre-account-lifecycle-actions-2026-10-02`.
+
 ### A6. MT4 Calendar ↔ Trades date consistency — 2026-09-29
 A user screenshot exposed a real timezone/display mismatch: MT4 trades were bucketed into Calendar/Daily Review using the preserved MT4 broker-day rule (`utcDayKey`), while the Trades table and trade modal formatted `closedAt/openedAt` through browser-local `toLocaleString()`. On a Tashkent browser this shifted late MT4 broker-time trades by +5 hours, so a 2026-09-28 broker-day close could display as 2026-09-29 00:xx in Trades.
 
