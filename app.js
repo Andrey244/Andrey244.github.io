@@ -6,7 +6,7 @@ const GROUPING_VERSION='2.3';
 const GROUPING_RULE='Server-isolated MT4 overlap · MT5 exposure · duplicate guard';
 const LATEST_MT4_CONNECTOR='1.20';
 let model={trades:[],daily:[],symbols:[],weekday:[],summary:{}},monthDate=null,activeTrade=null,liveToken='';
-let membership=null,allTrades=[],scopedTrades=[],scopedRawEvents=[],tradeNotes=[],dailyReviewRows=[],accountSettings=[],connectorStatuses=[],brokerConnections=[],detectedAccounts=[],memberRows=[],selectedAccountKey='all',declineTarget=null,rawEvents=[],dailyReviewMap={},activeReviewDate=null;
+let membership=null,allTrades=[],scopedTrades=[],scopedRawEvents=[],tradeNotes=[],dailyReviewRows=[],accountSettings=[],connectorStatuses=[],brokerConnections=[],detectedAccounts=[],accountCatalog=[],memberRows=[],selectedAccountKey='all',declineTarget=null,rawEvents=[],activeRawEvents=[],dailyReviewMap={},activeReviewDate=null;
 let directCollectorKey=null,directCollectorCheckPromise=null;
 let bulkSelectMode=false,selectedTradeIds=new Set(),tradeReviewSnapshot='',dailyReviewSnapshot='';
 let journalRealtimeChannel=null,realtimeRebuildTimer=null,lastFullLoadAt=0;
@@ -688,7 +688,10 @@ function setDataLoading(on){
 function rebuildJournalData(){
   dailyReviewMap={};dailyReviewRows.forEach(r=>dailyReviewMap[r.review_date]=r);
   const noteMap={};tradeNotes.forEach(n=>noteMap[n.trade_id]=n);
-  const groupingEvents=dedupeEvents(rawEvents);
+  buildDetectedAccounts(rawEvents);
+  const activeKeys=new Set(detectedAccounts.map(a=>a.key));
+  activeRawEvents=rawEvents.filter(e=>activeKeys.has(accountKey(e)));
+  const groupingEvents=dedupeEvents(activeRawEvents);
   const grouped=stabilizeTradeIds(
     groupMT5(groupingEvents.filter(e=>String(e.source).toUpperCase()==='MT5'))
       .concat(groupMT4(groupingEvents.filter(e=>String(e.source).toUpperCase()==='MT4')))
@@ -696,7 +699,6 @@ function rebuildJournalData(){
   );
   allTrades=grouped.map(t=>Object.assign(t,noteMap[t.id]||(!t.legacyCollision?noteMap[t.legacyId]:null)||{}))
     .sort((a,b)=>new Date(b.closedAt)-new Date(a.closedAt));
-  buildDetectedAccounts(rawEvents);
   restoreRange();
   applyFilters();
   renderAccounts();
@@ -780,18 +782,22 @@ function buildDetectedAccounts(events){
   const map={};
   events.forEach(e=>{
     const key=accountKey(e);
-    if(!map[key])map[key]={key,source:String(e.source||'').toUpperCase(),account:String(e.account||''),server:String(e.server||''),raw:0,last:null};
+    if(!map[key])map[key]={key,source:String(e.source||'').toUpperCase(),account:String(e.account||''),server:String(e.server||''),raw:0,last:null,enabled:true};
     const a=map[key];a.raw++;const ts=e.received_at||e.event_time||e.close_time;if(ts&&(!a.last||new Date(ts)>new Date(a.last)))a.last=ts;
   });
   const settingsMap={};accountSettings.forEach(s=>settingsMap[[String(s.source||'').toUpperCase(),String(s.account||''),String(s.server||'')].join('|')]=s);
-  detectedAccounts=Object.values(map).map(a=>Object.assign(a,settingsMap[a.key]||{})).sort((a,b)=>(a.label||a.account).localeCompare(b.label||b.account));
+  accountCatalog=Object.values(map)
+    .map(a=>Object.assign(a,settingsMap[a.key]||{}))
+    .map(a=>Object.assign(a,{enabled:a.enabled!==false}))
+    .sort((a,b)=>(a.label||a.account).localeCompare(b.label||b.account));
+  detectedAccounts=accountCatalog.filter(a=>a.enabled!==false);
   const select=el('accountScope'),staticScope=el('accountScopeStatic');
   select.innerHTML='<option value="all">'+esc(tx('All accounts','Все счета'))+'</option>'+detectedAccounts.map(a=>'<option value="'+esc(a.key)+'">'+esc(a.label||((a.source?a.source+' · ':'')+a.account+(a.server?' · '+a.server:'')))+'</option>').join('');
   if(selectedAccountKey!=='all'&&!detectedAccounts.some(a=>a.key===selectedAccountKey))selectedAccountKey='all';
   select.value=selectedAccountKey;
   if(detectedAccounts.length<=1){
     const a=detectedAccounts[0];
-    staticScope.textContent=a?(a.label||((a.source?a.source+' · ':'')+a.account)):tx('No account connected','Нет подключённого счёта');
+    staticScope.textContent=a?(a.label||((a.source?a.source+' · ':'')+a.account)):tx('No active account','Нет активных счетов');
     staticScope.classList.remove('hide');
     select.classList.add('hide');
   }else{
@@ -832,7 +838,7 @@ function syncContextualTradeFilters(){
 
 function applyFilters(){
   let trades=selectedAccountKey==='all'?allTrades:allTrades.filter(t=>accountKey(t)===selectedAccountKey);
-  let events=selectedAccountKey==='all'?rawEvents:rawEvents.filter(e=>accountKey(e)===selectedAccountKey);
+  let events=selectedAccountKey==='all'?activeRawEvents:activeRawEvents.filter(e=>accountKey(e)===selectedAccountKey);
   if(dateRange.mode!=='all'){
     trades=trades.filter(t=>{
       const k=tradeDayKey(t);
@@ -1011,39 +1017,163 @@ document.querySelectorAll('[data-range-preset]').forEach(b=>b.onclick=()=>{
   renderRangePicker();
 });
 
-function renderAccounts(){
-  el('accountList').innerHTML=detectedAccounts.length?detectedAccounts.map((a,i)=>
-    '<div class="accountRow">'+
-      '<div class="memberMeta"><b>'+esc(a.label||a.account)+'</b><span class="badge">'+esc(a.source)+'</span><div class="sub">'+esc(a.account)+(a.server?' · '+esc(a.server):'')+' · '+a.raw+' raw events</div></div>'+
-      '<label class="accountEdit"><span class="accountEditLabel">'+esc(tx('Account name','Название счёта'))+'</span><input class="input" id="accountLabel_'+i+'" value="'+esc(a.label||'')+'" placeholder="Main MT4"></label>'+
-      '<label class="accountEdit"><span class="accountEditLabel">'+esc(tx('Starting balance','Начальный баланс'))+'</span><input class="input" id="accountBalance_'+i+'" type="number" min="0" step="0.01" inputmode="decimal" value="'+(a.starting_balance==null?'':esc(a.starting_balance))+'" placeholder="10000"></label>'+
-      '<button class="btn" data-account-index="'+i+'">'+esc(tx('Save','Сохранить'))+'</button>'+
-    '</div>'
-  ).join(''):'<div class="empty">'+esc(tx('No connected accounts yet.','Подключённых счетов пока нет.'))+'</div>';
-  document.querySelectorAll('[data-account-index]').forEach(b=>b.onclick=()=>saveAccountLabel(Number(b.dataset.accountIndex)));
+function accountDirectActive(a){
+  return brokerConnections.some(row=>
+    String(row.platform||'').toUpperCase()===String(a.source||'').toUpperCase() &&
+    String(row.login||'')===String(a.account||'') &&
+    String(row.server||'')===String(a.server||'') &&
+    row.enabled!==false &&
+    String(row.state||'').toUpperCase()!=='DISCONNECTED'
+  );
 }
-async function saveAccountLabel(i){
-  const a=detectedAccounts[i];if(!a)return;
-  const balanceRaw=el('accountBalance_'+i).value.trim();
+function accountConnectorFresh(a){
+  const now=Date.now();
+  return connectorStatuses.some(row=>
+    accountKey(row)===a.key &&
+    row.last_seen &&
+    now-new Date(row.last_seen).getTime()<10*60*1000
+  );
+}
+function accountSettingsRow(a,i,enabled){
+  const labelInput=el('accountLabel_'+i);
+  const balanceInput=el('accountBalance_'+i);
+  const balanceRaw=balanceInput?balanceInput.value.trim():'';
   const startingBalance=balanceRaw===''?null:Number(balanceRaw);
   if(startingBalance!==null&&(!Number.isFinite(startingBalance)||startingBalance<0)){
-    el('accountBalance_'+i).focus();
-    showToast(tx('Starting balance must be 0 or higher.','Starting balance должен быть 0 или выше.'),'error');return;
+    if(balanceInput)balanceInput.focus();
+    throw new Error(tx('Starting balance must be 0 or higher.','Начальный баланс должен быть 0 или выше.'));
   }
-  const user=(await sb.auth.getUser()).data.user;
-  const row={
-    user_id:user.id,
+  return {
+    user_id:null,
     source:a.source,
     account:a.account,
     server:a.server||'',
-    label:el('accountLabel_'+i).value.trim()||null,
+    label:labelInput?(labelInput.value.trim()||null):(a.label||null),
     starting_balance:startingBalance,
-    enabled:true,
+    enabled,
     updated_at:new Date().toISOString()
   };
-  const {error}=await sb.from('account_settings').upsert(row,{onConflict:'user_id,source,account,server'});
-  if(error){showToast(error.message,'error');return;}
-  await loadData();
+}
+function renderAccounts(){
+  const active=accountCatalog.filter(a=>a.enabled!==false);
+  const archived=accountCatalog.filter(a=>a.enabled===false);
+  const rows=active.concat(archived);
+  const host=el('accountList');
+  if(!rows.length){
+    host.innerHTML='<div class="empty">'+esc(tx('No detected accounts yet.','Обнаруженных счетов пока нет.'))+'</div>';
+    return;
+  }
+  host.innerHTML=rows.map((a,i)=>{
+    const isArchived=a.enabled===false;
+    const directActive=accountDirectActive(a);
+    const stateBadge=isArchived?'<span class="badge accountStateBadge archived">'+esc(tx('Archived','В архиве'))+'</span>':(directActive?'<span class="badge accountStateBadge live">'+esc(tx('Connected','Подключён'))+'</span>':'');
+    const actions=isArchived
+      ? '<button class="btn" type="button" data-account-save="'+i+'">'+esc(tx('Save','Сохранить'))+'</button>'+
+        '<button class="btn" type="button" data-account-restore="'+i+'">'+esc(tx('Restore','Вернуть'))+'</button>'+
+        '<button class="btn danger" type="button" data-account-delete="'+i+'">'+esc(tx('Delete data','Удалить данные'))+'</button>'
+      : '<button class="btn" type="button" data-account-save="'+i+'">'+esc(tx('Save','Сохранить'))+'</button>'+
+        '<button class="btn" type="button" data-account-archive="'+i+'">'+esc(tx('Archive','В архив'))+'</button>';
+    return '<div class="accountRow '+(isArchived?'archivedAccount':'')+'">'+
+      '<div class="memberMeta"><div class="accountTitleLine"><b>'+esc(a.label||a.account)+'</b><span class="badge">'+esc(a.source)+'</span>'+stateBadge+'</div><div class="sub">'+esc(a.account)+(a.server?' · '+esc(a.server):'')+' · '+a.raw+' '+esc(tx('raw events','raw events'))+'</div></div>'+
+      '<label class="accountEdit"><span class="accountEditLabel">'+esc(tx('Account name','Название счёта'))+'</span><input class="input" id="accountLabel_'+i+'" value="'+esc(a.label||'')+'" placeholder="Main MT4"></label>'+
+      '<label class="accountEdit"><span class="accountEditLabel">'+esc(tx('Starting balance','Начальный баланс'))+'</span><input class="input" id="accountBalance_'+i+'" type="number" min="0" step="0.01" inputmode="decimal" value="'+(a.starting_balance==null?'':esc(a.starting_balance))+'" placeholder="10000"></label>'+
+      '<div class="accountActions">'+actions+'</div>'+
+    '</div>';
+  }).join('');
+  host.querySelectorAll('[data-account-save]').forEach(b=>b.onclick=()=>saveAccountLabel(Number(b.dataset.accountSave),b));
+  host.querySelectorAll('[data-account-archive]').forEach(b=>b.onclick=()=>setAccountArchived(Number(b.dataset.accountArchive),true,b));
+  host.querySelectorAll('[data-account-restore]').forEach(b=>b.onclick=()=>setAccountArchived(Number(b.dataset.accountRestore),false,b));
+  host.querySelectorAll('[data-account-delete]').forEach(b=>b.onclick=()=>deleteAccountData(Number(b.dataset.accountDelete),b));
+}
+async function saveAccountLabel(i,button){
+  const rows=accountCatalog.filter(a=>a.enabled!==false).concat(accountCatalog.filter(a=>a.enabled===false));
+  const a=rows[i];if(!a)return;
+  await withBusyButton(button,tx('Saving…','Сохраняю…'),async()=>{
+    let row;
+    try{row=accountSettingsRow(a,i,a.enabled!==false)}catch(error){showToast(error.message,'error');return}
+    const user=(await sb.auth.getUser()).data.user;
+    if(!user){showToast(tx('Session expired.','Сессия истекла.'),'error');return}
+    row.user_id=user.id;
+    const {error}=await sb.from('account_settings').upsert(row,{onConflict:'user_id,source,account,server'});
+    if(error){showToast(error.message,'error');return}
+    showToast(tx('Account settings saved.','Настройки счёта сохранены.'),'success');
+    await loadData({silent:true});
+  });
+}
+async function setAccountArchived(i,archive,button){
+  const rows=accountCatalog.filter(a=>a.enabled!==false).concat(accountCatalog.filter(a=>a.enabled===false));
+  const a=rows[i];if(!a)return;
+  if(archive){
+    const ok=await askConfirm(
+      tx('Archive this account? It will disappear from Insights and All accounts, but its history will be kept.','Отправить этот счёт в архив? Он исчезнет из Аналитики и Все счета, но история сохранится.'),
+      {confirmText:tx('Archive','В архив')}
+    );
+    if(!ok)return;
+  }
+  await withBusyButton(button,archive?tx('Archiving…','Архивирую…'):tx('Restoring…','Возвращаю…'),async()=>{
+    let row;
+    try{row=accountSettingsRow(a,i,!archive)}catch(error){showToast(error.message,'error');return}
+    const user=(await sb.auth.getUser()).data.user;
+    if(!user){showToast(tx('Session expired.','Сессия истекла.'),'error');return}
+    row.user_id=user.id;
+    const {error}=await sb.from('account_settings').upsert(row,{onConflict:'user_id,source,account,server'});
+    if(error){showToast(error.message,'error');return}
+    showToast(archive?tx('Account archived. History kept.','Счёт отправлен в архив. История сохранена.'):tx('Account restored to Insights.','Счёт возвращён в Аналитику.'),'success');
+    await loadData({silent:true});
+  });
+}
+function accountTradeIdsForDelete(a){
+  const rows=dedupeEvents(rawEvents.filter(e=>accountKey(e)===a.key));
+  const grouped=stabilizeTradeIds(
+    groupMT5(rows.filter(e=>String(e.source).toUpperCase()==='MT5'))
+      .concat(groupMT4(rows.filter(e=>String(e.source).toUpperCase()==='MT4')))
+      .filter(t=>t.closedAt)
+  );
+  const ids=new Set();
+  grouped.forEach(t=>{if(t.id)ids.add(String(t.id));if(t.legacyId)ids.add(String(t.legacyId))});
+  return [...ids];
+}
+async function deleteAccountData(i,button){
+  const rows=accountCatalog.filter(a=>a.enabled!==false).concat(accountCatalog.filter(a=>a.enabled===false));
+  const a=rows[i];if(!a||a.enabled!==false)return;
+  if(accountDirectActive(a)){
+    showToast(tx('Disconnect this broker account before deleting its history.','Перед удалением истории отключи этот брокерский счёт.'),'error');return;
+  }
+  if(accountConnectorFresh(a)){
+    showToast(tx('This account still has a recent connector heartbeat. Stop that connector first, then try again.','У этого счёта ещё свежий heartbeat коннектора. Сначала останови коннектор и повтори.'),'error');return;
+  }
+  const label=a.label||a.account;
+  const ok=await askConfirm(
+    tx('Permanently delete all raw trading history and trade reviews for ','Навсегда удалить всю raw-историю сделок и разборы для ')+label+
+    tx('? Shared Daily Review notes are kept. This cannot be undone.','? Общие заметки Daily Review сохранятся. Это действие нельзя отменить.'),
+    {danger:true,confirmText:tx('Delete data','Удалить данные')}
+  );
+  if(!ok)return;
+  await withBusyButton(button,tx('Deleting…','Удаляю…'),async()=>{
+    try{
+      const result=await edgePost('account-data-delete',{
+        source:a.source,
+        account:a.account,
+        server:a.server||'',
+        trade_ids:accountTradeIdsForDelete(a)
+      });
+      showToast(
+        tx('Account data deleted: ','Данные счёта удалены: ')+String(result.raw_events_deleted||0)+tx(' raw events.',' raw events.'),
+        'success'
+      );
+      await loadData();
+    }catch(error){
+      const code=String(error?.code||error?.message||'delete_failed');
+      const msg=code==='account_not_archived'
+        ? tx('Archive the account first.','Сначала отправь счёт в архив.')
+        : code==='active_connection'
+          ? tx('Disconnect the broker account first.','Сначала отключи брокерский счёт.')
+          : code==='connector_active'
+            ? tx('Stop the active connector first.','Сначала останови активный коннектор.')
+            : tx('Delete failed: ','Ошибка удаления: ')+code;
+      showToast(msg,'error');
+    }
+  });
 }
 
 async function loadMembers(){
@@ -1152,7 +1282,7 @@ function eventEligible(e){
 }
 function renderHealth(){
   const healthTrades=selectedAccountKey==='all'?allTrades:allTrades.filter(t=>accountKey(t)===selectedAccountKey);
-  const healthEvents=selectedAccountKey==='all'?rawEvents:rawEvents.filter(e=>accountKey(e)===selectedAccountKey);
+  const healthEvents=selectedAccountKey==='all'?activeRawEvents:activeRawEvents.filter(e=>accountKey(e)===selectedAccountKey);
   const eligible=healthEvents.filter(eventEligible);
   const rawNet=eligible.reduce((z,e)=>z+Number(e.profit||0)+Number(e.commission||0)+Number(e.swap||0)+Number(e.fee||0),0);
   const logicalNet=healthTrades.reduce((z,t)=>z+Number(t.pnl||0),0);
@@ -1500,7 +1630,7 @@ function equityScopeContext(){
     if(firstTradeByAccount[key]==null||ts<firstTradeByAccount[key])firstTradeByAccount[key]=ts;
   });
 
-  const cashFlows=rawEvents.filter(e=>{
+  const cashFlows=activeRawEvents.filter(e=>{
     const key=accountKey(e),ts=cashFlowTime(e);
     if(!accountKeys.has(key)||!isCashFlowEvent(e)||!ts)return false;
     const ms=new Date(ts).getTime(),first=firstTradeByAccount[key];
