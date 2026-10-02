@@ -1,0 +1,104 @@
+{
+  "project": "Trading Journal",
+  "isolated_from": "ASTRA / EURUSD CR Shadow",
+  "date": "2026-10-02",
+  "repository": "Andrey244/Andrey244.github.io",
+  "code_checkpoint": "3d9e251eee859030201949b5720a2df0b652c980",
+  "rollback_branch": "rollback/pre-account-lifecycle-actions-2026-10-02",
+  "ci": {
+    "smoke": {
+      "number": 286,
+      "run_id": 36991355528,
+      "status": "SUCCESS"
+    },
+    "codeql": {
+      "number": 129,
+      "run_id": 36989213326,
+      "status": "SUCCESS"
+    },
+    "pages": {
+      "number": 280,
+      "run_id": 36989212719,
+      "status": "SUCCESS"
+    }
+  },
+  "pwa": {
+    "cache": "tj-shell-v16",
+    "asset_version": "20261002-account-lifecycle-1"
+  },
+  "supabase": {
+    "project_id": "ylriyjxcefovzwzinpqd",
+    "migration": {
+      "version": "20261002091621",
+      "name": "account_lifecycle_delete_service",
+      "applied": true
+    },
+    "edge_function": {
+      "slug": "account-data-delete",
+      "version": 1,
+      "status": "ACTIVE",
+      "verify_jwt": false,
+      "runtime_auth": "requireApprovedUser"
+    },
+    "raw_events_client_delete_grant_added": false
+  },
+  "latest_feature": {
+    "name": "Account lifecycle",
+    "disconnect": "connection-only; keep history",
+    "archive": "enabled=false; hide from active analytics; keep history",
+    "restore": "enabled=true; return to active analytics",
+    "delete_data": "permanent exact source+account+server deletion after archive; blocked by active direct connection/fresh connector"
+  },
+  "immediate_next_check": {
+    "type": "authenticated live UI validation",
+    "test_account": {
+      "label": "test test",
+      "source": "MT4",
+      "account": "252031119",
+      "server": "Alpari-Pro.ECN-Demo",
+      "raw_events_seen": 4
+    },
+    "expected": [
+      "Archive visible",
+      "Archived account remains in Accounts",
+      "Restore visible",
+      "Delete data visible",
+      "Archived account absent from Insights selector",
+      "Archived account absent from All accounts active analytics",
+      "Do not auto-delete"
+    ]
+  },
+  "recent_fixes": {
+    "mt4_trade_date": "Calendar/Trades/modal/Equity use broker-day-compatible source-aware display",
+    "equity_tooltip": "auto-width 150-260px",
+    "equity_height": {
+      "desktop_px": 270,
+      "tablet_px": 230,
+      "mobile_px": 200
+    }
+  },
+  "invariants": [
+    "grouping v2.3",
+    "explicit TG precedence",
+    "source+account+server isolation",
+    "MT4 overlap-lifetime grouping",
+    "MT5 exposure grouping",
+    "stable Logical Trade ID",
+    "MT4 broker-day via utcDayKey",
+    "Ghost exclusion semantics",
+    "Strategy Outcome not P&L-derived",
+    "Worked/SL/Other",
+    "USD-only for now",
+    "preserve RLS Owner/Admin/Member",
+    "no MFA/password-policy redesign",
+    "no fake collector nodes",
+    "never request Investor Password in chat"
+  ],
+  "tinyfish": {
+    "default_use": false,
+    "reason": "user reports lag/clutter; skip if limited or problematic",
+    "browser_verification_claim_requires_actual_evidence": true
+  },
+  "runtime_preference": "test on PC first, final collector location VPS",
+  "connector_version": "1.20"
+}
